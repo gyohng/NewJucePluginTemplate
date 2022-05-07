@@ -6,8 +6,8 @@ MYDIR=`dirname "$0"`
 cd "$MYDIR"
 MYDIR=`pwd`
 
-#rm -rf vst3sdk
-#git clone -j 6 --recursive https://github.com/steinbergmedia/vst3sdk.git
+rm -rf vst3sdk
+git clone -j 6 --recursive https://github.com/steinbergmedia/vst3sdk.git
 rm -rf \
     vst3sdk/.git \
     vst3sdk/*/.git \
