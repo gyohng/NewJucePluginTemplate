@@ -2,14 +2,18 @@
 
 set -e
 
-# Set the plugin binary to match the CMake project
-BINARY_NAME="Plugin"
+# Set the project name and product name to match the CMake project
+CMAKE_PROJECT_NAME="MyAudioPlugin"
+PRODUCT_NAME="My Audio Plugin"
 DEVELOPER_SIGNATURE="Developer ID Application"
 
 # If you don't have PACE SDK installed, you can ignore this data
 PACE_ACCOUNT=YourPaceAccount
 PACE_PASSWORD=YourPaceAccountPassword
 PACE_WCGUID=141991C2-DB49-452B-96E0-87B405A0544E
+
+# Note: do not pay attention to the warnings that say that some object files
+# were built for newer macOS version (10.11) than being linked (10.9)
 
 MYDIR="$(dirname "$0")"
 MYDIR="$( cd "$MYDIR" ; pwd -P )"
@@ -45,9 +49,9 @@ export CMAKE_OBJC_COMPILER_LAUNCHER=ccache
 splice() {
     cd "$MYDIR"
 
-    ditto "build/macos10/${BINARY_NAME}_artefacts/Release/$1/$2" "build/output/$2"
+    ditto "build/macos10/${CMAKE_PROJECT_NAME}_artefacts/Release/$1/$2" "build/output/$2"
     OUTPUTBIN=`echo "build/output/$2/Contents/MacOS/"*`
-    MACOS11BIN=`echo "build/macos11/${BINARY_NAME}_artefacts/Release/$1/$2/Contents/MacOS/"*`
+    MACOS11BIN=`echo "build/macos11/${CMAKE_PROJECT_NAME}_artefacts/Release/$1/$2/Contents/MacOS/"*`
 
     strip -x -S "$OUTPUTBIN"
     strip -x -S "$MACOS11BIN"
@@ -102,4 +106,4 @@ cmake -G Ninja -DUSE_BUILDNUMBER=1 -DBUILD_MACOS11=1 -DCMAKE_BUILD_TYPE=Release 
 cmake --build .
 cd "$MYDIR"
 
-spliceAll "$BINARY_NAME"
+spliceAll "$PRODUCT_NAME"

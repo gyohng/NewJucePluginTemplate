@@ -225,6 +225,12 @@ if (APPLE)
 endif()
 
 if (APPLE)
+
+    # Note: do not pay attention to the warnings that say that some object files
+    # were built for newer macOS version (10.11) than being linked (10.9),
+    # this is intended, and this allows the same binary to be reused for diffrent
+    # macOS versions.
+
     # remove arm64 from AAX
     set(aaxarch ${CMAKE_OSX_ARCHITECTURES})
     list(REMOVE_ITEM aaxarch arm64)
