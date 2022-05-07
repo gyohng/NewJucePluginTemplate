@@ -530,7 +530,7 @@ constexpr bool isPowerOfTwo (IntegerType value)
 }
 
 /** Returns the smallest power-of-two which is equal to or greater than the given integer. */
-inline int nextPowerOfTwo (int n) noexcept
+constexpr inline int nextPowerOfTwo (int n) noexcept
 {
     --n;
     n |= (n >> 1);
@@ -548,7 +548,7 @@ inline int nextPowerOfTwo (int n) noexcept
 int findHighestSetBit (uint32 n) noexcept;
 
 /** Returns the number of bits in a 32-bit integer. */
-inline int countNumberOfBits (uint32 n) noexcept
+constexpr inline int countNumberOfBits (uint32 n) noexcept
 {
     n -= ((n >> 1) & 0x55555555);
     n =  (((n >> 2) & 0x33333333) + (n & 0x33333333));
@@ -559,7 +559,7 @@ inline int countNumberOfBits (uint32 n) noexcept
 }
 
 /** Returns the number of bits in a 64-bit integer. */
-inline int countNumberOfBits (uint64 n) noexcept
+constexpr inline int countNumberOfBits (uint64 n) noexcept
 {
     return countNumberOfBits ((uint32) n) + countNumberOfBits ((uint32) (n >> 32));
 }
@@ -568,7 +568,7 @@ inline int countNumberOfBits (uint64 n) noexcept
     The divisor must be greater than zero.
 */
 template <typename IntegerType>
-IntegerType negativeAwareModulo (IntegerType dividend, const IntegerType divisor) noexcept
+inline constexpr IntegerType negativeAwareModulo (IntegerType dividend, const IntegerType divisor) noexcept
 {
     jassert (divisor > 0);
     dividend %= divisor;
