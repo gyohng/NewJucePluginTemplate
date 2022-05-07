@@ -1,0 +1,1 @@
+New JUCE Plugin template
