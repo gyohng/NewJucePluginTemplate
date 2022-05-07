@@ -18,6 +18,7 @@
 *.opensdf
 *.VC.db
 *.VC.opendb
++.vscode
 xcuserdata
 *.xccheckout
 *.xcscmblueprint
@@ -65,3 +66,4 @@ extras/Projucer/JUCECompileEngine.dylib
 
 .vscode
 /build
+!/extras/Build
