@@ -1,0 +1,16 @@
+.DS_Store
+desktop.ini
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+CMakeFiles
+cmake-build-*
+cmake-juce
+*_artefacts
+cmake-*
+CMakeFiles
+__pycache__
+build
+build-*
+build.ninja
+.ninja_*
