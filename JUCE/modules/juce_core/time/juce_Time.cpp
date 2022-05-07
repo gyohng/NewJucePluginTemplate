@@ -583,7 +583,7 @@ static int getMonthNumberForCompileDate (const String& m)
         if (m.equalsIgnoreCase (shortMonthNames[i]))
             return i;
 
-    // If you hit this because your compiler has an unusual __DATE__
+    // If you hit this because your compiler has an unusual DATE macro
     // format, let us know so we can add support for it!
     jassertfalse;
     return 0;
@@ -593,10 +593,10 @@ Time Time::getCompilationDate()
 {
     StringArray dateTokens, timeTokens;
 
-    dateTokens.addTokens (__DATE__, true);
+    dateTokens.addTokens ("Sep 19 2021", true);
     dateTokens.removeEmptyStrings (true);
 
-    timeTokens.addTokens (__TIME__, ":", StringRef());
+    timeTokens.addTokens ("00:00:00", ":", StringRef());
 
     return Time (dateTokens[2].getIntValue(),
                  getMonthNumberForCompileDate (dateTokens[0]),
