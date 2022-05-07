@@ -241,11 +241,11 @@ function(_juce_get_platform_plugin_kinds out)
     set(result Standalone)
 
     if(APPLE AND (CMAKE_GENERATOR STREQUAL "Xcode"))
-        list(APPEND result AUv3)
+        # list(APPEND result AUv3)
     endif()
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        list(APPEND result AU)
+        list(APPEND result AU AUv3)
     endif()
 
     if(NOT CMAKE_SYSTEM_NAME STREQUAL "iOS" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Android")
