@@ -31,6 +31,7 @@
 
 #if JucePlugin_Build_VST || JucePlugin_Build_VST3
 
+#define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
 #define JUCE_MAC_WINDOW_VISIBITY_BODGE 1
 
 #include "../utility/juce_IncludeSystemHeaders.h"

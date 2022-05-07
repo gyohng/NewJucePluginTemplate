@@ -159,7 +159,7 @@ void NSViewComponent::resizeToFitView()
         if (auto* peer = getTopLevelComponent()->getPeer())
         {
             const auto position = peer->getAreaCoveredBy (*this).getPosition();
-            [view setFrameOrigin: convertToCGPoint (position)];
+            [view setFrameOrigin: NSPointFromCGPoint(convertToCGPoint (position))];
         }
     }
 }
