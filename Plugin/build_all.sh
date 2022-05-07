@@ -24,6 +24,12 @@ if [ ! -d "$HOME/MacOSX-SDKs" ]; then
     git clone https://github.com/phracker/MacOSX-SDKs.git "$HOME/MacOSX-SDKs"
 fi
 
+if [ ! -d "$MYDIR/../JUCE/sdks/vst3sdk" ]; then
+    cd "$MYDIR/../JUCE/sdks"
+    ./download-vst3-sdk.sh
+    cd "$MYDIR"
+fi
+
 if ! which ninja >/dev/null; then 
     echo Error: ninja not found
     echo install: brew install ninja
@@ -70,21 +76,24 @@ splice() {
 }
 
 spliceAll() {
-    splice AAX "$1.aaxplugin"
+
     splice AU "$1.component"
     splice AUv3 "$1.appex"
     splice Standalone "$1.app"
     splice VST "$1.vst"
     splice VST3 "$1.vst3"
 
-    if [ -f /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool ]; then
-        mv "build/output/$1.aaxplugin" "build/output/$1.unsigned.aaxplugin"
-        /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool \
-            sign --verbose --strip on \
-            --account "$PACE_ACCOUNT" --password "$PACE_PASSWORD" \
-            --signid "$DEVELOPER_SIGNATURE" \
-            --wcguid "$WCGUID" \
-            --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin" || true
+    if [ -d "build/macos10/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX" ]; then
+        splice AAX "$1.aaxplugin"
+        if [ -f /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool ]; then
+            mv "build/output/$1.aaxplugin" "build/output/$1.unsigned.aaxplugin"
+            /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool \
+                sign --verbose --strip on \
+                --account "$PACE_ACCOUNT" --password "$PACE_PASSWORD" \
+                --signid "$DEVELOPER_SIGNATURE" \
+                --wcguid "$WCGUID" \
+                --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin" || true
+        fi
     fi
 }
 

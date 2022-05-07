@@ -58,13 +58,21 @@ if (NOT MIXER_ROOT_PROJECT)
 add_subdirectory(../JUCE JUCE)
 endif()
 
-juce_set_vst2_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks")
-juce_set_aax_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/aax")
+juce_set_vst2_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/vst3sdk")
+juce_set_vst3_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/vst3sdk")
+
+
+if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/aax")
+    juce_set_aax_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/aax")
+    set(optAAX AAX)
+    set(_optAAX _AAX)
+    set(HAS_AAX 1)
+endif()
 
 string(TIMESTAMP thisyear "%Y")
 
 juce_add_plugin(${TargetName}
-    FORMATS AAX AU AUv3 VST3 VST Standalone
+    FORMATS ${optAAX} AU AUv3 VST3 VST Standalone
 
     VERSION ${PROJECT_VERSION}
     # ICON_* arguments specify a path to an image file to use as an icon for the Standalone
@@ -81,7 +89,7 @@ juce_add_plugin(${TargetName}
     PLUGIN_MANUFACTURER_CODE "YOHN"
     PLUGIN_CODE "TMPL"
 
-    AAX_IDENTIFIER "com.yohng.plugintemplate"
+    AAX_IDENTIFIER "com.yohng.plugintemplate.aax"
 
     HARDENED_RUNTIME_ENABLED TRUE
     HARDENED_RUNTIME_OPTIONS "com.apple.security.device.audio-input"
@@ -145,11 +153,11 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(${TargetName} PROPERTIES FOLDER "")
 
 if (APPLE)
-    foreach(ttype All AU AUv3 AAX Standalone VST VST3)
+    foreach(ttype All AU AUv3 ${optAAX} Standalone VST VST3)
         set_target_properties(${TargetName}_${ttype} PROPERTIES FOLDER "Build Config")
     endforeach()
 elseif(WIN32)
-    foreach(ttype All AAX Standalone VST VST3)
+    foreach(ttype All ${optAAX} Standalone VST VST3)
         set_target_properties(${TargetName}_${ttype} PROPERTIES FOLDER "Build Config")
     endforeach()
 endif()
@@ -171,7 +179,7 @@ if (WIN32 AND CMAKE_C_COMPILER_ID STREQUAL Clang)
         add_link_options(-Xclang -triple=x86_64-pc-windows-msvc)
     endif()
 
-    foreach(ttype "" _AAX _Standalone _VST _VST3)
+    foreach(ttype "" ${_optAAX} _Standalone _VST _VST3)
         target_compile_options(${TargetName}${ttype} PUBLIC
             -O3 -ffast-math -ftree-vectorize
             -fpascal-strings
@@ -183,7 +191,7 @@ endif()
 
 # Optimisation flags for Windows
 if (WIN32 AND NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    foreach(ttype "" _AAX _Standalone _VST _VST3)
+    foreach(ttype "" ${_optAAX} _Standalone _VST _VST3)
         target_compile_options(${TargetName}${ttype} PUBLIC
             /O2 /fp:fast /Zp16 /GS-)
 
@@ -211,7 +219,7 @@ if (APPLE)
     endif()
 
     # Optimisation flags
-    foreach(ttype "" _AU _AUv3 _Standalone _VST _VST3 _AAX)
+    foreach(ttype "" _AU _AUv3 _Standalone _VST _VST3 ${_optAAX})
         target_compile_options(${TargetName}${ttype} PUBLIC
             -O3 -ffast-math -ftree-vectorize
             -fpascal-strings
@@ -231,10 +239,12 @@ if (APPLE)
     # this is intended, and this allows the same binary to be reused for diffrent
     # macOS versions.
 
-    # remove arm64 from AAX
-    set(aaxarch ${CMAKE_OSX_ARCHITECTURES})
-    list(REMOVE_ITEM aaxarch arm64)
-    set_target_properties(${TargetName}_AAX PROPERTIES OSX_ARCHITECTURES "${aaxarch}")
+    if (HAS_AAX)
+        # remove arm64 from AAX
+        set(aaxarch ${CMAKE_OSX_ARCHITECTURES})
+        list(REMOVE_ITEM aaxarch arm64)
+        set_target_properties(${TargetName}_AAX PROPERTIES OSX_ARCHITECTURES "${aaxarch}")
+    endif()
 
     # remove i386 from AUv3
     set(auv3arch ${CMAKE_OSX_ARCHITECTURES})
