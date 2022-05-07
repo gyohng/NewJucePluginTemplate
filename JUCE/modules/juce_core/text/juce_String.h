@@ -1218,6 +1218,9 @@ public:
     /** */
     std::string toStdString() const;
 
+    /** */
+    std::string_view toStringView() const;
+
     //==============================================================================
     /** Creates a String from a UTF-8 encoded buffer.
         If the size is < 0, it'll keep reading until it hits a zero.
