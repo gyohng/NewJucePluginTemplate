@@ -1914,6 +1914,11 @@ const NamedValueSet& JavascriptEngine::getRootObjectProperties() const noexcept
     return root->getProperties();
 }
 
+DynamicObject *JavascriptEngine::getRootObject() noexcept
+{
+    return root;
+}
+
 JUCE_END_IGNORE_WARNINGS_MSVC
 
 } // namespace juce

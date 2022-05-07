@@ -111,6 +111,9 @@ public:
     /** Provides access to the set of properties of the root namespace object. */
     const NamedValueSet& getRootObjectProperties() const noexcept;
 
+    /** Access the root object directly */
+    DynamicObject *getRootObject() noexcept;
+
 private:
     JUCE_PUBLIC_IN_DLL_BUILD (struct RootObject)
     const ReferenceCountedObjectPtr<RootObject> root;
