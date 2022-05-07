@@ -404,10 +404,12 @@ function(juce_add_binary_data target)
     list(APPEND binary_file_names "${juce_binary_data_folder}/${JUCE_ARG_HEADER_NAME}")
 
     set(newline_delimited_input)
+    set(juce_sources_dep)
 
     foreach(name IN LISTS JUCE_ARG_SOURCES)
-        _juce_make_absolute_and_check(name)
+        _juce_make_absolute(name)
         set(newline_delimited_input "${newline_delimited_input}${name}\n")
+        list(APPEND juce_sources_dep "${name}")
     endforeach()
 
     set(input_file_list "${juce_binary_data_folder}/input_file_list")
@@ -417,7 +419,7 @@ function(juce_add_binary_data target)
         COMMAND juce::juceaide binarydata "${JUCE_ARG_NAMESPACE}" "${JUCE_ARG_HEADER_NAME}"
             ${juce_binary_data_folder} "${input_file_list}"
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-        DEPENDS "${input_file_list}"
+        DEPENDS "${input_file_list}" "${juce_sources_dep}"
         VERBATIM)
 
     target_sources(${target} PRIVATE "${binary_file_names}")
