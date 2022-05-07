@@ -86,3 +86,5 @@
  #undef JucePlugin_Build_AAX
  #define JucePlugin_Build_AAX 0
 #endif
+
+#include "juce_PluginVersion.h"

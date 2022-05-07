@@ -297,7 +297,7 @@ endfunction()
 
 function(_juce_add_plugin_wrapper_target format path out_path)
     _juce_module_sources("${path}" "${out_path}" out_var headers)
-    list(FILTER out_var EXCLUDE REGEX "/juce_audio_plugin_client_utils.cpp$")
+    list(FILTER out_var EXCLUDE REGEX "/juce_audio_plugin_client_(utils|version).cpp$")
     set(target_name juce_audio_plugin_client_${format})
 
     _juce_add_interface_library("${target_name}" ${out_var})
@@ -429,7 +429,8 @@ function(juce_add_module module_path)
         endforeach()
 
         set(utils_source
-            "${base_path}/${module_name}/juce_audio_plugin_client_utils.cpp")
+            "${base_path}/${module_name}/juce_audio_plugin_client_utils.cpp"
+            "${base_path}/${module_name}/juce_audio_plugin_client_version.cpp")
         add_library(juce_audio_plugin_client_utils INTERFACE)
         target_sources(juce_audio_plugin_client_utils INTERFACE "${utils_source}")
 
