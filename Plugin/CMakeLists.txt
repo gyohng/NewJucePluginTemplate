@@ -52,9 +52,11 @@ set(SOFTWARE_VERSION 1.0.${BUILDNUMBER})
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version.txt" ${SOFTWARE_VERSION})
 
 project(MyAudioPlugin VERSION ${SOFTWARE_VERSION} LANGUAGES C CXX)
+set(TargetName "${PROJECT_NAME}")
 
-set (TargetName ${PROJECT_NAME})
+if (NOT MIXER_ROOT_PROJECT)
 add_subdirectory(../JUCE JUCE)
+endif()
 
 juce_set_vst2_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks")
 juce_set_aax_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/aax")
