@@ -101,6 +101,7 @@ public:
     }
 
 private:
+    static constexpr int RUNNING_MAX_POW = 9; // 2**9 = 512 samples
     AudioBuffer<double> doubleProxy;
 
     AudioParameterFloat *thresh, *ceiling, *attack, *hold, *release;
@@ -140,7 +141,7 @@ void PluginDSP::processBlock(AudioBuffer<double> &buffer, MidiBuffer &) {
 
         amp = 1.0 / amp;
 
-        for (int j = 0; j < maxN; j++) {
+        for (int j = 0; j < RUNNING_MAX_POW; j++) {
             int mask = (1 << j) - 1;
             int off = mask + (bptr & mask);
             auto tt = holdv[off]; holdv[off] = amp;
@@ -166,7 +167,7 @@ void PluginDSP::processBlock(AudioBuffer<double> &buffer, MidiBuffer &) {
         holdCounter = max(0, holdCounter - 1);
 
         double sL = sampL[i] * env * outGain;
-        double sR = sampR[i] * env * outGain
+        double sR = sampR[i] * env * outGain;
 
         sampL[i] = clamp(sL, -0.9999, 0.9999);
         sampR[i] = clamp(sR, -0.9999, 0.9999);
