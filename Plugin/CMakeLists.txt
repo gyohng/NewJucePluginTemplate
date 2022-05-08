@@ -29,6 +29,7 @@ if (NOT USE_XCODE)
         set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "" FORCE)
     else()
         set(CMAKE_OSX_SYSROOT "$ENV{HOME}/MacOSX-SDKs/MacOSX10.13.sdk" CACHE STRING "" FORCE)
+        # you may want to remove i386 from the list eventually
         set(CMAKE_OSX_ARCHITECTURES "x86_64;i386" CACHE STRING "" FORCE)
     endif()
     

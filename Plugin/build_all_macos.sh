@@ -20,6 +20,20 @@ MYDIR="$( cd "$MYDIR" ; pwd -P )"
 
 cd "$MYDIR"
 
+NOTFOUND_PACKAGES=""
+
+for f in git ninja cmake ccache wget; do
+    if ! which $f >/dev/null; then 
+        NOTFOUND_PACKAGES="$NOTFOUND_PACKAGES $f"
+    fi
+done
+
+if [ "$NOTFOUND_PACKAGES" != "" ]; then
+    echo Error: the following packages were not found:$NOTFOUND_PACKAGES
+    echo install: brew install$NOTFOUND_PACKAGES
+    exit 1
+fi
+
 if [ ! -d "$HOME/MacOSX-SDKs" ]; then
     git clone https://github.com/phracker/MacOSX-SDKs.git "$HOME/MacOSX-SDKs"
 fi
@@ -28,24 +42,6 @@ if [ ! -d "$MYDIR/../JUCE/sdks/vst3sdk" ]; then
     cd "$MYDIR/../JUCE/sdks"
     ./download-vst3-sdk.sh
     cd "$MYDIR"
-fi
-
-if ! which ninja >/dev/null; then 
-    echo Error: ninja not found
-    echo install: brew install ninja
-    exit 1
-fi
-
-if ! which cmake >/dev/null; then 
-    echo Error: cmake not found
-    echo install: brew install cmake
-    exit 1
-fi
-
-if ! which ccache >/dev/null; then 
-    echo Error: ccache not found
-    echo install: brew install cccache
-    exit 1
 fi
 
 export CMAKE_C_COMPILER_LAUNCHER=ccache
