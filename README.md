@@ -35,6 +35,6 @@ If the AAX SDK is available and PACE Tools are installed, this template should b
 
 I recommend that for private projects, you remove `.gitignore` from the `sdks` directory and commit all downloaded SDK files directly to your repository.
 
----
-<i>Have fun,  
-George Yohng</i>
+
+*Have fun,  
+ George Yohng*
