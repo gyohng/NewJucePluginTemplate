@@ -1,6 +1,6 @@
 # New JUCE Plugin Template
 
-    Please note that before loading the project in your development environment on macOS, you must run build_all_macos.sh at least once to download and check for dependencies.
+> Please note that before loading the project in your development environment on macOS, you must run build_all_macos.sh at least once to download and check for dependencies.
 
 This template provides a complete CMake project for JUCE plugin development. It also includes shell scripts, which automate compiling for all architectures and macOS versions (including legacy 10.9 support), as well as Windows 32- and 64-bit plugins. 
 
