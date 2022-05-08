@@ -14,7 +14,12 @@ The code, however, provides all the necessary boilerplate, including JSON serial
 
 # Development
 
-The template and the projects are macOS centric and to be used with CLion (preferred), Xcode (project generator script is installed). Working with CLion is possible with just the Command Line Tools installed without Xcode.app. The scripts and projects will also attempt to sign produced binaries with the available `Developer ID Application` licence.
+The template and the projects are macOS centric and to be used with CLion (preferred), Xcode (project generator script is installed). Working with CLion is possible with just the Command Line Tools installed without Xcode.app.
+
+You will see some warning messages during linking about mismatching macOS versions. You can safely ignore these warnings.
+
+The scripts and projects will also attempt to sign produced binaries with the available `Developer ID Application` licence. 
+If you don't need to sign your binaries or don't have an Apple developer ID subscription, you can comment out or remove the `codesign` commands.
 
 The template should also be compatible with Windows, although it's not actively tested. I included a Visual Studio project generation batch file. Things may not work out of the box; you might need to modify some of the build files / scripts to fit your configuration.
 
