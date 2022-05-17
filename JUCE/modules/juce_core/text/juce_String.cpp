@@ -2093,10 +2093,12 @@ std::string String::toStdString() const
     return std::string (toRawUTF8());
 }
 
+#if JUCE_CXX17_IS_AVAILABLE
 std::string_view String::toStringView() const
 {
     return std::string_view (toRawUTF8(), getNumBytesAsUTF8());
 }
+#endif
 
 //==============================================================================
 template <class CharPointerType_Src, class CharPointerType_Dest>
