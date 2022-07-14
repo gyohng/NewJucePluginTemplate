@@ -87,6 +87,20 @@ public:
         return view == attachedView && attachedView != nullptr;
     }
 
+#ifdef __i386__
+    template <typename Callback>
+    bool drawRectangleList (ViewType* view,
+                            float scaleFactor,
+                            NSRect viewFrame,
+                            const Component& comp,
+                            Callback&& drawRectWithContext,
+                            const RectangleList<float>& dirtyRegions) {
+        return drawRectangleList<Callback>(view, scaleFactor,
+            CGRectMake(viewFrame.origin.x, viewFrame.origin.y, viewFrame.size.width, viewFrame.size.height),
+            comp, std::move(drawRectWithContext), dirtyRegions);
+    }
+#endif
+
     template <typename Callback>
     bool drawRectangleList (ViewType* view,
                             float scaleFactor,

@@ -948,6 +948,13 @@ public:
         drawRectWithContext (cg, r);
     }
 
+#ifdef __i386__
+    void drawRectWithContext (CGContextRef cg, CGRect r)
+    {
+        drawRectWithContext (cg, NSMakeRect(r.origin.x, r.origin.y, r.size.width, r.size.height));
+    }
+#endif
+
     void drawRectWithContext (CGContextRef cg, NSRect r)
     {
         if (! component.isOpaque())
