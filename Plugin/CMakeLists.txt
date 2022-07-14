@@ -143,6 +143,8 @@ target_link_libraries(${TargetName} PUBLIC
 if (APPLE)
     target_link_libraries(${TargetName} PUBLIC
         "-framework ServiceManagement"
+        "-framework Carbon"
+        #"-Xarch_i386 -framework -Xarch_i386 Carbon"
     )
 endif()
 
