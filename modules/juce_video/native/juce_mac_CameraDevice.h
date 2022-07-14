@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -226,7 +226,7 @@ private:
         {
             JUCE_CAMERA_LOG (nsStringToJuce ([notification description]));
 
-            NSError* error = notification.userInfo[AVCaptureSessionErrorKey];
+            NSError* error = [notification.userInfo objectForKey: AVCaptureSessionErrorKey];
             auto errorString = error != nil ? nsStringToJuce (error.localizedDescription) : String();
             getOwner (self).cameraSessionRuntimeError (errorString);
         }
@@ -244,8 +244,7 @@ private:
     };
 
    #if JUCE_USE_NEW_CAMERA_API
-    JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability", "-Wunguarded-availability-new")
-    class PostCatalinaPhotoOutput  : public ImageOutputBase
+    class API_AVAILABLE (macos (10.15)) PostCatalinaPhotoOutput  : public ImageOutputBase
     {
     public:
         PostCatalinaPhotoOutput()
@@ -329,7 +328,6 @@ private:
         AVCapturePhotoOutput* imageOutput = nil;
         std::unique_ptr<NSObject, NSObjectDeleter> delegate;
     };
-    JUCE_END_IGNORE_WARNINGS_GCC_LIKE
    #endif
 
     JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
