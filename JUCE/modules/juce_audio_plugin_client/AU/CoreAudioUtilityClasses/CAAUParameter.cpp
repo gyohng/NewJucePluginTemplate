@@ -46,6 +46,7 @@
 */
 
 #include "CAAUParameter.h"
+#include <math.h>
 
 CAAUParameter::CAAUParameter()
 {

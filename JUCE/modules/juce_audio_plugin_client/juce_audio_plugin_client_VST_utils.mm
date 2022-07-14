@@ -23,4 +23,8 @@
   ==============================================================================
 */
 
+#ifdef __i386__
+#include <Carbon/Carbon.h>
+#endif
+
 #include "VST/juce_VST_Wrapper.mm"
