@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -26,7 +26,7 @@
 namespace juce
 {
 
-JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability", "-Wunguarded-availability-new", "-Wdeprecated-declarations")
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
 
 extern NSMenu* createNSMenu (const PopupMenu&, const String& name, int topLevelMenuId,
                              int topLevelIndex, bool addDelegate);
@@ -87,7 +87,7 @@ struct StatusItemContainer   : public Timer
 };
 
 //==============================================================================
-struct ButtonBasedStatusItem   : public StatusItemContainer
+struct API_AVAILABLE (macos (10.10)) ButtonBasedStatusItem : public StatusItemContainer
 {
     //==============================================================================
     ButtonBasedStatusItem (SystemTrayIconComponent& iconComp, const Image& im)
@@ -384,7 +384,7 @@ public:
     //==============================================================================
     Pimpl (SystemTrayIconComponent& iconComp, const Image& im)
     {
-        if (std::floor (NSFoundationVersionNumber) > NSFoundationVersionNumber10_10)
+        if (@available (macOS 10.10, *))
             statusItemHolder = std::make_unique<ButtonBasedStatusItem> (iconComp, im);
         else
             statusItemHolder = std::make_unique<ViewBasedStatusItem> (iconComp, im);
