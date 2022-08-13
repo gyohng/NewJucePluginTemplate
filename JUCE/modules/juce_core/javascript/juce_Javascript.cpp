@@ -1916,7 +1916,7 @@ const NamedValueSet& JavascriptEngine::getRootObjectProperties() const noexcept
 
 DynamicObject *JavascriptEngine::getRootObject() noexcept
 {
-    return root;
+    return &*root;
 }
 
 JUCE_END_IGNORE_WARNINGS_MSVC
