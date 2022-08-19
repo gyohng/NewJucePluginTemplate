@@ -77,14 +77,12 @@ public:
         }
 
         var json(obj);
-        mo.writeString(JSON::toString(json));
+        mo.writeText(JSON::toString(json), false, false, "\n");
     }
 
     void setStateInformation(const void *data, int sizeInBytes) override {
-        MemoryInputStream mi(data, static_cast<size_t> (sizeInBytes), false);
-
         var json;
-        if (JSON::parse(mi.readString(), json).failed())
+        if (JSON::parse(String::fromUTF8((const char*)data, sizeInBytes), json).failed())
             return;
 
         for (auto *p_: getParameters()) {
