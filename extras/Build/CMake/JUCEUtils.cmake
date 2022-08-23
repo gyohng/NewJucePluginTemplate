@@ -322,6 +322,7 @@ function(_juce_write_configure_time_info target)
     _juce_append_target_property(file_content PLUGIN_AU_MAIN_TYPE                  ${target} JUCE_AU_MAIN_TYPE_CODE)
     _juce_append_target_property(file_content IS_AU_SANDBOX_SAFE                   ${target} JUCE_AU_SANDBOX_SAFE)
     _juce_append_target_property(file_content IS_PLUGIN_SYNTH                      ${target} JUCE_IS_SYNTH)
+    _juce_append_target_property(file_content IS_PLUGIN_ARA_EFFECT                 ${target} JUCE_IS_ARA_EFFECT)
     _juce_append_target_property(file_content SUPPRESS_AU_PLIST_RESOURCE_USAGE     ${target} JUCE_SUPPRESS_AU_PLIST_RESOURCE_USAGE)
     _juce_append_target_property(file_content HARDENED_RUNTIME_ENABLED             ${target} JUCE_HARDENED_RUNTIME_ENABLED)
     _juce_append_target_property(file_content APP_SANDBOX_ENABLED                  ${target} JUCE_APP_SANDBOX_ENABLED)
@@ -1343,10 +1344,11 @@ function(_juce_set_fallback_properties target)
     _juce_set_property_if_not_set(${target} BUILD_VERSION "${final_version}")
 
     get_target_property(custom_xcassets ${target} JUCE_CUSTOM_XCASSETS_FOLDER)
+    get_target_property(custom_storyboard ${target} JUCE_LAUNCH_STORYBOARD_FILE)
 
     set(needs_storyboard TRUE)
 
-    if(custom_xcassets)
+    if((NOT custom_storyboard) AND custom_xcassets AND (EXISTS "${custom_xcassets}/LaunchImage.launchimage"))
         set(needs_storyboard FALSE)
     endif()
 
@@ -1909,7 +1911,8 @@ function(juce_add_pip header)
 
             juce_add_plugin(${JUCE_PIP_NAME}
                 FORMATS AU VST3
-                IS_ARA_EFFECT TRUE)
+                IS_ARA_EFFECT TRUE
+                ${extra_target_args})
         else()
             set(source_main "${JUCE_CMAKE_UTILS_DIR}/PIPAudioProcessor.cpp.in")
 
