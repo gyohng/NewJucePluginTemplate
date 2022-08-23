@@ -76,7 +76,14 @@ You need to e-mail devauth@avid.com with something like this:
     Purpose of request: AAX plugin development for ProTools
 
     Company name: [[your company name or your proper name]]
-    Product:      [[your plugin name]]
+    Product name: [[your plugin name]]
+    Product description:
+    [[what does your plugin do]]
+
+    Product release date: [[release date or planned release date]]
+    Product price: [[planned sale price]]
+    Additional information:
+    [[Any other informational/marketing material on the plugin(s)]]
     
     Authorised personnel:
     Name:         [[your name]]
@@ -89,4 +96,3 @@ You need to e-mail devauth@avid.com with something like this:
 
     Best regards,
     [[your name]]. 
-
