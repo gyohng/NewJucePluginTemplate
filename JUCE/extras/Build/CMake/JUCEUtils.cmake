@@ -2050,12 +2050,13 @@ function(juce_set_aax_sdk_path path)
     endif()
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        add_library(juce_aax_sdk STATIC IMPORTED GLOBAL)
-        set_target_properties(juce_aax_sdk PROPERTIES
-            IMPORTED_LOCATION_DEBUG "${path}/Libs/Debug/libAAXLibrary_libcpp.a"
-            IMPORTED_LOCATION "${path}/Libs/Release/libAAXLibrary_libcpp.a")
+        add_library(juce_aax_sdk STATIC)
+        include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../../../sdks/juce_aax_sdk.cmake")
+        target_sources(juce_aax_sdk PRIVATE ${aax_sources} ${aax_int_sources})
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        add_library(juce_aax_sdk INTERFACE IMPORTED GLOBAL)
+        add_library(juce_aax_sdk STATIC)
+        include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/../../../sdks/juce_aax_sdk.cmake")
+        target_sources(juce_aax_sdk PRIVATE ${aax_sources} ${aax_int_sources})
     else()
         return()
     endif()
