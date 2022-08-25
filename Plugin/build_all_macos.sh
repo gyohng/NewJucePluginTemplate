@@ -97,7 +97,8 @@ spliceAll() {
                 --account "$PACE_ACCOUNT" --password "$PACE_PASSWORD" \
                 --signid "$DEVELOPER_SIGNATURE" \
                 --wcguid "$PACE_WCGUID" \
-                --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin" || true
+                --removeunsupportedarchs \
+                --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin"
         fi
     fi
 }
