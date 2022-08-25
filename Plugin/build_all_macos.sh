@@ -98,6 +98,8 @@ spliceAll() {
                 --signid "$DEVELOPER_SIGNATURE" \
                 --wcguid "$PACE_WCGUID" \
                 --removeunsupportedarchs \
+                --dsig1-compat on \
+                --extrasigningoptions "--digest-algorithm=sha1,sha256 --preserve-metadata=entitlements" \
                 --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin"
         fi
     fi
