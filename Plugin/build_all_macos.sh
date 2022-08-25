@@ -10,10 +10,10 @@ DEVELOPER_SIGNATURE="Developer ID Application"
 # If you don't have PACE SDK installed, you can ignore this data
 # It's best not to put the data here but inside .paceaccount file
 # in the same folder, which is not submitted to git
+PACE_ACCOUNT=SpecifyInDotPaceaccountFileInstead
+PACE_PASSWORD=SpecifyInDotPaceaccountFileInstead
 
-# PACE_ACCOUNT=YourPaceAccount
-# PACE_PASSWORD=YourPaceAccountPassword
-
+# This one is safe to put here, please change in place
 PACE_WCGUID=141991C2-DB49-452B-96E0-87B405A0544E
 
 # Note: do not pay attention to the warnings that say that some object files
@@ -96,7 +96,7 @@ spliceAll() {
                 sign --verbose --strip on \
                 --account "$PACE_ACCOUNT" --password "$PACE_PASSWORD" \
                 --signid "$DEVELOPER_SIGNATURE" \
-                --wcguid "$WCGUID" \
+                --wcguid "$PACE_WCGUID" \
                 --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin" || true
         fi
     fi
