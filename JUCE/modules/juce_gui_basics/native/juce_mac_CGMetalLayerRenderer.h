@@ -129,7 +129,7 @@ public:
         layer.contentsScale = scaleFactor;
         const auto drawableSizeTansform = CGAffineTransformMakeScale (layer.contentsScale,
                                                                       layer.contentsScale);
-        const auto transformedFrameSize = CGSizeApplyAffineTransform (view.frame.size, drawableSizeTansform);
+        const auto transformedFrameSize = CGSizeApplyAffineTransform (NSSizeToCGSize(view.frame.size), drawableSizeTansform);
 
         if (resources == nullptr || ! CGSizeEqualToSize (layer.drawableSize, transformedFrameSize))
         {
