@@ -8,8 +8,12 @@ PRODUCT_NAME="My Audio Plugin"
 DEVELOPER_SIGNATURE="Developer ID Application"
 
 # If you don't have PACE SDK installed, you can ignore this data
-PACE_ACCOUNT=YourPaceAccount
-PACE_PASSWORD=YourPaceAccountPassword
+# It's best not to put the data here but inside .paceaccount file
+# in the same folder, which is not submitted to git
+
+# PACE_ACCOUNT=YourPaceAccount
+# PACE_PASSWORD=YourPaceAccountPassword
+
 PACE_WCGUID=141991C2-DB49-452B-96E0-87B405A0544E
 
 # Note: do not pay attention to the warnings that say that some object files
@@ -19,6 +23,11 @@ MYDIR="$(dirname "$0")"
 MYDIR="$( cd "$MYDIR" ; pwd -P )"
 
 cd "$MYDIR"
+
+# this file should contain PACE_ACCOUNT and PACE_PASSWORD setting
+if [ -f .paceaccount ]; then
+    . ./.paceaccount
+fi
 
 NOTFOUND_PACKAGES=""
 
