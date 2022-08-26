@@ -5,15 +5,9 @@ licence restrictions, but you can obtain these files elsewhere.
 
 ## VST SDKs
 
-You need to clone the VST3 SDK from this location:
-  - https://github.com/steinbergmedia/vst3sdk
-
-Alternatively, you can use download-vst3-sdk.sh script to clone vst3sdk
-
-If you also want VST2 compatibility or `JUCE_VST3_CAN_REPLACE_VST2` logic,
-then some files should be placed into `sdks/vst3sdk/pluginterfaces/vst2.x`.
-The shell script presently downloads the missing files from alternative locations.
-If you are not using the shell script, you might want to inspect its contents.
+Downloading VST3 SDK is no longer necessary. The scripts are still provided,
+but JUCE now includes VST3 within its own git. A few more files are added
+to the JUCE tree to allow VST2 compilation.
 
 ## AAX SDK
 
