@@ -98,8 +98,9 @@ juce_add_plugin(${TargetName}
     APP_SANDBOX_ENABLED TRUE
 
     IS_SYNTH FALSE
+    NEEDS_MIDI_INPUT FALSE # set also to true if IS_SYNTH is true
     COPY_PLUGIN_AFTER_BUILD FALSE
-    
+
     MICROPHONE_PERMISSION_ENABLED TRUE
 )
 
