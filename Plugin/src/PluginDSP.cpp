@@ -15,6 +15,8 @@ class PluginDSP : public AudioProcessor {
 public:
 
     PluginDSP()
+        // Important: even for a synth, the Input bus should be preserved for the plugin
+        // to be able to load and work as AAX
         : AudioProcessor(BusesProperties().withInput("Input", AudioChannelSet::stereo())
                              .withOutput("Output", AudioChannelSet::stereo())) {
 
