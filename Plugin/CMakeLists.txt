@@ -44,7 +44,7 @@ if (USE_BUILDNUMBER)
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET)
 else()
-    set(BUILDNUMBER 99999)
+    set(BUILDNUMBER 9999)
 endif()
 
 set(DEVELOPER_SIGNATURE "Developer ID Application")
