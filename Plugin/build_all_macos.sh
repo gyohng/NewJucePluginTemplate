@@ -47,11 +47,11 @@ if [ ! -d "$HOME/MacOSX-SDKs" ]; then
     git clone https://github.com/phracker/MacOSX-SDKs.git "$HOME/MacOSX-SDKs"
 fi
 
-if [ ! -d "$MYDIR/../JUCE/sdks/vst3sdk" ]; then
-    cd "$MYDIR/../JUCE/sdks"
-    ./download-vst3-sdk.sh
-    cd "$MYDIR"
-fi
+#if [ ! -d "$MYDIR/../JUCE/sdks/vst3sdk" ]; then
+#    cd "$MYDIR/../JUCE/sdks"
+#    ./download-vst3-sdk.sh
+#    cd "$MYDIR"
+#fi
 
 export CMAKE_C_COMPILER_LAUNCHER=ccache
 export CMAKE_CXX_COMPILER_LAUNCHER=ccache
