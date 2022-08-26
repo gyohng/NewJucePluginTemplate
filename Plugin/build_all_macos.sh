@@ -100,7 +100,8 @@ spliceAll() {
                 --removeunsupportedarchs \
                 --dsig1-compat on \
                 --extrasigningoptions "--digest-algorithm=sha1,sha256 --preserve-metadata=entitlements" \
-                --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin"
+                --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin" \
+                --autoinstall on
         fi
     fi
 }
