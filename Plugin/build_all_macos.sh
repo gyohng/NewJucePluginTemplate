@@ -73,10 +73,17 @@ splice() {
     fi
     strip -x -S "$OUTPUTBIN"
 
+    if [ "$1" == "Standalone" ]; then
+        rm -rf "build/output/$2/Contents/PlugIns/${PRODUCT_NAME}.appex"
+        ditto "build/output/${PRODUCT_NAME}.appex" "build/output/$2/Contents/PlugIns/${PRODUCT_NAME}.appex"
+    fi
+
     codesign -v -f -o runtime --timestamp --deep \
         --preserve-metadata=entitlements \
+        --generate-entitlement-der \
         --sign "$DEVELOPER_SIGNATURE" \
         --digest-algorithm=sha1,sha256 \
+        --entitlements "build/macos11/${CMAKE_PROJECT_NAME}_artefacts/JuceLibraryCode/${CMAKE_PROJECT_NAME}_$1.entitlements" \
         "build/output/$2"
 }
 
