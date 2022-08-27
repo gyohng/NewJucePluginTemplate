@@ -217,8 +217,10 @@ if (APPLE)
             TARGET ${TargetName}_Standalone POST_BUILD
             COMMAND codesign -v -f -o runtime --timestamp --deep
             --preserve-metadata=entitlements
+            --generate-entitlement-der
             --sign "${DEVELOPER_SIGNATURE}"
             --digest-algorithm=sha1,sha256
+            "--entitlements=${CMAKE_BINARY_DIR}/${TargetName}_artefacts/JuceLibraryCode/${TargetName}_Standalone.entitlements"
             "$<TARGET_BUNDLE_CONTENT_DIR:${TargetName}_Standalone>/.."
             VERBATIM)
     endif()
