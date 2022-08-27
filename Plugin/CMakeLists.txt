@@ -98,6 +98,11 @@ juce_add_plugin(${TargetName}
     AU_SANDBOX_SAFE TRUE
     APP_SANDBOX_ENABLED TRUE
 
+    # for sandboxed apps and plugins to exchange data between each other on Mac
+    # check JUCE's File::getContainerForSecurityApplicationGroupIdentifier
+    APP_GROUPS_ENABLED TRUE
+    APP_GROUP_IDS "group.com.yohng.plugintemplate"
+
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE # set also to true if IS_SYNTH is true
     COPY_PLUGIN_AFTER_BUILD FALSE
@@ -242,7 +247,7 @@ endif()
 if (APPLE)
 
     # Note: do not pay attention to the warnings that say that some object files
-    # were built for newer macOS version (10.11) than being linked (10.9),
+    # were built for newer macOS version (10.13) than being linked (10.9),
     # this is intended, and this allows the same binary to be reused for diffrent
     # macOS versions.
 
@@ -259,20 +264,20 @@ if (APPLE)
 
     set_target_properties(${TargetName}_Standalone PROPERTIES OSX_ARCHITECTURES "${auv3arch}")
 
-    # set 10.11 as the target for AUv3
+    # set 10.13 as the target for AUv3
     set_target_properties(${TargetName}_AUv3 PROPERTIES OSX_ARCHITECTURES "${auv3arch}")
 
     if (NOT USE_XCODE)
-        set_target_properties(${TargetName}_AUv3 PROPERTIES OSX_DEPLOYMENT_TARGET "10.11")
+        set_target_properties(${TargetName}_AUv3 PROPERTIES OSX_DEPLOYMENT_TARGET "10.13")
 
         set_source_files_properties(
             "${CMAKE_CURRENT_LIST_DIR}/../JUCE/modules/juce_audio_plugin_client/juce_audio_plugin_client_AUv3.mm" PROPERTIES
-            COMPILE_FLAGS -mmacosx-version-min=10.11
+            COMPILE_FLAGS -mmacosx-version-min=10.13
         )
 
         # add required flags to compile appex
-        target_link_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.11)
-        target_compile_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.11)
+        target_link_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.13)
+        target_compile_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.13)
     endif()
 
     target_link_options(${TargetName}_AUv3 PUBLIC -fapplication-extension -e _NSExtensionMain)

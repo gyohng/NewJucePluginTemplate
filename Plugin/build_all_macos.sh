@@ -106,7 +106,12 @@ spliceAll() {
                 --wcguid "$PACE_WCGUID" \
                 --removeunsupportedarchs \
                 --dsig1-compat on \
-                --extrasigningoptions "--digest-algorithm=sha1,sha256 --preserve-metadata=entitlements" \
+                --extrasigningoptions "                    
+                    --preserve-metadata=entitlements
+                    --generate-entitlement-der
+                    --digest-algorithm=sha1,sha256 
+                    --entitlements \"build/macos11/${CMAKE_PROJECT_NAME}_artefacts/JuceLibraryCode/${CMAKE_PROJECT_NAME}_AAX.entitlements\"
+                " \
                 --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin" \
                 --autoinstall on
         fi
