@@ -51,5 +51,5 @@ target_include_directories(juce_aax_sdk PRIVATE
 )
 
 if (UNIX)
-target_compile_options(juce_aax_sdk PRIVATE -Wno-undef-prefix -fvisibility=hidden -fvisibility-inlines-hidden)
+target_compile_options(juce_aax_sdk PRIVATE -Wno-undef-prefix -Wno-pragma-pack -fvisibility=hidden -fvisibility-inlines-hidden)
 endif()
