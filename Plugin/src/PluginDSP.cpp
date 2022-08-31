@@ -10,9 +10,17 @@ using namespace std;
     addParameter(this->variable); \
 }
 
+// for parameter rounding
+inline double chop(double d) {
+    d = round(d * 10000.0) / 10000.0;
+    if (fabs(d) < 0.0000000001) d = 0.0;
+    if (fabs(d - round(d)) < 0.0000000001) d = round(d);
+    return d;
+}
 
 class PluginDSP : public AudioProcessor {
 public:
+    static constexpr int DATA_FORMAT_SCHEMA = 1;
 
     PluginDSP()
         // Important: even for a synth, the Input bus should be preserved for the plugin
@@ -76,9 +84,24 @@ public:
         MemoryOutputStream mo(destData, true);
 
         auto *obj = new DynamicObject();
+        obj->setProperty("schema", DATA_FORMAT_SCHEMA);
+
         for (const auto *p_: getParameters()) {
             const auto *p = static_cast<const AudioProcessorParameterWithID *>(p_); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
-            obj->setProperty(p->paramID, p->getValue());
+            const auto *pf = dynamic_cast<const AudioParameterFloat *>(p);
+            const auto *pb = dynamic_cast<const AudioParameterBool *>(p);
+            const auto *pi = dynamic_cast<const AudioParameterInt *>(p);
+            const auto *pc = dynamic_cast<const AudioParameterChoice *>(p);
+            if (pf)
+                obj->setProperty(p->paramID, chop(*pf));
+            else if (pc)
+                obj->setProperty(p->paramID, pc->getIndex());
+            else if (pb)
+                obj->setProperty(p->paramID, bool(*pb));
+            else if (pi)
+                obj->setProperty(p->paramID, int(*pi));
+            else
+                obj->setProperty(p->paramID, p->getValue());
         }
 
         var json(obj);
@@ -87,12 +110,38 @@ public:
 
     void setStateInformation(const void *data, int sizeInBytes) override {
         var json;
-        if (JSON::parse(String::fromUTF8((const char*)data, sizeInBytes), json).failed())
+        if (JSON::parse(String::fromUTF8((const char *) data, sizeInBytes), json).failed())
             return;
+
+        auto schema = int(json.getProperty("schema", 0));
+        if (schema > DATA_FORMAT_SCHEMA) {
+            NativeMessageBox::showMessageBoxAsync(
+                AlertWindow::AlertIconType::WarningIcon,
+                getName(),
+                TRANS(
+                    "The project was saved with a newer version of this plugin.\n"
+                    "The data might not load correctly and might lose elements upon saving\n"));
+
+            // potentially fail to load altogether if the plugin is not compatible with the new format
+            //return;
+        }
 
         for (auto *p_: getParameters()) {
             auto *p = static_cast<AudioProcessorParameterWithID *>(p_); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
-            p->setValueNotifyingHost(json.getProperty(p->paramID, p->getValue()));
+            auto *pf = dynamic_cast<AudioParameterFloat *>(p);
+            auto *pb = dynamic_cast<AudioParameterBool *>(p);
+            auto *pi = dynamic_cast<AudioParameterInt *>(p);
+            auto *pc = dynamic_cast<AudioParameterChoice *>(p);
+            if (pf)
+                *pf = json.getProperty(p->paramID, double(*pf));
+            else if (pc)
+                *pc = json.getProperty(p->paramID, int(pc->getIndex()));
+            else if (pb)
+                *pb = json.getProperty(p->paramID, bool(*pb));
+            else if (pi)
+                *pi = json.getProperty(p->paramID, int(*pi));
+            else
+                p->setValueNotifyingHost(json.getProperty(p->paramID, p->getValue()));
         }
     }
 
