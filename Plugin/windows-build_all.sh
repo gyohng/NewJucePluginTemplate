@@ -18,7 +18,12 @@ rm -rf win64
 mkdir -p win64
 cd win64
 
-cmake -G "${MSVS_VERSION}" -T host=x64 -A x64 ../..
+# using MSBuild/CL
+#cmake -G "${MSVS_VERSION}" -T host=x64 -A x64 ../..
+#cmake --build . --config Release
+
+# using Clang (requires installation)
+cmake -G "Ninja" "-DCMAKE_TOOLCHAIN_FILE=${MYDIR}/../tools/toolchain-clang-win64.cmake"  -DCMAKE_BUILD_TYPE=Release ../..
 cmake --build . --config Release
 
 # ======= DELETE EVERYTHING BELOW THIS POINT IF YOU DON'T NEED x86 32-bit =======
@@ -29,5 +34,10 @@ rm -rf win32
 mkdir -p win32
 cd win32
 
-cmake -G "${MSVS_VERSION}" -T host=x64 -A Win32 ../..
+# using MSBuild/CL
+#cmake -G "${MSVS_VERSION}" -T host=x64 -A Win32 ../..
+#cmake --build . --config Release
+
+# using Clang (requires installation)
+cmake -G "Ninja" "-DCMAKE_TOOLCHAIN_FILE=${MYDIR}/../tools/toolchain-clang-win32.cmake"  -DCMAKE_BUILD_TYPE=Release ../..
 cmake --build . --config Release
