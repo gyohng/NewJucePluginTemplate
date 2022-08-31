@@ -23,13 +23,13 @@
   ==============================================================================
 */
 
-namespace juce
-{
-
 #ifndef _WINDEF_
-class HWND__; // Forward or never
+struct HWND__; // Forward or never
 typedef HWND__* HWND;
 #endif
+
+namespace juce
+{
 
 class Direct2DLowLevelGraphicsContext   : public LowLevelGraphicsContext
 {

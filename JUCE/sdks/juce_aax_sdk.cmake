@@ -29,11 +29,17 @@ set(aax_sources
     AAX_IEffectDirectData.cpp
     AAX_VTransport.cpp
     AAX_CMutex.cpp
-    AAX_CAutoreleasePool.OSX.mm    
     AAX_VEffectDescriptor.cpp
     AAX_VFeatureInfo.cpp
     AAX_VDescriptionHost.cpp
 )
+
+if (APPLE)
+set(aax_sources ${aax_sources} AAX_CAutoreleasePool.OSX.mm)
+elseif (WIN32)
+set(aax_sources ${aax_sources} AAX_CAutoreleasePool.Win.cpp)
+endif()
+
 
 list(TRANSFORM aax_sources PREPEND "${CMAKE_CURRENT_LIST_DIR}/aax/Libs/AAXLibrary/source/")
 
@@ -51,5 +57,9 @@ target_include_directories(juce_aax_sdk PRIVATE
 )
 
 if (UNIX)
-target_compile_options(juce_aax_sdk PRIVATE -Wno-undef-prefix -Wno-pragma-pack -fvisibility=hidden -fvisibility-inlines-hidden)
+target_compile_options(juce_aax_sdk PRIVATE -Wno-register -Wno-undef-prefix -Wno-pragma-pack -fvisibility=hidden -fvisibility-inlines-hidden)
+endif()
+
+if (WIN32)
+target_compile_options(juce_aax_sdk PRIVATE -Wno-register -Wno-undef-prefix -Wno-pragma-pack)
 endif()
