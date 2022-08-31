@@ -3,10 +3,34 @@
 #include <algorithm>
 using namespace std;
 
+#ifndef _MSC_VER
 #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 
-#define PARAM(variable, name, minv, maxv, defv) { \
+#define PARAM_FLOAT(variable, name, minv, maxv, defv) { \
     this->variable = new AudioParameterFloat(#variable, name, float(minv), float(maxv), float(defv)); \
+    addParameter(this->variable); \
+}
+
+#define PARAM_FLOAT_LOG(variable, name, minv, maxv, defv) { \
+    NormalisableRange range(float(minv), float(maxv)); \
+    range.setSkewForCentre(float((minv) * sqrt((maxv)/(minv)))); \
+    this->variable = new AudioParameterFloat(#variable, name, range, float(defv)); \
+    addParameter(this->variable); \
+}
+
+#define PARAM_INT(variable, name, minv, maxv, defv) { \
+    this->variable = new AudioParameterInt(#variable, name, float(minv), float(maxv), float(defv)); \
+    addParameter(this->variable); \
+}
+
+#define PARAM_BOOL(variable, name, defv) { \
+    this->variable = new AudioParameterBool(#variable, name, defv); \
+    addParameter(this->variable); \
+}
+
+#define PARAM_CHOICE(variable, name, ...) { \
+    this->variable = new AudioParameterChoice(#variable, name,  {__VA_ARGS__}, 0); \
     addParameter(this->variable); \
 }
 
@@ -29,12 +53,12 @@ public:
             .withInput("Input", AudioChannelSet::stereo())
             .withOutput("Output", AudioChannelSet::stereo())) {
 
-        PARAM(thresh, "Threshold", -90, 0, 0);
-        PARAM(ceiling, "Ceiling", -90, 0, 0);
+        PARAM_FLOAT(thresh, "Threshold", -90, 0, 0);
+        PARAM_FLOAT(ceiling, "Ceiling", -90, 0, 0);
 
-        PARAM(attack, "Attack", 0.0, 500, 1);
-        PARAM(hold, "Hold", 0, 500, 0);
-        PARAM(release, "Release", 1, 5000, 75);
+        PARAM_FLOAT(attack, "Attack", 0.0, 500, 1);
+        PARAM_FLOAT(hold, "Hold", 0, 500, 0);
+        PARAM_FLOAT(release, "Release", 1, 5000, 75);
 
         attack->range.setSkewForCentre(30);
         release->range.setSkewForCentre(1000);
