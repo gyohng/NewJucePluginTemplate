@@ -17,8 +17,9 @@ public:
     PluginDSP()
         // Important: even for a synth, the Input bus should be preserved for the plugin
         // to be able to load and work as AAX
-        : AudioProcessor(BusesProperties().withInput("Input", AudioChannelSet::stereo())
-                             .withOutput("Output", AudioChannelSet::stereo())) {
+        : AudioProcessor(BusesProperties()
+            .withInput("Input", AudioChannelSet::stereo())
+            .withOutput("Output", AudioChannelSet::stereo())) {
 
         PARAM(thresh, "Threshold", -90, 0, 0);
         PARAM(ceiling, "Ceiling", -90, 0, 0);
@@ -97,7 +98,21 @@ public:
         const auto &mainInLayout = layouts.getChannelSet(true, 0);
         const auto &mainOutLayout = layouts.getChannelSet(false, 0);
 
-        return (mainInLayout == mainOutLayout && (!mainInLayout.isDisabled()));
+        // requires an output
+        if (mainOutLayout.isDisabled()) return false;
+ 
+        // only support mono and stereo
+        if (mainOutLayout.size() > 2) return false;
+
+        #if !JucePlugin_IsSynth
+            // requires an input
+            if (mainInLayout.isDisabled()) return false;
+
+            // support inch = noutch only
+            if (mainInLayout != mainOutLayout) return false;
+        #endif
+
+        return true;
     }
 
 private:
