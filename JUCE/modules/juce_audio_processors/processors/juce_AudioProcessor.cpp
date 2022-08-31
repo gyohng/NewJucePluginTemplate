@@ -28,6 +28,10 @@ namespace juce
 
 static ThreadLocalValue<AudioProcessor::WrapperType> wrapperTypeBeingCreated;
 
+AudioProcessor::WrapperType getWrapperTypeBeingCreated() {
+    return wrapperTypeBeingCreated.get();
+}
+
 void JUCE_CALLTYPE AudioProcessor::setTypeOfNextNewPlugin (AudioProcessor::WrapperType type)
 {
     wrapperTypeBeingCreated = type;
