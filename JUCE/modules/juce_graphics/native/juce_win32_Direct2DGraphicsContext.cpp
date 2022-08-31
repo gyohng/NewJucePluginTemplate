@@ -209,7 +209,7 @@ public:
         }
     }
 
-    void Direct2DLowLevelGraphicsContext::SavedState::clipToPath (ID2D1Geometry* geometry)
+    void clipToPath (ID2D1Geometry* geometry)
     {
         clearPathClip();
 
