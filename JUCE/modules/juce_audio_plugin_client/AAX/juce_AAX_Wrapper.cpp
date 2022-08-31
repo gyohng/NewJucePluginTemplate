@@ -101,7 +101,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wfour-char-constants")
   #define JUCE_AAX_LIB_SUFFIX ""
  #endif
 
- #pragma comment(lib, JucePlugin_AAXLibs_path JUCE_AAX_LIB_PATH JUCE_AAX_LIB JUCE_AAX_LIB_SUFFIX ".lib")
+ // uncomment to autolink AAX lib on windows, but this method is not used by NewPluginTemplate repo
+ //#pragma comment(lib, JucePlugin_AAXLibs_path JUCE_AAX_LIB_PATH JUCE_AAX_LIB JUCE_AAX_LIB_SUFFIX ".lib")
 #endif
 
 #undef check
