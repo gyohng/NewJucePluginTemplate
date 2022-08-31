@@ -47,6 +47,8 @@ public:
 
     void processBlock(AudioBuffer<double> &buffer, MidiBuffer &) override;
 
+    bool supportsDoublePrecisionProcessing() const override { return true; }
+
     AudioProcessorEditor *createEditor() override { return new GenericAudioProcessorEditor(*this); }
 
     bool hasEditor() const override { return true; }
