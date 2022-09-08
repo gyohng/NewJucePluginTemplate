@@ -4,6 +4,6 @@ The JUCE library itself is licensed according to its own licence agreement (or a
 
 The rest of the template code and scripts are released in the public domain. Any acknowledgement of my work is appreciated but not required.
 
-The project may require VST and AAX SDKs for compilation, which come with their own terms and conditions. The automated convenience script will pull the VST SDK; please make sure you are aware of the licensing terms associated with using VST SDK before proceeding.
+The VST support is now included with JUCE. Please make sure you are aware of the licensing terms associated with using VST SDKs before proceeding. The AAX SDK can be obtained separately from Avid, and they certainly didn't make things easy. Please check `JUCE/sdks/SDKS-FOLDER-README.md` for more information. 
 
 *George*
