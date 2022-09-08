@@ -698,6 +698,7 @@ public:
             {
                 if (OK (AudioDeviceCreateIOProcID (deviceID, audioIOProc, this, &audioProcID)))
                 {
+                    const ScopedUnlock sul (callbackLock); // prevent lockup, as AudioDeviceStart may invoke callback
                     if (OK (AudioDeviceStart (deviceID, audioProcID)))
                     {
                         started = true;
