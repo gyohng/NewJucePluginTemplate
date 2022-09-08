@@ -114,6 +114,7 @@ spliceAll() {
                 " \
                 --in "build/output/$1.unsigned.aaxplugin" --out "build/output/$1.aaxplugin" \
                 --autoinstall on
+            rm -rf "build/output/$1.unsigned.aaxplugin"
         fi
     fi
 }
