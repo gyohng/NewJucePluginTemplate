@@ -76,6 +76,7 @@ splice() {
     if [ "$1" == "Standalone" ]; then
         rm -rf "build/output/$2/Contents/PlugIns/${PRODUCT_NAME}.appex"
         ditto "build/output/${PRODUCT_NAME}.appex" "build/output/$2/Contents/PlugIns/${PRODUCT_NAME}.appex"
+        rm -rf "build/output/${PRODUCT_NAME}.appex"
     fi
 
     codesign -v -f -o runtime --timestamp --deep \
