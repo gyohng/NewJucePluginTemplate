@@ -220,7 +220,7 @@ if (APPLE)
     if (USE_XCODE OR "$ENV{CLION_IDE}")
         add_custom_command(
             TARGET ${TargetName}_Standalone POST_BUILD
-            COMMAND codesign -v -f -o runtime --timestamp --deep
+            COMMAND "$<IF:$<CONFIG:Debug>,echo,codesign>" "$<IF:$<CONFIG:Debug>,skipping,-v>"
             --preserve-metadata=entitlements
             --generate-entitlement-der
             --sign "${DEVELOPER_SIGNATURE}"
