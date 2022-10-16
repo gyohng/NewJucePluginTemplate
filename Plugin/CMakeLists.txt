@@ -73,6 +73,13 @@ endif()
 
 string(TIMESTAMP thisyear "%Y")
 
+if (WIN32)
+    # Windows RC doesn't like unicode
+    set(copysym "(C)")
+else()
+    set(copysym "©")
+endif()
+
 juce_add_plugin(${TargetName}
     FORMATS ${optAAX} AU AUv3 VST3 VST Standalone
 
@@ -84,7 +91,7 @@ juce_add_plugin(${TargetName}
     # Change the values below to your own
     PRODUCT_NAME "My Audio Plugin"
     COMPANY_NAME "George Yohng"
-    COMPANY_COPYRIGHT "Copyright ©${thisyear} by George Yohng"
+    COMPANY_COPYRIGHT "Copyright ${copysym}${thisyear} by George Yohng"
     COMPANY_WEBSITE "http://www.yohng.com"
 
     BUNDLE_ID "com.yohng.plugintemplate"
