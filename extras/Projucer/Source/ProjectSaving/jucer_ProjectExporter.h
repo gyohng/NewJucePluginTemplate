@@ -37,7 +37,6 @@ class ProjectExporter  : private Value::Listener
 {
 public:
     ProjectExporter (Project&, const ValueTree& settings);
-    virtual ~ProjectExporter() override = default;
 
     //==============================================================================
     struct ExporterTypeInfo
@@ -140,9 +139,6 @@ public:
     Value getTargetLocationValue()                        { return targetLocationValue.getPropertyAsValue(); }
     String getTargetLocationString() const                { return targetLocationValue.get(); }
 
-    String getExtraCompilerFlagsString() const            { return extraCompilerFlagsValue.get().toString().replaceCharacters ("\r\n", "  "); }
-    String getExtraLinkerFlagsString() const              { return extraLinkerFlagsValue.get().toString().replaceCharacters ("\r\n", "  "); }
-
     StringArray getExternalLibrariesStringArray() const   { return getSearchPathsFromString (externalLibrariesValue.get().toString()); }
     String getExternalLibrariesString() const             { return getExternalLibrariesStringArray().joinIntoString (";"); }
 
@@ -228,7 +224,6 @@ public:
     {
     public:
         BuildConfiguration (Project& project, const ValueTree& configNode, const ProjectExporter&);
-        ~BuildConfiguration();
 
         using Ptr = ReferenceCountedObjectPtr<BuildConfiguration>;
 
@@ -253,7 +248,6 @@ public:
 
         String getBuildConfigPreprocessorDefsString() const    { return ppDefinesValue.get(); }
         StringPairArray getAllPreprocessorDefs() const;        // includes inherited definitions
-        StringPairArray getUniquePreprocessorDefs() const;     // returns pre-processor definitions that are not already in the project pre-processor defs
 
         String getHeaderSearchPathString() const               { return headerSearchPathValue.get(); }
         StringArray getHeaderSearchPaths() const;
@@ -266,6 +260,9 @@ public:
 
         bool shouldUsePrecompiledHeaderFile() const            { return usePrecompiledHeaderFileValue.get(); }
         String getPrecompiledHeaderFileContent() const;
+
+        String getAllCompilerFlagsString() const               { return (exporter.extraCompilerFlagsValue.get().toString() + "  " + configCompilerFlagsValue.get().toString()).replaceCharacters ("\r\n", "  ").trim(); }
+        String getAllLinkerFlagsString() const                 { return (exporter.extraLinkerFlagsValue  .get().toString() + "  " + configLinkerFlagsValue  .get().toString()).replaceCharacters ("\r\n", "  ").trim(); }
 
         //==============================================================================
         Value getValue (const Identifier& nm)                  { return config.getPropertyAsValue (nm, getUndoManager()); }
@@ -311,7 +308,7 @@ public:
     protected:
         ValueTreePropertyWithDefault isDebugValue, configNameValue, targetNameValue, targetBinaryPathValue, recommendedWarningsValue, optimisationLevelValue,
                                      linkTimeOptimisationValue, ppDefinesValue, headerSearchPathValue, librarySearchPathValue, userNotesValue,
-                                     usePrecompiledHeaderFileValue, precompiledHeaderFileValue;
+                                     usePrecompiledHeaderFileValue, precompiledHeaderFileValue, configCompilerFlagsValue, configLinkerFlagsValue;
 
     private:
         std::map<String, CompilerWarningFlags> recommendedCompilerWarningFlags;
@@ -321,8 +318,6 @@ public:
 
     void addNewConfigurationFromExisting (const BuildConfiguration& configToCopy);
     void addNewConfiguration (bool isDebugConfig);
-    bool hasConfigurationNamed (const String& name) const;
-    String getUniqueConfigName (String name) const;
 
     String getExternalLibraryFlags (const BuildConfiguration& config) const;
 
@@ -403,6 +398,9 @@ public:
         return false;
     }
 
+    String getCompilerFlagsForFileCompilerFlagScheme (StringRef) const;
+    String getCompilerFlagsForProjectItem (const Project::Item&) const;
+
 protected:
     //==============================================================================
     String name;
@@ -418,7 +416,6 @@ protected:
                                  userNotesValue, gnuExtensionsValue, bigIconValue, smallIconValue, extraPPDefsValue;
 
     Value projectCompilerFlagSchemesValue;
-    HashMap<String, ValueTreePropertyWithDefault> compilerFlagSchemesMap;
 
     mutable Array<Project::Item> itemGroups;
     Project::Item* modulesGroup = nullptr;
@@ -455,6 +452,9 @@ protected:
     }
 
 private:
+    //==============================================================================
+    std::map<String, ValueTreePropertyWithDefault> compilerFlagSchemesMap;
+
     //==============================================================================
     void valueChanged (Value&) override   { updateCompilerFlagValues(); }
     void updateCompilerFlagValues();

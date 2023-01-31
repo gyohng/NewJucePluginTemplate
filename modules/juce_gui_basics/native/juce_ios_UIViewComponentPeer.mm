@@ -36,6 +36,12 @@
  #define JUCE_HAS_IOS_POINTER_SUPPORT 0
 #endif
 
+#if defined (__IPHONE_13_4) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_13_4
+ #define JUCE_HAS_IOS_HARDWARE_KEYBOARD_SUPPORT 1
+#else
+ #define JUCE_HAS_IOS_HARDWARE_KEYBOARD_SUPPORT 0
+#endif
+
 namespace juce
 {
 
@@ -69,6 +75,28 @@ static NSArray* getContainerAccessibilityElements (AccessibilityHandler& handler
 
 class UIViewComponentPeer;
 
+namespace iOSGlobals
+{
+class KeysCurrentlyDown
+{
+public:
+    bool isDown (int x) const { return down.find (x) != down.cend(); }
+
+    void setDown (int x, bool b)
+    {
+        if (b)
+            down.insert (x);
+        else
+            down.erase (x);
+    }
+
+private:
+    std::set<int> down;
+};
+static KeysCurrentlyDown keysCurrentlyDown;
+static UIViewComponentPeer* currentlyFocusedPeer = nullptr;
+} // namespace iOSGlobals
+
 static UIInterfaceOrientation getWindowOrientation()
 {
     UIApplication* sharedApplication = [UIApplication sharedApplication];
@@ -87,7 +115,7 @@ static UIInterfaceOrientation getWindowOrientation()
     JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 }
 
-namespace Orientations
+struct Orientations
 {
     static Desktop::DisplayOrientation convertToJuce (UIInterfaceOrientation orientation)
     {
@@ -119,8 +147,7 @@ namespace Orientations
         return UIInterfaceOrientationPortrait;
     }
 
-
-    static NSUInteger getSupportedOrientations()
+    static UIInterfaceOrientationMask getSupportedOrientations()
     {
         NSUInteger allowed = 0;
         auto& d = Desktop::getInstance();
@@ -132,7 +159,7 @@ namespace Orientations
 
         return allowed;
     }
-}
+};
 
 enum class MouseEventFlags
 {
@@ -351,7 +378,7 @@ struct UIViewPeerControllerReceiver
 
 //==============================================================================
 class UIViewComponentPeer  : public ComponentPeer,
-                             private UIViewPeerControllerReceiver
+                             public UIViewPeerControllerReceiver
 {
 public:
     UIViewComponentPeer (Component&, int windowStyleFlags, UIView* viewToAttachTo);
@@ -404,8 +431,6 @@ public:
     void dismissPendingTextInput() override;
     void closeInputMethodContext() override;
 
-    BOOL textViewReplaceCharacters (Range<int>, const String&);
-
     void updateScreenBounds();
 
     void handleTouches (UIEvent*, MouseEventFlags);
@@ -414,6 +439,23 @@ public:
     API_AVAILABLE (ios (13.0)) void onHover (UIHoverGestureRecognizer*);
     void onScroll (UIPanGestureRecognizer*);
    #endif
+
+    Range<int> getMarkedTextRange() const
+    {
+        return Range<int>::withStartAndLength (startOfMarkedTextInTextInputTarget,
+                                               stringBeingComposed.length());
+    }
+
+    void replaceMarkedRangeWithText (TextInputTarget* target, const String& text)
+    {
+        if (stringBeingComposed.isNotEmpty())
+            target->setHighlightedRegion (getMarkedTextRange());
+
+        target->insertTextAtCaret (text);
+        target->setTemporaryUnderlining ({ Range<int>::withStartAndLength (startOfMarkedTextInTextInputTarget,
+                                                                           text.length()) });
+        stringBeingComposed = text;
+    }
 
     //==============================================================================
     void repaint (const Rectangle<int>& area) override;
@@ -425,6 +467,7 @@ public:
     UIViewController* controller = nil;
     const bool isSharedWindow, isAppex;
     String stringBeingComposed;
+    int startOfMarkedTextInTextInputTarget = 0;
     bool fullScreen = false, insideDrawRect = false;
     NSUniquePtr<JuceTextView> hiddenTextInput { [[JuceTextView alloc] initWithOwner: this] };
     NSUniquePtr<JuceTextInputTokenizer> tokenizer { [[JuceTextInputTokenizer alloc] initWithPeer: this] };
@@ -457,9 +500,10 @@ public:
             case TextInputTarget::urlKeyboard:           return UIKeyboardTypeURL;
             case TextInputTarget::emailAddressKeyboard:  return UIKeyboardTypeEmailAddress;
             case TextInputTarget::phoneNumberKeyboard:   return UIKeyboardTypePhonePad;
-            default:                                     jassertfalse; break;
+            case TextInputTarget::passwordKeyboard:      return UIKeyboardTypeASCIICapable;
         }
 
+        jassertfalse;
         return UIKeyboardTypeDefault;
     }
 
@@ -747,6 +791,178 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 }
 #endif
 
+static std::optional<int> getKeyCodeForSpecialCharacterString (StringRef characters)
+{
+    static const auto map = [&]
+    {
+        std::map<String, int> result
+        {
+            { nsStringToJuce (UIKeyInputUpArrow),       KeyPress::upKey },
+            { nsStringToJuce (UIKeyInputDownArrow),     KeyPress::downKey },
+            { nsStringToJuce (UIKeyInputLeftArrow),     KeyPress::leftKey },
+            { nsStringToJuce (UIKeyInputRightArrow),    KeyPress::rightKey },
+            { nsStringToJuce (UIKeyInputEscape),        KeyPress::escapeKey },
+           #if JUCE_HAS_IOS_HARDWARE_KEYBOARD_SUPPORT
+            // These symbols are available on iOS 8, but only declared in the headers for iOS 13.4+
+            { nsStringToJuce (UIKeyInputPageUp),        KeyPress::pageUpKey },
+            { nsStringToJuce (UIKeyInputPageDown),      KeyPress::pageDownKey },
+           #endif
+        };
+
+       #if JUCE_HAS_IOS_HARDWARE_KEYBOARD_SUPPORT
+        if (@available (iOS 13.4, *))
+        {
+            result.insert ({ { nsStringToJuce (UIKeyInputHome),          KeyPress::homeKey },
+                             { nsStringToJuce (UIKeyInputEnd),           KeyPress::endKey },
+                             { nsStringToJuce (UIKeyInputF1),            KeyPress::F1Key },
+                             { nsStringToJuce (UIKeyInputF2),            KeyPress::F2Key },
+                             { nsStringToJuce (UIKeyInputF3),            KeyPress::F3Key },
+                             { nsStringToJuce (UIKeyInputF4),            KeyPress::F4Key },
+                             { nsStringToJuce (UIKeyInputF5),            KeyPress::F5Key },
+                             { nsStringToJuce (UIKeyInputF6),            KeyPress::F6Key },
+                             { nsStringToJuce (UIKeyInputF7),            KeyPress::F7Key },
+                             { nsStringToJuce (UIKeyInputF8),            KeyPress::F8Key },
+                             { nsStringToJuce (UIKeyInputF9),            KeyPress::F9Key },
+                             { nsStringToJuce (UIKeyInputF10),           KeyPress::F10Key },
+                             { nsStringToJuce (UIKeyInputF11),           KeyPress::F11Key },
+                             { nsStringToJuce (UIKeyInputF12),           KeyPress::F12Key } });
+        }
+       #endif
+
+       #if defined (__IPHONE_15_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_15_0
+        if (@available (iOS 15.0, *))
+        {
+            result.insert ({ { nsStringToJuce (UIKeyInputDelete),        KeyPress::deleteKey } });
+        }
+       #endif
+
+        return result;
+    }();
+
+    const auto iter = map.find (characters);
+    return iter != map.cend() ? std::make_optional (iter->second) : std::nullopt;
+}
+
+static int getKeyCodeForCharacters (StringRef unmodified)
+{
+    return getKeyCodeForSpecialCharacterString (unmodified).value_or (unmodified[0]);
+}
+
+static int getKeyCodeForCharacters (NSString* characters)
+{
+    return getKeyCodeForCharacters (nsStringToJuce (characters));
+}
+
+#if JUCE_HAS_IOS_HARDWARE_KEYBOARD_SUPPORT
+static void updateModifiers (const UIKeyModifierFlags flags)
+{
+    const auto convert = [&flags] (UIKeyModifierFlags f, int result) { return (flags & f) != 0 ? result : 0; };
+    const auto juceFlags = convert (UIKeyModifierAlphaShift, 0) // capslock modifier currently not implemented
+                         | convert (UIKeyModifierShift,      ModifierKeys::shiftModifier)
+                         | convert (UIKeyModifierControl,    ModifierKeys::ctrlModifier)
+                         | convert (UIKeyModifierAlternate,  ModifierKeys::altModifier)
+                         | convert (UIKeyModifierCommand,    ModifierKeys::commandModifier)
+                         | convert (UIKeyModifierNumericPad, 0); // numpad modifier currently not implemented
+
+    ModifierKeys::currentModifiers = ModifierKeys::currentModifiers.withOnlyMouseButtons().withFlags (juceFlags);
+}
+
+API_AVAILABLE (ios(13.4))
+static int getKeyCodeForKey (UIKey* key)
+{
+    return getKeyCodeForCharacters ([key charactersIgnoringModifiers]);
+}
+
+API_AVAILABLE (ios(13.4))
+static bool attemptToConsumeKeys (JuceUIView* view, NSSet<UIPress*>* presses)
+{
+    auto used = false;
+
+    for (UIPress* press in presses)
+    {
+        if (auto* key = [press key])
+        {
+            const auto code = getKeyCodeForKey (key);
+            const auto handleCodepoint = [view, &used, code] (juce_wchar codepoint)
+            {
+                // These both need to fire; no short-circuiting!
+                used |= view->owner->handleKeyUpOrDown (true);
+                used |= view->owner->handleKeyPress (code, codepoint);
+            };
+
+            if (getKeyCodeForSpecialCharacterString (nsStringToJuce ([key charactersIgnoringModifiers])).has_value())
+                handleCodepoint (0);
+            else
+                for (const auto codepoint : nsStringToJuce ([key characters]))
+                    handleCodepoint (codepoint);
+        }
+    }
+
+    return used;
+}
+
+- (void) pressesBegan:(NSSet<UIPress*>*) presses withEvent:(UIPressesEvent*) event
+{
+    const auto handledEvent = [&]
+    {
+        if (@available (iOS 13.4, *))
+        {
+            auto isEscape = false;
+
+            updateModifiers ([event modifierFlags]);
+
+            for (UIPress* press in presses)
+            {
+                if (auto* key = [press key])
+                {
+                    const auto code = getKeyCodeForKey (key);
+                    isEscape |= code == KeyPress::escapeKey;
+                    iOSGlobals::keysCurrentlyDown.setDown (code, true);
+                }
+            }
+
+            return ((isEscape && owner->stringBeingComposed.isEmpty())
+                    || owner->findCurrentTextInputTarget() == nullptr)
+                   && attemptToConsumeKeys (self, presses);
+        }
+
+        return false;
+    }();
+
+    if (! handledEvent)
+        [super pressesBegan: presses withEvent: event];
+}
+
+/*  Returns true if we handled the event. */
+static bool doKeysUp (UIViewComponentPeer* owner, NSSet<UIPress*>* presses, UIPressesEvent* event)
+{
+    if (@available (iOS 13.4, *))
+    {
+        updateModifiers ([event modifierFlags]);
+
+        for (UIPress* press in presses)
+            if (auto* key = [press key])
+                iOSGlobals::keysCurrentlyDown.setDown (getKeyCodeForKey (key), false);
+
+        return owner->findCurrentTextInputTarget() == nullptr && owner->handleKeyUpOrDown (false);
+    }
+
+    return false;
+}
+
+- (void) pressesEnded:(NSSet<UIPress*>*) presses withEvent:(UIPressesEvent*) event
+{
+    if (! doKeysUp (owner, presses, event))
+        [super pressesEnded: presses withEvent: event];
+}
+
+- (void) pressesCancelled:(NSSet<UIPress*>*) presses withEvent:(UIPressesEvent*) event
+{
+    if (! doKeysUp (owner, presses, event))
+        [super pressesCancelled: presses withEvent: event];
+}
+#endif
+
 //==============================================================================
 - (BOOL) becomeFirstResponder
 {
@@ -920,7 +1136,10 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     const auto rangeToDelete = range.isEmpty() ? range.withStartAndLength (jmax (range.getStart() - 1, 0),
                                                                            range.getStart() != 0 ? 1 : 0)
                                                : range;
+    const auto start = rangeToDelete.getStart();
 
+    // This ensures that the cursor is at the beginning, rather than the end, of the selection
+    target->setHighlightedRegion ({ start, start });
     target->setHighlightedRegion (rangeToDelete);
     target->insertTextAtCaret ("");
 }
@@ -930,10 +1149,48 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     if (owner == nullptr)
         return;
 
-    owner->stringBeingComposed.clear();
-
     if (auto* target = owner->findCurrentTextInputTarget())
-        target->insertTextAtCaret (nsStringToJuce (text));
+    {
+        // If we're in insertText, it's because there's a focused TextInputTarget,
+        // and key presses from pressesBegan and pressesEnded have been composed
+        // into a string that is now ready for insertion.
+        // Because JUCE has been passing key events to the system for composition, it
+        // won't have been processing those key presses itself, so it may not have had
+        // a chance to process keys like return/tab/etc.
+        // It's not possible to filter out these keys during pressesBegan, because they
+        // may form part of a longer composition sequence.
+        // e.g. when entering Japanese text, the return key may be used to select an option
+        // from the IME menu, and in this situation the return key should not be propagated
+        // to the JUCE view.
+        // If we receive a special character (return/tab/etc.) in insertText, it can
+        // only be because the composition has finished, so we can turn the event into
+        // a KeyPress and trust the current TextInputTarget to process it correctly.
+        const auto redirectKeyPresses = [&] (juce_wchar codepoint)
+        {
+            // Simulate a key down
+            const auto code = getKeyCodeForCharacters (String::charToString (codepoint));
+            iOSGlobals::keysCurrentlyDown.setDown (code, true);
+            owner->handleKeyUpOrDown (true);
+
+            owner->handleKeyPress (code, codepoint);
+
+            // Simulate a key up
+            iOSGlobals::keysCurrentlyDown.setDown (code, false);
+            owner->handleKeyUpOrDown (false);
+        };
+
+        if ([text isEqual: @"\n"] || [text isEqual: @"\r"])
+            redirectKeyPresses ('\r');
+        else if ([text isEqual: @"\t"])
+            redirectKeyPresses ('\t');
+        else
+            owner->replaceMarkedRangeWithText (target, nsStringToJuce (text));
+
+        target->setTemporaryUnderlining ({});
+    }
+
+    owner->stringBeingComposed.clear();
+    owner->startOfMarkedTextInTextInputTarget = 0;
 }
 
 - (BOOL) hasText
@@ -972,7 +1229,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 {
     if (owner != nullptr && owner->stringBeingComposed.isNotEmpty())
         if (auto* target = owner->findCurrentTextInputTarget())
-            return [JuceUITextRange withRange: target->getHighlightedRegion()];
+            return [JuceUITextRange withRange: owner->getMarkedTextRange()];
 
     return nil;
 }
@@ -980,22 +1237,24 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 - (void) setMarkedText: (NSString*) markedText
          selectedRange: (NSRange) selectedRange
 {
-    ignoreUnused (selectedRange);
-
     if (owner == nullptr)
         return;
 
-    owner->stringBeingComposed = nsStringToJuce (markedText);
+    const auto newMarkedText = nsStringToJuce (markedText);
+    const ScopeGuard scope { [&] { owner->stringBeingComposed = newMarkedText; } };
 
     auto* target = owner->findCurrentTextInputTarget();
 
     if (target == nullptr)
         return;
 
-    const auto currentHighlight = target->getHighlightedRegion();
-    target->insertTextAtCaret (owner->stringBeingComposed);
-    target->setHighlightedRegion (currentHighlight.withLength (0));
-    target->setHighlightedRegion (currentHighlight.withLength (owner->stringBeingComposed.length()));
+    if (owner->stringBeingComposed.isEmpty())
+        owner->startOfMarkedTextInTextInputTarget = target->getHighlightedRegion().getStart();
+
+    owner->replaceMarkedRangeWithText (target, newMarkedText);
+
+    const auto newSelection = nsRangeToJuce (selectedRange) + owner->startOfMarkedTextInTextInputTarget;
+    target->setHighlightedRegion (newSelection);
 }
 
 - (void) unmarkText
@@ -1008,8 +1267,10 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     if (target == nullptr)
         return;
 
-    target->insertTextAtCaret (owner->stringBeingComposed);
+    owner->replaceMarkedRangeWithText (target, owner->stringBeingComposed);
+    target->setTemporaryUnderlining ({});
     owner->stringBeingComposed.clear();
+    owner->startOfMarkedTextInTextInputTarget = 0;
 }
 
 - (NSDictionary<NSAttributedStringKey, id>*) markedTextStyle
@@ -1309,6 +1570,11 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
     return UITextAutocorrectionTypeNo;
 }
 
+- (UITextSpellCheckingType) spellCheckingType
+{
+    return UITextSpellCheckingTypeNo;
+}
+
 - (BOOL) canBecomeFirstResponder
 {
     return YES;
@@ -1367,9 +1633,15 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 namespace juce
 {
 
-bool KeyPress::isKeyCurrentlyDown (int)
+bool KeyPress::isKeyCurrentlyDown (int keyCode)
 {
+   #if JUCE_HAS_IOS_HARDWARE_KEYBOARD_SUPPORT
+    return iOSGlobals::keysCurrentlyDown.isDown (keyCode)
+        || ('A' <= keyCode && keyCode <= 'Z' && iOSGlobals::keysCurrentlyDown.isDown ((int) CharacterFunctions::toLowerCase ((juce_wchar) keyCode)))
+        || ('a' <= keyCode && keyCode <= 'z' && iOSGlobals::keysCurrentlyDown.isDown ((int) CharacterFunctions::toUpperCase ((juce_wchar) keyCode)));
+   #else
     return false;
+   #endif
 }
 
 Point<float> juce_lastMousePos;
@@ -1391,7 +1663,10 @@ UIViewComponentPeer::UIViewComponentPeer (Component& comp, int windowStyleFlags,
 
    #if JUCE_COREGRAPHICS_RENDER_WITH_MULTIPLE_PAINT_CALLS
     if (@available (iOS 13, *))
-        metalRenderer = std::make_unique<CoreGraphicsMetalLayerRenderer<UIView>> (view, comp.isOpaque());
+    {
+        metalRenderer = CoreGraphicsMetalLayerRenderer<UIView>::create (view, comp.isOpaque());
+        jassert (metalRenderer != nullptr);
+    }
    #endif
 
     if ((windowStyleFlags & ComponentPeer::windowRequiresSynchronousCoreGraphicsRendering) == 0)
@@ -1428,12 +1703,10 @@ UIViewComponentPeer::UIViewComponentPeer (Component& comp, int windowStyleFlags,
     setVisible (component.isVisible());
 }
 
-static UIViewComponentPeer* currentlyFocusedPeer = nullptr;
-
 UIViewComponentPeer::~UIViewComponentPeer()
 {
-    if (currentlyFocusedPeer == this)
-        currentlyFocusedPeer = nullptr;
+    if (iOSGlobals::currentlyFocusedPeer == this)
+        iOSGlobals::currentlyFocusedPeer = nullptr;
 
     currentTouches.deleteAllTouchesForPeer (this);
 
@@ -1651,6 +1924,13 @@ void UIViewComponentPeer::handleTouches (UIEvent* event, MouseEventFlags mouseEv
     if (event == nullptr)
         return;
 
+   #if JUCE_HAS_IOS_HARDWARE_KEYBOARD_SUPPORT
+    if (@available (iOS 13.4, *))
+    {
+        updateModifiers ([event modifierFlags]);
+    }
+   #endif
+
     NSArray* touches = [[event touchesForView: view] allObjects];
 
     for (unsigned int i = 0; i < [touches count]; ++i)
@@ -1754,8 +2034,10 @@ void UIViewComponentPeer::onScroll (UIPanGestureRecognizer* gesture)
     details.isSmooth = true;
     details.isInertial = false;
 
+    const auto reconstructedMousePosition = convertToPointFloat ([gesture locationInView: view]) - convertToPointFloat (offset);
+
     handleMouseWheel (MouseInputSource::InputSourceType::touch,
-                      convertToPointFloat ([gesture locationInView: view]),
+                      reconstructedMousePosition,
                       UIViewComponentPeer::getMouseTime ([[NSProcessInfo processInfo] systemUptime]),
                       details);
 }
@@ -1764,12 +2046,12 @@ void UIViewComponentPeer::onScroll (UIPanGestureRecognizer* gesture)
 //==============================================================================
 void UIViewComponentPeer::viewFocusGain()
 {
-    if (currentlyFocusedPeer != this)
+    if (iOSGlobals::currentlyFocusedPeer != this)
     {
-        if (ComponentPeer::isValidPeer (currentlyFocusedPeer))
-            currentlyFocusedPeer->handleFocusLoss();
+        if (ComponentPeer::isValidPeer (iOSGlobals::currentlyFocusedPeer))
+            iOSGlobals::currentlyFocusedPeer->handleFocusLoss();
 
-        currentlyFocusedPeer = this;
+        iOSGlobals::currentlyFocusedPeer = this;
 
         handleFocusGain();
     }
@@ -1777,9 +2059,9 @@ void UIViewComponentPeer::viewFocusGain()
 
 void UIViewComponentPeer::viewFocusLoss()
 {
-    if (currentlyFocusedPeer == this)
+    if (iOSGlobals::currentlyFocusedPeer == this)
     {
-        currentlyFocusedPeer = nullptr;
+        iOSGlobals::currentlyFocusedPeer = nullptr;
         handleFocusLoss();
     }
 }
@@ -1789,7 +2071,7 @@ bool UIViewComponentPeer::isFocused() const
     if (isAppex)
         return true;
 
-    return isSharedWindow ? this == currentlyFocusedPeer
+    return isSharedWindow ? this == iOSGlobals::currentlyFocusedPeer
                           : (window != nil && [window isKeyWindow]);
 }
 
@@ -1804,6 +2086,10 @@ void UIViewComponentPeer::grabFocus()
 
 void UIViewComponentPeer::textInputRequired (Point<int>, TextInputTarget&)
 {
+    // We need to restart the text input session so that the keyboard can change types if necessary.
+    if ([hiddenTextInput.get() isFirstResponder])
+        [hiddenTextInput.get() resignFirstResponder];
+
     [hiddenTextInput.get() becomeFirstResponder];
 }
 
@@ -1825,30 +2111,11 @@ void UIViewComponentPeer::dismissPendingTextInput()
     [hiddenTextInput.get() resignFirstResponder];
 }
 
-BOOL UIViewComponentPeer::textViewReplaceCharacters (Range<int> range, const String& text)
-{
-    if (auto* target = findCurrentTextInputTarget())
-    {
-        auto currentSelection = target->getHighlightedRegion();
-
-        if (range.getLength() == 1 && text.isEmpty()) // (detect backspace)
-            if (currentSelection.isEmpty())
-                target->setHighlightedRegion (currentSelection.withStart (currentSelection.getStart() - 1));
-
-        WeakReference<Component> deletionChecker (dynamic_cast<Component*> (target));
-
-        if (text == "\r" || text == "\n" || text == "\r\n")
-            handleKeyPress (KeyPress::returnKey, text[0]);
-        else
-            target->insertTextAtCaret (text);
-    }
-
-    return NO;
-}
-
 //==============================================================================
 void UIViewComponentPeer::displayLinkCallback()
 {
+    vBlankListeners.call ([] (auto& l) { l.onVBlank(); });
+
     if (deferredRepaints.isEmpty())
         return;
 
@@ -1913,6 +2180,40 @@ void Desktop::setKioskComponent (Component* kioskModeComp, bool enableOrDisable,
 
 void Desktop::allowedOrientationsChanged()
 {
+   #if defined (__IPHONE_16_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_16_0
+    if (@available (iOS 16.0, *))
+    {
+        UIApplication* sharedApplication = [UIApplication sharedApplication];
+
+        const NSUniquePtr<UIWindowSceneGeometryPreferencesIOS> preferences { [UIWindowSceneGeometryPreferencesIOS alloc] };
+        [preferences.get() initWithInterfaceOrientations: Orientations::getSupportedOrientations()];
+
+        for (UIScene* scene in [sharedApplication connectedScenes])
+        {
+            if ([scene isKindOfClass: [UIWindowScene class]])
+            {
+                [static_cast<UIWindowScene*> (scene) requestGeometryUpdateWithPreferences: preferences.get()
+                                                                             errorHandler: ^([[maybe_unused]] NSError* error)
+                 {
+                    // Failed to set the new set of supported orientations.
+                    // You may have hit this assertion because you're trying to restrict the supported orientations
+                    // of an app that allows multitasking (i.e. the app does not require fullscreen, and supports
+                    // all orientations).
+                    // iPadOS apps that allow multitasking must support all interface orientations,
+                    // so attempting to change the set of supported orientations will fail.
+                    // If you hit this assertion in an application that requires fullscreen, it may be because the
+                    // set of supported orientations declared in the app's plist doesn't have any entries in common
+                    // with the orientations passed to Desktop::setOrientationsEnabled.
+                    DBG (nsStringToJuce ([error localizedDescription]));
+                    jassertfalse;
+                }];
+            }
+        }
+
+        return;
+    }
+   #endif
+
     // if the current orientation isn't allowed anymore then switch orientations
     if (! isOrientationEnabled (getCurrentOrientation()))
     {
