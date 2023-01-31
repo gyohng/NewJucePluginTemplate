@@ -171,14 +171,13 @@ void AudioCDReader::refreshTrackLengths()
     if (toc.exists())
     {
         XmlDocument doc (toc);
-        const char* error = CDReaderHelpers::getTrackOffsets (doc, trackStartSamples);
-        ignoreUnused (error); // could be logged..
+        [[maybe_unused]] const char* error = CDReaderHelpers::getTrackOffsets (doc, trackStartSamples);
 
         lengthInSamples = trackStartSamples.getLast() - trackStartSamples.getFirst();
     }
 }
 
-bool AudioCDReader::readSamples (int** destSamples, int numDestChannels, int startOffsetInDestBuffer,
+bool AudioCDReader::readSamples (int* const* destSamples, int numDestChannels, int startOffsetInDestBuffer,
                                  int64 startSampleInFile, int numSamples)
 {
     while (numSamples > 0)

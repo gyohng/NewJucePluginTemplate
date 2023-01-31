@@ -317,7 +317,7 @@ function(_juce_add_plugin_wrapper_target format path out_path)
     _juce_add_plugin_definitions("${target_name}" INTERFACE ${format})
     _juce_add_standard_defs("${target_name}")
 
-    target_compile_features("${target_name}" INTERFACE cxx_std_14)
+    target_compile_features("${target_name}" INTERFACE cxx_std_17)
     add_library("juce::${target_name}" ALIAS "${target_name}")
 
     if(format STREQUAL "AUv3")
@@ -327,6 +327,7 @@ function(_juce_add_plugin_wrapper_target format path out_path)
             _juce_link_frameworks("${target_name}" INTERFACE AudioUnit)
         endif()
     elseif(format STREQUAL "AU")
+        target_include_directories("${target_name}" INTERFACE "${out_path}/juce_audio_plugin_client/AU")
         _juce_link_frameworks("${target_name}" INTERFACE AudioUnit CoreAudioKit)
     endif()
 endfunction()
@@ -440,6 +441,8 @@ function(juce_add_module module_path)
     _juce_module_sources("${module_path}" "${base_path}" globbed_sources headers)
 
     if(${module_name} STREQUAL "juce_audio_plugin_client")
+        list(REMOVE_ITEM headers "${module_path}/LV2/juce_LV2TurtleDumpProgram.cpp")
+
         _juce_get_platform_plugin_kinds(plugin_kinds)
 
         foreach(kind IN LISTS plugin_kinds)

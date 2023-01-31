@@ -236,7 +236,7 @@ bool Project::setCppVersionFromOldExporterSettings()
         }
     }
 
-    if (highestLanguageStandard >= 14)
+    if (highestLanguageStandard >= 17)
     {
         cppStandardValue = highestLanguageStandard;
         return true;
@@ -247,8 +247,14 @@ bool Project::setCppVersionFromOldExporterSettings()
 
 void Project::updateDeprecatedProjectSettings()
 {
-    if (cppStandardValue.get().toString() == "11")
-        cppStandardValue.resetToDefault();
+    for (const auto& version : { "11", "14" })
+    {
+        if (cppStandardValue.get().toString() == version)
+        {
+            cppStandardValue.resetToDefault();
+            break;
+        }
+    }
 
     for (ExporterIterator exporter (*this); exporter.next();)
         exporter->updateDeprecatedSettings();
@@ -299,7 +305,7 @@ void Project::initialiseProjectValues()
     useAppConfigValue.referTo             (projectRoot, Ids::useAppConfig,                  getUndoManager(), true);
     addUsingNamespaceToJuceHeader.referTo (projectRoot, Ids::addUsingNamespaceToJuceHeader, getUndoManager(), true);
 
-    cppStandardValue.referTo (projectRoot, Ids::cppLanguageStandard, getUndoManager(), "14");
+    cppStandardValue.referTo (projectRoot, Ids::cppLanguageStandard, getUndoManager(), "17");
 
     headerSearchPathsValue.referTo   (projectRoot, Ids::headerPath, getUndoManager());
     preprocessorDefsValue.referTo    (projectRoot, Ids::defines,    getUndoManager());
@@ -1717,7 +1723,8 @@ Value Project::Item::getShouldSkipPCHValue()                { return state.getPr
 bool Project::Item::shouldSkipPCH() const                   { return isModuleCode() || state [Ids::skipPCH]; }
 
 Value Project::Item::getCompilerFlagSchemeValue()           { return state.getPropertyAsValue (Ids::compilerFlagScheme, getUndoManager()); }
-String Project::Item::getCompilerFlagSchemeString() const   { return state [Ids::compilerFlagScheme]; }
+
+String Project::Item::getCompilerFlagSchemeString() const   { return state[Ids::compilerFlagScheme]; }
 
 void Project::Item::setCompilerFlagScheme (const String& scheme)
 {

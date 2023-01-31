@@ -218,7 +218,7 @@ public:
             }
             else if (type == LV2PlugIn)
             {
-                s.add ("JUCE_LV2DIR := " + targetName + ".lv2");
+                s.add ("JUCE_LV2DIR := " + escapeQuotesAndSpaces (targetName) + ".lv2");
                 targetName = "$(JUCE_LV2DIR)/" + targetName + ".so";
             }
             else if (type == LV2TurtleProgram)
@@ -227,6 +227,9 @@ public:
             }
 
             s.add ("JUCE_TARGET_" + getTargetVarName() + String (" := ") + escapeQuotesAndSpaces (targetName));
+
+            if (type == LV2PlugIn)
+                s.add ("JUCE_LV2_FULL_PATH := $(JUCE_OUTDIR)/$(JUCE_TARGET_LV2_PLUGIN)");
 
             if (config.isPluginBinaryCopyStepEnabled()
                 && (type == VST3PlugIn || type == VSTPlugIn || type == UnityPlugIn || type == LV2PlugIn))
@@ -251,7 +254,6 @@ public:
                 else if (type == LV2PlugIn)
                 {
                     s.add ("JUCE_LV2DESTDIR := " + config.getLV2BinaryLocationString());
-                    s.add ("JUCE_LV2_FULL_PATH := $(JUCE_OUTDIR)/$(JUCE_TARGET_LV2_PLUGIN)");
                     s.add (copyCmd + "$(JUCE_LV2DIR) $(JUCE_LV2DESTDIR)");
                 }
             }
@@ -275,32 +277,30 @@ public:
             return String (getName()).toUpperCase().replaceCharacter (L' ', L'_');
         }
 
-        void writeObjects (OutputStream& out, const Array<std::pair<File, String>>& filesToCompile) const
+        void writeObjects (OutputStream& out, const std::vector<std::pair<build_tools::RelativePath, String>>& filesToCompile) const
         {
             out << "OBJECTS_" + getTargetVarName() + String (" := \\") << newLine;
 
             for (auto& f : filesToCompile)
-                out << "  $(JUCE_OBJDIR)/" << escapeQuotesAndSpaces (owner.getObjectFileFor ({ f.first, owner.getTargetFolder(), build_tools::RelativePath::buildTargetFolder }))
+                out << "  $(JUCE_OBJDIR)/" << escapeQuotesAndSpaces (owner.getObjectFileFor (f.first))
                     << " \\" << newLine;
 
             out << newLine;
         }
 
-        void addFiles (OutputStream& out, const Array<std::pair<File, String>>& filesToCompile)
+        void addFiles (OutputStream& out, const std::vector<std::pair<build_tools::RelativePath, String>>& filesToCompile)
         {
             auto cppflagsVarName = "JUCE_CPPFLAGS_" + getTargetVarName();
             auto cflagsVarName   = "JUCE_CFLAGS_"   + getTargetVarName();
 
-            for (auto& f : filesToCompile)
+            for (auto& [path, flags] : filesToCompile)
             {
-                build_tools::RelativePath relativePath (f.first, owner.getTargetFolder(), build_tools::RelativePath::buildTargetFolder);
-
-                out << "$(JUCE_OBJDIR)/" << escapeQuotesAndSpaces (owner.getObjectFileFor (relativePath)) << ": " << escapeQuotesAndSpaces (relativePath.toUnixStyle()) << newLine
-                    << "\t-$(V_AT)mkdir -p $(JUCE_OBJDIR)"                                                                                            << newLine
-                    << "\t@echo \"Compiling " << relativePath.getFileName() << "\""                                                                   << newLine
-                    << (relativePath.hasFileExtension ("c;s;S") ? "\t$(V_AT)$(CC) $(JUCE_CFLAGS) " : "\t$(V_AT)$(CXX) $(JUCE_CXXFLAGS) ")
+                out << "$(JUCE_OBJDIR)/" << escapeQuotesAndSpaces (owner.getObjectFileFor (path)) << ": " << escapeQuotesAndSpaces (path.toUnixStyle()) << newLine
+                    << "\t-$(V_AT)mkdir -p $(JUCE_OBJDIR)"                                                                                              << newLine
+                    << "\t@echo \"Compiling " << path.getFileName() << "\""                                                                             << newLine
+                    << (path.hasFileExtension ("c;s;S") ? "\t$(V_AT)$(CC) $(JUCE_CFLAGS) " : "\t$(V_AT)$(CXX) $(JUCE_CXXFLAGS) ")
                     << "$(" << cppflagsVarName << ") $(" << cflagsVarName << ")"
-                    << (f.second.isNotEmpty() ? " $(" + owner.getCompilerFlagSchemeVariableName (f.second) + ")" : "") << " -o \"$@\" -c \"$<\""      << newLine
+                    << (flags.isNotEmpty() ? " $(" + owner.getCompilerFlagSchemeVariableName (flags) + ")" : "") << " -o \"$@\" -c \"$<\""              << newLine
                     << newLine;
             }
         }
@@ -380,13 +380,11 @@ public:
 
             if (type == VST3PlugIn)
             {
-                out << "\t-$(V_AT)mkdir -p $(JUCE_VST3DESTDIR)" << newLine
-                    << "\t-$(V_AT)cp -R $(JUCE_COPYCMD_VST3)"   << newLine;
+                out << "\t-$(V_AT)[ ! \"$(JUCE_VST3DESTDIR)\" ] || (mkdir -p $(JUCE_VST3DESTDIR) && cp -R $(JUCE_COPYCMD_VST3))" << newLine;
             }
             else if (type == VSTPlugIn)
             {
-                out << "\t-$(V_AT)mkdir -p $(JUCE_VSTDESTDIR)" << newLine
-                    << "\t-$(V_AT)cp -R $(JUCE_COPYCMD_VST)"   << newLine;
+                out << "\t-$(V_AT)[ ! \"$(JUCE_VSTDESTDIR)\" ]  || (mkdir -p $(JUCE_VSTDESTDIR)  && cp -R $(JUCE_COPYCMD_VST))"  << newLine;
             }
             else if (type == UnityPlugIn)
             {
@@ -397,15 +395,12 @@ public:
                                                       build_tools::RelativePath::projectFolder);
 
                 out << "\t-$(V_AT)cp " + scriptPath.toUnixStyle() + " $(JUCE_OUTDIR)/$(JUCE_UNITYDIR)" << newLine
-                    << "\t-$(V_AT)mkdir -p $(JUCE_UNITYDESTDIR)"                                       << newLine
-                    << "\t-$(V_AT)cp -R $(JUCE_COPYCMD_UNITY_PLUGIN)"                                  << newLine;
+                    << "\t-$(V_AT)[ ! \"$(JUCE_UNITYDESTDIR)\" ] || (mkdir -p $(JUCE_UNITYDESTDIR) && cp -R $(JUCE_COPYCMD_UNITY_PLUGIN))" << newLine;
             }
             else if (type == LV2PlugIn)
             {
-                out << "\t$(V_AT) $(JUCE_OUTDIR)/$(JUCE_TARGET_LV2_MANIFEST_HELPER) "
-                       "$(abspath $(JUCE_LV2_FULL_PATH))"                                              << newLine
-                    << "\t-$(V_AT)mkdir -p $(JUCE_LV2DESTDIR)"                                         << newLine
-                    << "\t-$(V_AT)cp -R $(JUCE_COPYCMD_LV2_PLUGIN)"                                    << newLine;
+                out << "\t$(V_AT) $(JUCE_OUTDIR)/$(JUCE_TARGET_LV2_MANIFEST_HELPER) $(JUCE_LV2_FULL_PATH)" << newLine
+                    << "\t-$(V_AT)[ ! \"$(JUCE_LV2DESTDIR)\" ] || (mkdir -p $(JUCE_LV2DESTDIR) && cp -R $(JUCE_COPYCMD_LV2_PLUGIN))" << newLine;
             }
 
             out << newLine;
@@ -651,7 +646,7 @@ private:
         for (auto& recommended : config.getRecommendedCompilerWarningFlags().common)
             result.add (recommended);
 
-        auto extra = replacePreprocessorTokens (config, getExtraCompilerFlagsString()).trim();
+        auto extra = replacePreprocessorTokens (config, config.getAllCompilerFlagsString()).trim();
 
         if (extra.isNotEmpty())
             result.add (extra);
@@ -722,7 +717,7 @@ private:
         if (config.isLinkTimeOptimisationEnabled())
             result.add ("-flto");
 
-        auto extraFlags = getExtraLinkerFlagsString().trim();
+        const auto extraFlags = config.getAllLinkerFlagsString().trim();
 
         if (extraFlags.isNotEmpty())
             result.add (replacePreprocessorTokens (config, extraFlags));
@@ -915,12 +910,19 @@ private:
 
     static String getCompilerFlagSchemeVariableName (const String& schemeName)   { return "JUCE_COMPILERFLAGSCHEME_" + schemeName; }
 
-    void findAllFilesToCompile (const Project::Item& projectItem, Array<std::pair<File, String>>& results) const
+    std::vector<std::pair<File, String>> findAllFilesToCompile (const Project::Item& projectItem) const
     {
+        std::vector<std::pair<File, String>> results;
+
         if (projectItem.isGroup())
         {
             for (int i = 0; i < projectItem.getNumChildren(); ++i)
-                findAllFilesToCompile (projectItem.getChild (i), results);
+            {
+                auto inner = findAllFilesToCompile (projectItem.getChild (i));
+                results.insert (results.end(),
+                                std::make_move_iterator (inner.cbegin()),
+                                std::make_move_iterator (inner.cend()));
+            }
         }
         else
         {
@@ -931,33 +933,35 @@ private:
                 if (shouldFileBeCompiledByDefault (f))
                 {
                     auto scheme = projectItem.getCompilerFlagSchemeString();
-                    auto flags = compilerFlagSchemesMap[scheme].get().toString();
+                    auto flags = getCompilerFlagsForProjectItem (projectItem);
 
                     if (scheme.isNotEmpty() && flags.isNotEmpty())
-                        results.add ({ f, scheme });
+                        results.emplace_back (f, scheme);
                     else
-                        results.add ({ f, {} });
+                        results.emplace_back (f, String{});
                 }
             }
         }
+
+        return results;
     }
 
-    void writeCompilerFlagSchemes (OutputStream& out, const Array<std::pair<File, String>>& filesToCompile) const
+    void writeCompilerFlagSchemes (OutputStream& out, const std::vector<std::pair<File, String>>& filesToCompile) const
     {
-        StringArray schemesToWrite;
+        std::set<String> schemesToWrite;
 
-        for (auto& f : filesToCompile)
-            if (f.second.isNotEmpty())
-                schemesToWrite.addIfNotAlreadyThere (f.second);
+        for (const auto& pair : filesToCompile)
+            if (pair.second.isNotEmpty())
+                schemesToWrite.insert (pair.second);
 
-        if (! schemesToWrite.isEmpty())
-        {
-            for (auto& s : schemesToWrite)
-                out << getCompilerFlagSchemeVariableName (s) << " := "
-                    << compilerFlagSchemesMap[s].get().toString() << newLine;
+        if (schemesToWrite.empty())
+            return;
 
-            out << newLine;
-        }
+        for (const auto& s : schemesToWrite)
+            if (const auto flags = getCompilerFlagsForFileCompilerFlagScheme (s); flags.isNotEmpty())
+                out << getCompilerFlagSchemeVariableName (s) << " := " << flags << newLine;
+
+        out << newLine;
     }
 
     void writeMakefile (OutputStream& out) const
@@ -1004,27 +1008,44 @@ private:
         for (ConstConfigIterator config (*this); config.next();)
             writeConfig (out, dynamic_cast<const MakeBuildConfiguration&> (*config));
 
-        Array<std::pair<File, String>> filesToCompile;
+        std::vector<std::pair<File, String>> filesToCompile;
 
         for (int i = 0; i < getAllGroups().size(); ++i)
-            findAllFilesToCompile (getAllGroups().getReference (i), filesToCompile);
+        {
+            auto group = findAllFilesToCompile (getAllGroups().getReference (i));
+            filesToCompile.insert (filesToCompile.end(),
+                                   std::make_move_iterator (group.cbegin()),
+                                   std::make_move_iterator (group.cend()));
+        }
 
         writeCompilerFlagSchemes (out, filesToCompile);
 
-        auto getFilesForTarget = [this] (const Array<std::pair<File, String>>& files,
-                                         MakefileTarget* target,
-                                         const Project& p) -> Array<std::pair<File, String>>
+        const auto getFilesForTarget = [this] (const std::vector<std::pair<File, String>>& files,
+                                               MakefileTarget* target,
+                                               const Project& p)
         {
-            Array<std::pair<File, String>> targetFiles;
+            std::vector<std::pair<build_tools::RelativePath, String>> targetFiles;
 
             auto targetType = (p.isAudioPluginProject() ? target->type : MakefileTarget::SharedCodeTarget);
 
-            for (auto& f : files)
-                if (p.getTargetTypeFromFilePath (f.first, true) == targetType)
-                    targetFiles.add (f);
+            for (auto& [path, flags] : files)
+            {
+                if (p.getTargetTypeFromFilePath (path, true) == targetType)
+                {
+                    targetFiles.emplace_back (build_tools::RelativePath { path,
+                                                                          getTargetFolder(),
+                                                                          build_tools::RelativePath::buildTargetFolder },
+                                              flags);
+                }
+            }
 
             if (targetType == MakefileTarget::LV2TurtleProgram)
-                targetFiles.add ({ project.resolveFilename (getLV2TurtleDumpProgramSource().toUnixStyle()), {} });
+            {
+                targetFiles.emplace_back (getLV2TurtleDumpProgramSource().rebased (projectFolder,
+                                                                                   getTargetFolder(),
+                                                                                   build_tools::RelativePath::buildTargetFolder),
+                                          String{});
+            }
 
             return targetFiles;
         };

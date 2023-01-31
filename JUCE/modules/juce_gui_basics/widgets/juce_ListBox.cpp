@@ -525,7 +525,7 @@ ListBox::ListBox (const String& name, ListBoxModel* const m)
     setFocusContainerType (FocusContainerType::focusContainer);
     colourChanged();
 
-    setModel (m);
+    assignModelPtr (m);
 }
 
 ListBox::~ListBox()
@@ -1207,9 +1207,8 @@ std::unique_ptr<AccessibilityHandler> ListBox::createAccessibilityHandler()
 }
 
 //==============================================================================
-Component* ListBoxModel::refreshComponentForRow (int, bool, Component* existingComponentToUpdate)
+Component* ListBoxModel::refreshComponentForRow (int, bool, [[maybe_unused]] Component* existingComponentToUpdate)
 {
-    ignoreUnused (existingComponentToUpdate);
     jassert (existingComponentToUpdate == nullptr); // indicates a failure in the code that recycles the components
     return nullptr;
 }
