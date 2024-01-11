@@ -403,7 +403,7 @@ public:
                      display: isPre10_11];
         }
 
-        if (! CGSizeEqualToSize (oldViewSize, r.size))
+        if (! CGSizeEqualToSize (NSSizeToCGSize(oldViewSize), NSSizeToCGSize(r.size)))
             [view setNeedsDisplay: true];
     }
 

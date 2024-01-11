@@ -1621,7 +1621,7 @@ private:
         auto data = (void**) args.ptr;
         bool onlyStoreCurrentProgramData = (args.index != 0);
 
-        MemoryBlock block;
+        juce::MemoryBlock block;
 
         if (onlyStoreCurrentProgramData)
             processor->getCurrentProgramStateInformation (block);
