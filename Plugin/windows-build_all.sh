@@ -2,12 +2,13 @@
 
 set -e
 
-PROJECT_NAME="My Audio Plugin"
+CMAKE_PROJECT_NAME="MyAudioPlugin"
+PRODUCT_NAME="My Audio Plugin"
 
 # Pick your Microsoft Visual Studio version
 MSVS_VERSION="Visual Studio 17 2022"
 
-MSVS_PATH="$("C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere" -latest -property installationPath)"
+MSVS_PATH="`"C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere" -latest -property installationPath`"
 MSVS_PATH="$(echo $MSVS_PATH | sed 's,\\,/,g')"
 
 MYDIR="$(dirname "$0")"
@@ -44,7 +45,7 @@ for platform in win64 win32; do
     mkdir -p $platform
     cd $platform
 
-    cmake -G "Ninja" "-DCMAKE_TOOLCHAIN_FILE=${MYDIR}/toolchain-clang-$platform.cmake" -DCMAKE_BUILD_TYPE=Release ../..
+    cmake -G "Ninja" "-DCMAKE_TOOLCHAIN_FILE=${MYDIR}/../tools/toolchain-clang-$platform.cmake" -DCMAKE_BUILD_TYPE=Release ../..
     cmake --build . --config Release
 done
 
@@ -54,26 +55,26 @@ rm -rf output
 mkdir -p output
 cd output
 
-if [ -f "../win64/${PROJECT_NAME}_artefacts/Release/AAX/${PROJECT_NAME}.aaxplugin/desktop.ini" ]; then
-    mkdir -p "${PROJECT_NAME}.aaxplugin/Contents/x64"
-    mkdir -p "${PROJECT_NAME}.aaxplugin/Contents/Win32"
+if [ -f "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX/${PRODUCT_NAME}.aaxplugin/desktop.ini" ]; then
+    mkdir -p "${PRODUCT_NAME}.aaxplugin/Contents/x64"
+    mkdir -p "${PRODUCT_NAME}.aaxplugin/Contents/Win32"
 
-    cp "../win64/${PROJECT_NAME}_artefacts/Release/AAX/${PROJECT_NAME}.aaxplugin/"desktop.ini "${PROJECT_NAME}.aaxplugin/"
-    cp "../win64/${PROJECT_NAME}_artefacts/Release/AAX/${PROJECT_NAME}.aaxplugin/"Plugin.ico "${PROJECT_NAME}.aaxplugin/"
-    cp "../win64/${PROJECT_NAME}_artefacts/Release/AAX/${PROJECT_NAME}.aaxplugin/"Contents/x64/* "${PROJECT_NAME}.aaxplugin/Contents/x64"
-    cp "../win32/${PROJECT_NAME}_artefacts/Release/AAX/${PROJECT_NAME}.aaxplugin/"Contents/Win32/* "${PROJECT_NAME}.aaxplugin/Contents/Win32"
+    cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX/${PRODUCT_NAME}.aaxplugin/"desktop.ini "${PRODUCT_NAME}.aaxplugin/"
+    cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX/${PRODUCT_NAME}.aaxplugin/"Plugin.ico "${PRODUCT_NAME}.aaxplugin/"
+    cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX/${PRODUCT_NAME}.aaxplugin/"Contents/x64/* "${PRODUCT_NAME}.aaxplugin/Contents/x64"
+    cp "../win32/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX/${PRODUCT_NAME}.aaxplugin/"Contents/Win32/* "${PRODUCT_NAME}.aaxplugin/Contents/Win32"
 fi
 
-mkdir -p "${PROJECT_NAME}.vst3/Contents/x86_64-win"
-mkdir -p "${PROJECT_NAME}.vst3/Contents/x86-win"
+mkdir -p "${PRODUCT_NAME}.vst3/Contents/x86_64-win"
+mkdir -p "${PRODUCT_NAME}.vst3/Contents/x86-win"
 
-cp "../win64/${PROJECT_NAME}_artefacts/Release/VST3/${PROJECT_NAME}.vst3/"desktop.ini "${PROJECT_NAME}.vst3/"
-cp "../win64/${PROJECT_NAME}_artefacts/Release/VST3/${PROJECT_NAME}.vst3/"Plugin.ico "${PROJECT_NAME}.vst3/"
-cp "../win64/${PROJECT_NAME}_artefacts/Release/VST3/${PROJECT_NAME}.vst3/"Contents/x86_64-win/* "${PROJECT_NAME}.vst3/Contents/x86_64-win"
-cp "../win32/${PROJECT_NAME}_artefacts/Release/VST3/${PROJECT_NAME}.vst3/"Contents/x86-win/* "${PROJECT_NAME}.vst3/Contents/x86-win"
+cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"desktop.ini "${PRODUCT_NAME}.vst3/"
+cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"Plugin.ico "${PRODUCT_NAME}.vst3/"
+cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"Contents/x86_64-win/* "${PRODUCT_NAME}.vst3/Contents/x86_64-win"
+cp "../win32/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"Contents/x86-win/* "${PRODUCT_NAME}.vst3/Contents/x86-win"
 
-cp "../win64/${PROJECT_NAME}_artefacts/Release/VST/${PROJECT_NAME}.dll" "${PROJECT_NAME}64.dll"
-cp "../win32/${PROJECT_NAME}_artefacts/Release/VST/${PROJECT_NAME}.dll" "${PROJECT_NAME}32.dll"
+cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST/${PRODUCT_NAME}.dll" "${PRODUCT_NAME}64.dll"
+cp "../win32/${CMAKE_PROJECT_NAME}_artefacts/Release/VST/${PRODUCT_NAME}.dll" "${PRODUCT_NAME}32.dll"
 
-cp "../win64/${PROJECT_NAME}_artefacts/Release/Standalone/${PROJECT_NAME}.exe" "${PROJECT_NAME}64.exe"
-cp "../win32/${PROJECT_NAME}_artefacts/Release/Standalone/${PROJECT_NAME}.exe" "${PROJECT_NAME}32.exe"
+cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/Standalone/${PRODUCT_NAME}.exe" "${PRODUCT_NAME}64.exe"
+cp "../win32/${CMAKE_PROJECT_NAME}_artefacts/Release/Standalone/${PRODUCT_NAME}.exe" "${PRODUCT_NAME}32.exe"
