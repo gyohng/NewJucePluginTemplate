@@ -47,6 +47,15 @@ if [ ! -d "$HOME/MacOSX-SDKs" ]; then
     git clone https://github.com/phracker/MacOSX-SDKs.git "$HOME/MacOSX-SDKs"
 fi
 
+if [ ! -e "$HOME/MacOSX-SDKs/MacOSX10.13.sdk/usr/include/c++/v1" ]; then
+    ln -s "../../../../MacOSX11.3.sdk/usr/include/c++/v1" "$HOME/MacOSX-SDKs/MacOSX10.13.sdk/usr/include/c++/v1"
+fi
+
+if [ ! -e "$HOME/MacOSX-SDKs/MacOSX10.15.sdk/usr/include/c++" ]; then
+    ln -s "../../../MacOSX11.3.sdk/usr/include/c++" "$HOME/MacOSX-SDKs/MacOSX10.15.sdk/usr/include/c++"
+fi
+
+
 #if [ ! -d "$MYDIR/../JUCE/sdks/vst3sdk" ]; then
 #    cd "$MYDIR/../JUCE/sdks"
 #    ./download-vst3-sdk.sh
