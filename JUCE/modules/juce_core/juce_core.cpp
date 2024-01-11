@@ -210,6 +210,7 @@
  #include "native/juce_Threads_mac.mm"
  #include "native/juce_PlatformTimer_generic.cpp"
  #include "native/juce_Process_mac.mm"
+ #include "native/juce_LegacyOSVersionCheck_mac.cpp"
 
 //==============================================================================
 #elif JUCE_WINDOWS
