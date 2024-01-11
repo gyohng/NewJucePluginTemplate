@@ -5,18 +5,22 @@ function(GetTCFileDir)
 endfunction()
 GetTCFileDir()
 
-set(CLANGBIN 
-    # TODO: detect current MSVS path instead and throw some diagnostics about
-    # installing Clang
-    "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/Llvm/bin"
-)
+execute_process(COMMAND "C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe" -latest -property installationPath
+                OUTPUT_VARIABLE VS_INSTALL_DIR
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+set(CLANGBIN "${VS_INSTALL_DIR}/VC/Tools/Llvm/x64/bin")
 
 set(CMAKE_CXX_COMPILER "${CLANGBIN}/clang++.exe" CACHE FILEPATH "Clang C++ compiler")
-set(CMAKE_C_COMPILER  "${CLANGBIN}/clang.exe"  CACHE FILEPATH "Clang C compiler")
+set(CMAKE_C_COMPILER "${CLANGBIN}/clang.exe" CACHE FILEPATH "Clang C compiler")
+set(CMAKE_RC_COMPILER "${CLANGBIN}/llvm-rc.exe" CACHE FILEPATH "LLVM RC compiler")
 set(CMAKE_LINKER "${CLANGBIN}/clang++.exe" CACHE FILEPATH "Clang linker")
 set(CMAKE_AR "${CLANGBIN}/llvm-ar.exe" CACHE FILEPATH "Clang AR")
 set(CMAKE_RANLIB "${CLANGBIN}/llvm-ranlib.exe" CACHE FILEPATH "Clang ranlib")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -target i686-pc-windows-msvc -fms-extensions -fms-compatibility -fms-compatibility-version=19.00 -DWIN32 -D_WIN32")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -target i686-pc-windows-msvc -fms-extensions -fms-compatibility -fms-compatibility-version=19.00 -DWIN32 -D_WIN32")
-set(CMAKE_C_COMPILER_LAUNCHER "${TCFILEDIR}/ccache.exe")
-set(CMAKE_CXX_COMPILER_LAUNCHER "${TCFILEDIR}/ccache.exe")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -target i686-pc-windows-msvc -DWIN32 -D_WIN32")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -target i686-pc-windows-msvc -DWIN32 -D_WIN32")
+set(CMAKE_C_COMPILER_LAUNCHER "${TCFILEDIR}/../tools/ccache.exe")
+set(CMAKE_CXX_COMPILER_LAUNCHER "${TCFILEDIR}/../tools/ccache.exe")
+
+# set(CMAKE_C_COMPILER_WORKS 1)
+# set(CMAKE_CXX_COMPILER_WORKS 1)
