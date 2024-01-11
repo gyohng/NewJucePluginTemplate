@@ -101,6 +101,21 @@ else()
         set(ENV{CMAKE_GENERATOR_PLATFORM} "${CMAKE_HOST_SYSTEM_PROCESSOR}")
     endif()
 
+    set(EXTRA_JUCEAIDE_CMAKE_FLAGS )
+
+    if (WIN32)
+        set(EXTRA_JUCEAIDE_CMAKE_FLAGS
+            "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_LIST_DIR}/../../../../TruePianos/toolchain-clang-win64.cmake"
+        )
+    endif()
+
+    if (APPLE)
+        set(EXTRA_JUCEAIDE_CMAKE_FLAGS
+            "-DCMAKE_C_COMPILER_LAUNCHER=ccache"
+            "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+        )
+    endif()
+
     # Looks like we're bootstrapping, reinvoke CMake
     execute_process(COMMAND "${CMAKE_COMMAND}"
             "."
@@ -110,6 +125,7 @@ else()
             "-DCMAKE_BUILD_TYPE=Debug"
             "-DJUCE_BUILD_HELPER_TOOLS=ON"
             "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
+            ${EXTRA_JUCEAIDE_CMAKE_FLAGS}
             ${extra_compiler_flag_arguments}
         WORKING_DIRECTORY "${JUCE_SOURCE_DIR}"
         OUTPUT_VARIABLE command_output
