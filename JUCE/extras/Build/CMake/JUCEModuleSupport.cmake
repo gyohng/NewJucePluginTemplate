@@ -458,7 +458,6 @@ function(juce_add_module module_path)
         endforeach()
 
         set(utils_source
-            "${base_path}/${module_name}/juce_audio_plugin_client_utils.cpp"
             "${base_path}/${module_name}/juce_audio_plugin_client_version.cpp")
         add_library(juce_audio_plugin_client_utils INTERFACE)
         target_sources(juce_audio_plugin_client_utils INTERFACE "${utils_source}")
