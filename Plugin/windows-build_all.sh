@@ -9,10 +9,12 @@ PRODUCT_NAME="My Audio Plugin"
 MSVS_VERSION="Visual Studio 17 2022"
 
 MSVS_PATH="`"C:/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere" -latest -property installationPath`"
-MSVS_PATH="$(echo $MSVS_PATH | sed 's,\\,/,g')"
+set +e # workaround for busybox64 bash
+MSVS_PATH="$(echo "$MSVS_PATH" | sed 's,\\,/,g' )"
 
 MYDIR="$(dirname "$0")"
 MYDIR="$( cd "$MYDIR" ; pwd -P )"
+set -e # workaround for busybox64 bash
 
 cd "$MYDIR"
 mkdir -p build

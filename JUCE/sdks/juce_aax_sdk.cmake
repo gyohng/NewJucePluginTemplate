@@ -62,4 +62,5 @@ endif()
 
 if (WIN32)
 target_compile_options(juce_aax_sdk PRIVATE -Wno-register -Wno-undef-prefix -Wno-pragma-pack)
+target_compile_options(juce_aax_sdk INTERFACE -Wno-register)
 endif()
