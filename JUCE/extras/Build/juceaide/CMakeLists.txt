@@ -105,7 +105,7 @@ else()
 
     if (WIN32)
         set(EXTRA_JUCEAIDE_CMAKE_FLAGS
-            "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_LIST_DIR}/../../../../TruePianos/toolchain-clang-win64.cmake"
+            "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_CURRENT_LIST_DIR}/../../../../tools/toolchain-clang-win64.cmake"
         )
     endif()
 
