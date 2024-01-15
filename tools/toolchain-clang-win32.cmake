@@ -9,7 +9,12 @@ execute_process(COMMAND "C:/Program Files (x86)/Microsoft Visual Studio/Installe
                 OUTPUT_VARIABLE VS_INSTALL_DIR
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-set(CLANGBIN "${VS_INSTALL_DIR}/VC/Tools/Llvm/x64/bin")
+set(MYPLATFORM "x64")
+if("$ENV{PROCESSOR_ARCHITECTURE}" STREQUAL "ARM64")
+    set(MYPLATFORM "ARM64")
+endif()
+
+set(CLANGBIN "${VS_INSTALL_DIR}/VC/Tools/Llvm/${MYPLATFORM}/bin")
 
 set(CMAKE_CXX_COMPILER "${CLANGBIN}/clang++.exe" CACHE FILEPATH "Clang C++ compiler")
 set(CMAKE_C_COMPILER "${CLANGBIN}/clang.exe" CACHE FILEPATH "Clang C compiler")
