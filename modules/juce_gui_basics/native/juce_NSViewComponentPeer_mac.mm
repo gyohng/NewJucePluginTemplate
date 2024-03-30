@@ -1712,7 +1712,7 @@ public:
     NSWindow* window = nil;
     NSView* view = nil;
     WeakReference<Component> safeComponent;
-    bool isSharedWindow = false;
+    const bool isSharedWindow = false;
    #if USE_COREGRAPHICS_RENDERING
     bool usingCoreGraphics = true;
    #else
@@ -1998,9 +1998,88 @@ private:
        #endif
     }
 
+    /*  Used to store and restore the values of the NSWindowStyleMaskClosable and
+        NSWindowStyleMaskMiniaturizable flags.
+    */
+    struct StoredStyleFlags
+    {
+        StoredStyleFlags (NSWindowStyleMask m)
+            : stored { m }
+        {}
+
+        static auto getStoredFlags()
+        {
+            return std::array<NSWindowStyleMask, 2> { NSWindowStyleMaskClosable,
+                                                      NSWindowStyleMaskMiniaturizable };
+        }
+
+        auto withFlagsRestored (NSWindowStyleMask m) const
+        {
+            for (const auto& f : getStoredFlags())
+                m = withFlagFromStored (m, f);
+
+            return m;
+        }
+
+    private:
+        NSWindowStyleMask withFlagFromStored (NSWindowStyleMask m, NSWindowStyleMask flag) const
+        {
+            return (m & ~flag) | (stored & flag);
+        }
+
+        NSWindowStyleMask stored;
+    };
+
+    void modalComponentManagerChanged()
+    {
+        // We are only changing the style flags if we absolutely have to. Plugin windows generally
+        // don't like to be modified. Windows created under plugin hosts running in an external
+        // subprocess are particularly touchy, and may make the window invisible even if we call
+        // [window setStyleMask [window setStyleMask]].
+        if (isSharedWindow || ! hasNativeTitleBar())
+            return;
+
+        const auto newStyleMask = [&]() -> std::optional<NSWindowStyleMask>
+        {
+            const auto currentStyleMask = [window styleMask];
+
+            if (ModalComponentManager::getInstance()->getNumModalComponents() > 0)
+            {
+                if (! storedFlags)
+                    storedFlags.emplace (currentStyleMask);
+
+                auto updatedMask = (storedFlags->withFlagsRestored (currentStyleMask)) & ~NSWindowStyleMaskMiniaturizable;
+
+                if (component.isCurrentlyBlockedByAnotherModalComponent())
+                    updatedMask &= ~NSWindowStyleMaskClosable;
+
+                return updatedMask;
+            }
+
+            if (storedFlags)
+            {
+                const auto flagsToApply = storedFlags->withFlagsRestored (currentStyleMask);
+                storedFlags.reset();
+                return flagsToApply;
+            }
+
+            return {};
+        }();
+
+        if (newStyleMask && *newStyleMask != [window styleMask])
+            [window setStyleMask: *newStyleMask];
+    }
+
     //==============================================================================
     std::vector<ScopedNotificationCenterObserver> scopedObservers;
     std::vector<ScopedNotificationCenterObserver> windowObservers;
+
+    std::optional<StoredStyleFlags> storedFlags;
+    ErasedScopeGuard modalChangeListenerScope =
+        detail::ComponentHelpers::ModalComponentManagerChangeNotifier::getInstance().addListener ([this]
+                                                                                                  {
+                                                                                                      modalComponentManagerChanged();
+                                                                                                  });
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NSViewComponentPeer)
 };

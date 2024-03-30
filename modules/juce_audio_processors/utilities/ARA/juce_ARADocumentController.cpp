@@ -26,8 +26,7 @@
 namespace juce
 {
 
-class ARADocumentControllerSpecialisation::ARADocumentControllerImpl  : public ARADocumentController,
-                                                                        private juce::Timer
+class ARADocumentControllerSpecialisation::ARADocumentControllerImpl  : public ARADocumentController
 {
 public:
     ARADocumentControllerImpl (const ARA::PlugIn::PlugInEntry* entry,
@@ -204,10 +203,6 @@ protected:
     void didUpdatePlaybackRegionProperties (ARA::PlugIn::PlaybackRegion* playbackRegion) noexcept override;
     void willDestroyPlaybackRegion (ARA::PlugIn::PlaybackRegion* playbackRegion) noexcept override;
 
-    //==============================================================================
-    // juce::Timer overrides
-    void timerCallback() override;
-
 public:
     //==============================================================================
     /** @internal */
@@ -248,6 +243,9 @@ private:
     std::atomic<bool> internalAnalysisProgressIsSynced { true };
     ScopedJuceInitialiser_GUI libraryInitialiser;
     int activeAudioSourcesCount = 0;
+    std::optional<TimedCallback> analysisTimer;
+
+    void analysisTimerCallback();
 
     //==============================================================================
     template <typename ModelObject, typename Function, typename... Ts>
@@ -363,10 +361,15 @@ void ARADocumentControllerSpecialisation::ARADocumentControllerImpl::didEndEditi
 {
     notifyListeners (&ARADocument::Listener::didEndEditing, static_cast<ARADocument*> (getDocument()));
 
-    if (isTimerRunning() && (activeAudioSourcesCount == 0))
-        stopTimer();
-    else if (! isTimerRunning() && (activeAudioSourcesCount > 0))
-        startTimerHz (20);
+    if (activeAudioSourcesCount == 0)
+    {
+        analysisTimer.reset();
+    }
+    else if (! analysisTimer.has_value() && (activeAudioSourcesCount > 0))
+    {
+        analysisTimer.emplace ([this] { analysisTimerCallback(); });
+        analysisTimer->startTimerHz (20);
+    }
 }
 
 void ARADocumentControllerSpecialisation::ARADocumentControllerImpl::willNotifyModelUpdates() noexcept
@@ -760,7 +763,7 @@ namespace ModelUpdateControllerProgressAdapter
     }
 }
 
-void ARADocumentControllerSpecialisation::ARADocumentControllerImpl::timerCallback()
+void ARADocumentControllerSpecialisation::ARADocumentControllerImpl::analysisTimerCallback()
 {
     if (! internalAnalysisProgressIsSynced.exchange (true, std::memory_order_release))
         for (auto& audioSource : getDocument()->getAudioSources())

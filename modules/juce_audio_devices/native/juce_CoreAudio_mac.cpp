@@ -1462,6 +1462,12 @@ public:
     auto getDeviceWrappers()       { return std::array<      DeviceWrapper*, 2> { { &inputWrapper, &outputWrapper } }; }
     auto getDeviceWrappers() const { return std::array<const DeviceWrapper*, 2> { { &inputWrapper, &outputWrapper } }; }
 
+    int getIndexOfDevice (bool asInput) const
+    {
+        return asInput ? inputWrapper.getIndexOfDevice (true)
+                       : outputWrapper.getIndexOfDevice (false);
+    }
+
     StringArray getOutputChannelNames() override        { return outputWrapper.getChannelNames(); }
     StringArray getInputChannelNames()  override        { return inputWrapper .getChannelNames(); }
     BigInteger getActiveOutputChannels() const override { return outputWrapper.getActiveChannels(); }
@@ -1469,46 +1475,16 @@ public:
 
     Array<double> getAvailableSampleRates() override
     {
-        Array<double> commonRates;
-        bool first = true;
-
-        for (auto& d : getDeviceWrappers())
-        {
-            auto rates = d->getAvailableSampleRates();
-
-            if (first)
-            {
-                first = false;
-                commonRates = rates;
-            }
-            else
-            {
-                commonRates.removeValuesNotIn (rates);
-            }
-        }
+        auto commonRates = inputWrapper.getAvailableSampleRates();
+        commonRates.removeValuesNotIn (outputWrapper.getAvailableSampleRates());
 
         return commonRates;
     }
 
     Array<int> getAvailableBufferSizes() override
     {
-        Array<int> commonSizes;
-        bool first = true;
-
-        for (auto& d : getDeviceWrappers())
-        {
-            auto sizes = d->getAvailableBufferSizes();
-
-            if (first)
-            {
-                first = false;
-                commonSizes = sizes;
-            }
-            else
-            {
-                commonSizes.removeValuesNotIn (sizes);
-            }
-        }
+        auto commonSizes = inputWrapper.getAvailableBufferSizes();
+        commonSizes.removeValuesNotIn (outputWrapper.getAvailableBufferSizes());
 
         return commonSizes;
     }
@@ -1520,22 +1496,12 @@ public:
 
     int getCurrentBitDepth() override
     {
-        int depth = 32;
-
-        for (auto& d : getDeviceWrappers())
-            depth = jmin (depth, d->getCurrentBitDepth());
-
-        return depth;
+        return jmin (32, inputWrapper.getCurrentBitDepth(), outputWrapper.getCurrentBitDepth());
     }
 
     int getDefaultBufferSize() override
     {
-        int size = 0;
-
-        for (auto& d : getDeviceWrappers())
-            size = jmax (size, d->getDefaultBufferSize());
-
-        return size;
+        return jmax (0, inputWrapper.getDefaultBufferSize(), outputWrapper.getDefaultBufferSize());
     }
 
     AudioWorkgroup getWorkgroup() const override
@@ -2099,7 +2065,8 @@ private:
             if (target != nullptr)
                 target->audioDeviceStopped();
 
-            error = true;
+            // The audio device may stop because it's about to be restarted with new settings.
+            // Stopping the device doesn't necessarily count as an error.
         }
 
         void audioDeviceError (const String& errorMessage) override
@@ -2238,9 +2205,7 @@ public:
             return d->getIndexOfDevice (asInput);
 
         if (auto* d = dynamic_cast<AudioIODeviceCombiner*> (device))
-            for (auto* dev : d->getDeviceWrappers())
-                if (const auto index = dev->getIndexOfDevice (asInput); index >= 0)
-                    return index;
+            return d->getIndexOfDevice (asInput);
 
         return -1;
     }
