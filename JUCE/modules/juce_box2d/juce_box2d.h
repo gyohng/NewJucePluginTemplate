@@ -35,7 +35,7 @@
 
   ID:                 juce_box2d
   vendor:             juce
-  version:            7.0.9
+  version:            7.0.11
   name:               JUCE wrapper for the Box2D physics engine
   description:        The Box2D physics engine and some utility classes.
   website:            http://www.juce.com/juce
@@ -61,7 +61,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wconversion",
                                      "-Wmaybe-uninitialized",
                                      "-Wshadow-field",
                                      "-Wsign-conversion",
-                                     "-Wzero-as-null-pointer-constant")
+                                     "-Wzero-as-null-pointer-constant",
+                                     "-Wsuggest-override")
 
 #include <climits>
 #include <cfloat>

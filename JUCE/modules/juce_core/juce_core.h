@@ -32,7 +32,7 @@
 
   ID:                 juce_core
   vendor:             juce
-  version:            7.0.9
+  version:            7.0.11
   name:               JUCE core classes
   description:        The essential set of basic JUCE classes, as required by all the other JUCE modules. Includes text, container, memory, threading and i/o functionality.
   website:            http://www.juce.com/juce
@@ -285,6 +285,7 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "misc/juce_ConsoleApplication.h"
 #include "containers/juce_Variant.h"
 #include "containers/juce_NamedValueSet.h"
+#include "javascript/juce_JSON.h"
 #include "containers/juce_DynamicObject.h"
 #include "containers/juce_HashMap.h"
 #include "containers/juce_FixedSizeFunction.h"
@@ -309,7 +310,6 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "files/juce_WildcardFileFilter.h"
 #include "streams/juce_FileInputSource.h"
 #include "logging/juce_FileLogger.h"
-#include "javascript/juce_JSON.h"
 #include "javascript/juce_JSONUtils.h"
 #include "serialisation/juce_Serialisation.h"
 #include "javascript/juce_JSONSerialisation.h"
@@ -353,6 +353,8 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "memory/juce_Reservoir.h"
 #include "files/juce_AndroidDocument.h"
 #include "streams/juce_AndroidDocumentInputSource.h"
+
+#include "detail/juce_CallbackListenerList.h"
 
 #if JUCE_CORE_INCLUDE_OBJC_HELPERS && (JUCE_MAC || JUCE_IOS)
  #include "native/juce_CFHelpers_mac.h"

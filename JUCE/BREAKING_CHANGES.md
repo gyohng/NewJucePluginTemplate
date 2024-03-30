@@ -1,10 +1,258 @@
 # JUCE breaking changes
 
+# Version 7.0.10
+
+## Change
+
+The signatures of some member functions of ci::Device have been changed:
+- sendPropertyGetInquiry
+- sendPropertySetInquiry
+
+The signature of ci::PropertyHost::sendSubscriptionUpdate has also changed.
+
+The following member functions of ci::Device have been replaced with new
+alternatives:
+- sendPropertySubscriptionStart
+- sendPropertySubscriptionEnd
+- getOngoingSubscriptionsForMuid
+- countOngoingPropertyTransactions
+
+The enum field PropertyExchangeResult::Error::invalidPayload has been removed.
+
+**Possible Issues**
+
+Code that uses any of these symbols will fail to compile until it is updated.
+
+**Workaround**
+
+Device::sendPropertyGetInquiry, Device::sendPropertySetInquiry, and
+PropertyHost::sendSubscriptionUpdate all now return an optional RequestKey
+instead of an ErasedScopeGuard. Requests started via any of these functions may
+be cancelled by the request's RequestKey to the new function
+Device::abortPropertyRequest. The returned RequestKey may be null, indicating a
+failure to send the request.
+
+countOngoingPropertyTransactions has been replaced by getOngoingRequests,
+which returns the RequestKeys of all ongoing requests. To find the number of
+transactions, use the size of the returned container.
+
+sendPropertySubscriptionStart has been replaced by beginSubscription.
+sendPropertySubscriptionEnd has been replaced by endSubscription.
+The new functions no longer take callbacks. Instead, to receive notifications
+when a subscription starts or ends, override
+DeviceListener::propertySubscriptionChanged.
+
+getOngoingSubscriptionsForMuid is replaced by multiple functions.
+getOngoingSubscriptions returns SubscriptionKeys for all of the subscriptions
+currently in progress, which may be filtered based on SubscriptionKey::getMuid.
+The subscribeId assigned to a particular SubscriptionKey can be found using
+getSubscribeIdForKey, and the subscribed resource can be found using
+getResourceForKey.
+
+It's possible that the initial call to beginSubscription may not be able to
+start the subscription, e.g. if the remote device is busy and request a retry.
+In this case, the request is cached. If you use subscriptions, then you
+should call sendPendingMessages periodically to flush any messages that may
+need to be retried.
+
+There is no need to check for the invalidPayload error when processing
+property exchange results.
+
+**Rationale**
+
+Keeping track of subscriptions is quite involved, as the initial request to
+begin a subscription might not be accepted straight away. The device may not
+initially have enough vacant slots to send the request, or responder might
+request a retry if it is too busy to process the request. The ci::Device now
+caches requests when necessary, allowing them to be retried in the future.
+This functionality couldn't be implemented without modifying the old interface.
+
+Replacing ErasedScopeGuards with Keys makes lifetime handling a bit easier.
+It's no longer necessary to store or manually release scope guards for requests
+that don't need to be cancelled. The new Key types are also a bit more
+typesafe, and allow for simple queries of the transaction that created the key.
+
+
+## Change
+
+The ListenerList::Iterator class has been removed.
+
+**Possible Issues**
+
+Any code directly referencing the ListenerList::Iterator will fail to compile.
+
+**Workaround**
+
+In most cases there should be a public member function that does the required
+job, for example, call, add, remove, or clear. In other cases you can access the
+raw array of listeners to iterate through them by calling getListeners().
+
+**Rationale**
+
+Iterating through the listeners using the ListenerList::Iterator could in a
+number of cases lead to surprising results and undefined behavior.
+
+
+## Change
+
+The background colour of the Toolbar::CustomisationDialog has been changed from
+white to a new, customisable value, that matches Toolbar::backgroundColourId by
+default.
+
+**Possible Issues**
+
+User interfaces that use Toolbar::CustomisationDialog will render differently.
+
+**Workaround**
+
+You can customise the new colour using LookAndFeel::setColour() using
+Toolbar::customisationDialogBackgroundColourId.
+
+**Rationale**
+
+Previously there was no way to customise the dialog's background colour and the
+fixed white colour was inappropriate for most user interfaces.
+
+
+## Change
+
+>>>>>>> c74b2b1058 (CIDevice: Improve robustness of subscription API)
+ProfileHost::enableProfile and ProfileHost::disableProfile have been combined
+into a single function, ProfileHost::setProfileEnablement.
+
+**Possible Issues**
+
+Code that calls this function will fail to compile until it is updated.
+
+**Workaround**
+
+To enable a profile, call setProfileEnablement with a positive number of
+channels. To disable a profile, call setProfileEnablement with zero channels.
+
+**Rationale**
+
+The new API is simpler, more compact, and more consistent, as it now mirrors
+the signature of Device::sendProfileEnablement.
+
+
+## Change
+
+OpenGLContext::getRenderingScale() has been changed to include the effects of
+AffineTransforms on all platforms.
+
+**Possible Issues**
+
+Applications that use OpenGLContext::getRenderingScale() and also have scaling
+transformations that affect the context component's size may render incorrectly.
+
+**Workaround**
+
+Adjust rendering code by dividing the reported scale with the user specified
+transformation scale, if necessary.
+
+**Rationale**
+
+The previous implementation resulted in inconsistent behaviour between Windows
+and the other platforms. The main intended use-case for getRenderingScale() is
+to help determine the number of physical pixels covered by the context
+component. Since plugin windows will often use AffineTransforms to set up the
+correct rendering scale, it makes sense to include these in the result of
+getRenderingScale().
+
+
+## Change
+
+Components that have setMouseClickGrabsKeyboardFocus() set to false will not
+accept or propagate keyboard focus to parent components due to a mouse click
+event. This is now true even if the mouse click event happens in a child
+component with setMouseClickGrabsKeyboardFocus (true) and
+setWantsKeyboardFocus (false).
+
+**Possible Issues**
+
+Components that rely on child components propagating keyboard focus from a
+mouse click, when those child components have setMouseClickGrabsKeyboardFocus()
+set to false, will no longer grab keyboard focus.
+
+**Workaround**
+
+Add a MouseListener to the component receiving the click and override the
+mouseDown() method in the listener. In the mouseDown() method call
+Component::grabKeyboardFocus() for the component that should be focused.
+
+**Rationale**
+
+The intent of setMouseClickGrabsKeyboardFocus (false) is to reject focus changes
+coming from mouse clicks even if the component is otherwise capable of receiving
+keyboard focus.
+
+The previous behaviour could result in surprising focus changes when a child
+component was clicked. This manifested in the focus seemingly disappearing when
+a PopupMenu item added to a component was clicked.
+
+
+## Change
+
+The NodeID argument to AudioProcessorGraph::addNode() has been changed to take
+a std::optional<NodeID>.
+
+**Possible Issues**
+
+The behavior of any code calling AudioProcessorGraph::addNode(), that explicitly
+passes a default constructed NodeID or a NodeID constructed with a value of 0,
+will change. Previously these values would have been treated as a null value
+resulting in the actual NodeID being automatically determined. These will now
+be treated as requests for an explicit value.
+
+**Workaround**
+
+Either remove the explicit NodeID argument and rely on the default argument or
+pass a std::nullopt instead.
+
+**Rationale**
+
+The previous version prevented users from specifying a NodeID of 0 and resulted
+in unexpected behavior.
+
+
+## Change
+
+The signature of DynamicObject::writeAsJSON() has been changed to accept a
+more extensible JSON::FormatOptions argument.
+
+**Possible Issues**
+
+Code that overrides or calls this function will fail to compile.
+
+**Workaround**
+
+Update the signatures of overriding functions. Use FormatOptions::getIndentLevel()
+and FormatOptions::getMaxDecimalPlaces() as necessary. To find whether the output
+should be multi-line, compare the result of FormatOptions::getSpacing() with
+JSON::Spacing::multiLine.
+
+Callers of the function can construct the new argument type using the old
+arguments accordingly
+
+```
+JSON::FormatOptions{}.withIndentLevel (indentLevel)
+                     .withSpacing (allOnOneLine ? JSON::Spacing::singleLine
+                                                : JSON::Spacing::multiLine)
+                     .withMaxDecimalPlaces (maximumDecimalPlaces);
+```
+
+**Rationale**
+
+The previous signature made it impossible to add new formatting options. Now,
+if we need to add further options in the future, these can be added to the
+FormatOptions type, which will not be a breaking change.
+
+
 # Version 7.0.9
 
 ## Change
 
-CachedValue::operator==() will now emit floating point comparison warnings if 
+CachedValue::operator==() will now emit floating point comparison warnings if
 they are enabled for the project.
 
 **Possible Issues**
@@ -20,7 +268,7 @@ CachedValue::get().
 
 **Rationale**
 
-The JUCE Framework now offers the free-standing exactlyEqual() and 
+The JUCE Framework now offers the free-standing exactlyEqual() and
 approximatelyEqual() functions to clearly express the desired semantics when
 comparing floating point values. These functions are intended to eliminate
 the ambiguity in code-bases regarding these types. However, when such a value

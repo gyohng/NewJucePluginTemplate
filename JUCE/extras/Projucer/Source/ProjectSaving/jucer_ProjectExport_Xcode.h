@@ -34,24 +34,130 @@ constexpr auto* macOSArch_32BitUniversal = "32BitUniversal";
 constexpr auto* macOSArch_64BitUniversal = "64BitUniversal";
 constexpr auto* macOSArch_64Bit          = "64BitIntel";
 
-static constexpr const char* configGuardTemplate = R"(
-if test "$CONFIGURATION" = "$JUCE_CONFIG_NAME"; then :
-$JUCE_GUARDED_SCRIPT
-fi
-)";
+//==============================================================================
+inline String doubleQuoted (const String& text)
+{
+    return text.quoted();
+}
 
-static constexpr const char* copyPluginScriptTemplate = R"(
-if [ -e "$JUCE_INSTALL_PATH$JUCE_PRODUCT_NAME" ]; then :
-  echo "Destination '$JUCE_INSTALL_PATH$JUCE_PRODUCT_NAME' exists, overwriting"
-  rm -rf "$JUCE_INSTALL_PATH$JUCE_PRODUCT_NAME"
-fi
-mkdir -p "$JUCE_INSTALL_PATH"
-cp -r "$JUCE_SOURCE_BUNDLE" "$JUCE_INSTALL_PATH"
-)";
+inline String singleQuoted (const String& text)
+{
+    return text.quoted ('\'');
+}
 
-static constexpr const char* adhocCodeSignTemplate = R"(
-xcrun codesign --verify "$JUCE_FULL_PRODUCT_PATH" || xcrun codesign -f -s - "$JUCE_FULL_PRODUCT_PATH"
-)";
+//==============================================================================
+class ScriptBuilder
+{
+public:
+    //==============================================================================
+    ScriptBuilder() = default;
+    explicit ScriptBuilder (int indentIn) : indent (indentIn) {}
+
+    //==============================================================================
+    template <typename... Args>
+    ScriptBuilder& run (const String& command, Args&&... args)
+    {
+        const auto joined = StringArray { command, std::forward<Args> (args)... }.joinIntoString (" ");
+        return echo ("Running " + joined).insertLine (joined);
+    }
+
+    ScriptBuilder& echo (const String& text)
+    {
+        return insertLine ("echo " + text.replace ("\"", "\\\""));
+    }
+
+    ScriptBuilder& remove (const String& path)
+    {
+        return run ("rm -rf", doubleQuoted (path));
+    }
+
+    ScriptBuilder& copy (const String& src, const String& dst)
+    {
+        return run ("ditto", doubleQuoted (src), doubleQuoted (dst));
+    }
+
+    ScriptBuilder& set (const String& variableName, const String& defaultValue = singleQuoted (""))
+    {
+        return insertLine (variableName + "=" + doubleQuoted (defaultValue));
+    }
+
+    //==============================================================================
+    ScriptBuilder& ifThen (const String& condition, const String& then)
+    {
+        jassert (then.isNotEmpty());
+        return insertLine ("if [[ " + condition + " ]]; then")
+              .insertScript (ScriptBuilder { indent + 1 }.insertScript (then).toString())
+              .insertLine ("fi")
+              .insertLine();
+    }
+
+    ScriptBuilder& ifCompare (const String& lhs, const String& rhs, const String& comparison, const String& then)
+    {
+        return ifThen (StringArray { doubleQuoted (lhs), comparison, doubleQuoted (rhs) }.joinIntoString (" "), then);
+    }
+
+    ScriptBuilder& ifEqual (const String& lhs, const String& rhs, const String& then)
+    {
+        return ifCompare (lhs, rhs, "==", then);
+    }
+
+    ScriptBuilder& ifSet (const String& variable, const String& then)
+    {
+        return ifThen ("-n " + doubleQuoted ("${" + variable + "-}"), then);
+    }
+
+    //==============================================================================
+    ScriptBuilder& insertLine (const String& line = {})
+    {
+        constexpr auto spacesPerIndent = 2;
+        script.add ((String::repeatedString (" ", spacesPerIndent * indent) + line).trimEnd());
+        return *this;
+    }
+
+    ScriptBuilder& insertLines (const StringArray& lines)
+    {
+        for (const auto& line : lines)
+            insertLine (line);
+
+        return *this;
+    }
+
+    ScriptBuilder& insertScript (const String& s)
+    {
+        return insertLines (StringArray::fromLines (s.trimEnd()));
+    }
+
+    //==============================================================================
+    bool isEmpty() const
+    {
+        return script.isEmpty();
+    }
+
+    String toString() const
+    {
+        return script.joinIntoString ("\n") + "\n";
+    }
+
+    String toStringWithShellOptions (const String& options) const
+    {
+        if (isEmpty())
+            return {};
+
+        return ScriptBuilder{}.insertLine ("set " + options)
+                              .insertLine()
+                              .insertScript (toString())
+                              .toString();
+    }
+
+    String toStringWithDefaultShellOptions() const
+    {
+        return toStringWithShellOptions ("-euo pipefail");
+    }
+
+private:
+    StringArray script;
+    int indent{};
+};
 
 //==============================================================================
 class XcodeProjectExporter final : public ProjectExporter,
@@ -1985,17 +2091,17 @@ public:
         //==============================================================================
         void addShellScriptBuildPhase (const String& phaseName, const String& script)
         {
-            if (script.trim().isNotEmpty())
-            {
-                auto v = addBuildPhase ("PBXShellScriptBuildPhase", {});
-                v.setProperty (Ids::name, phaseName, nullptr);
-                v.setProperty ("alwaysOutOfDate", 1, nullptr);
-                v.setProperty ("shellPath", "/bin/sh", nullptr);
-                v.setProperty ("shellScript", script.replace ("\\", "\\\\")
-                                                    .replace ("\"", "\\\"")
-                                                    .replace ("\r\n", "\\n")
-                                                    .replace ("\n", "\\n"), nullptr);
-            }
+            if (script.trim().isEmpty())
+                return;
+
+            auto v = addBuildPhase ("PBXShellScriptBuildPhase", {});
+            v.setProperty (Ids::name, phaseName, nullptr);
+            v.setProperty ("alwaysOutOfDate", 1, nullptr);
+            v.setProperty ("shellPath", "/bin/sh", nullptr);
+            v.setProperty ("shellScript", script.replace ("\\", "\\\\")
+                                                .replace ("\"", "\\\"")
+                                                .replace ("\r\n", "\\n")
+                                                .replace ("\n", "\\n"), nullptr);
         }
 
         void addCopyFilesPhase (const String& phaseName, const StringArray& files, XcodeCopyFilesDestinationIDs dst)
@@ -2081,12 +2187,17 @@ public:
 
 private:
     //==============================================================================
+    static String replaceHomeTildeInPath (const String& path)
+    {
+        return path.startsWithChar ('~') ? "$(HOME)" + path.substring (1)
+                                         : path;
+    }
+
     static String expandPath (const String& path)
     {
         if (! build_tools::isAbsolutePath (path))  return "$(SRCROOT)/" + path;
-        if (path.startsWithChar ('~'))             return "$(HOME)" + path.substring (1);
 
-        return path;
+        return replaceHomeTildeInPath (path);
     }
 
     static String addQuotesIfRequired (const String& s)
@@ -2216,28 +2327,22 @@ private:
 
             target->addMainBuildProduct();
 
-            if (target->type == XcodeTarget::LV2Helper
-                && project.getEnabledModules().isModuleEnabled ("juce_audio_plugin_client"))
+            if (project.getEnabledModules().isModuleEnabled ("juce_audio_plugin_client"))
             {
-                const auto path = rebaseFromProjectFolderToBuildTarget (getLV2HelperProgramSource());
-                addFile (FileOptions().withRelativePath ({ expandPath (path.toUnixStyle()), path.getRoot() })
-                                      .withSkipPCHEnabled (true)
-                                      .withCompilationEnabled (true)
-                                      .withInhibitWarningsEnabled (true)
-                                      .withCompilerFlags ("-std=c++11")
-                                      .withXcodeTarget (target));
-            }
+                auto getFileOptions = [this, target] (const build_tools::RelativePath& path)
+                {
+                    const auto rebasedPath = rebaseFromProjectFolderToBuildTarget (path);
+                    return FileOptions().withRelativePath ({ replaceHomeTildeInPath (rebasedPath.toUnixStyle()), rebasedPath.getRoot() })
+                                        .withSkipPCHEnabled (true)
+                                        .withCompilationEnabled (true)
+                                        .withInhibitWarningsEnabled (true)
+                                        .withXcodeTarget (target);
+                };
 
-            if (target->type == XcodeTarget::VST3Helper
-                && project.getEnabledModules().isModuleEnabled ("juce_audio_plugin_client"))
-            {
-                const auto path = rebaseFromProjectFolderToBuildTarget (getVST3HelperProgramSource());
-                addFile (FileOptions().withRelativePath ({ expandPath (path.toUnixStyle()), path.getRoot() })
-                                      .withSkipPCHEnabled (true)
-                                      .withCompilationEnabled (true)
-                                      .withInhibitWarningsEnabled (true)
-                                      .withCompilerFlags ("-std=c++17 -fobjc-arc")
-                                      .withXcodeTarget (target));
+                if (target->type == XcodeTarget::LV2Helper)
+                    addFile (getFileOptions (getLV2HelperProgramSource()));
+                else if (target->type == XcodeTarget::VST3Helper)
+                    addFile (getFileOptions (getVST3HelperProgramSource()).withCompilerFlags ("-fobjc-arc"));
             }
 
             auto targetName = String (target->getName());
@@ -2420,38 +2525,30 @@ private:
             // When building LV2 and VST3 plugins on Arm macs, we need to load and run the plugin
             // bundle during a post-build step in order to generate the plugin's supporting files.
             // Arm macs will only load shared libraries if they are signed, but Xcode runs its
-            // signing step after any post-build scripts. As a workaround, we check whether the
-            // plugin is signed and generate an adhoc certificate if necessary, before running
-            // the manifest-generator.
+            // signing step after any post-build scripts. As a workaround, we sign the plugin
+            // using an adhoc certificate.
             if (target->type == XcodeTarget::VST3PlugIn || target->type == XcodeTarget::LV2PlugIn)
             {
-                String script = "set -e\n";
-
-                // Delete manifest if it's left over from an old build
-                if (target->type == XcodeTarget::VST3PlugIn)
-                    script << "rm -f \"$CONFIGURATION_BUILD_DIR/$FULL_PRODUCT_NAME/Contents/moduleinfo.json\"\n";
-
-                // Sign the bundle so that it can be loaded by the manifest generator tools
-                script << String { adhocCodeSignTemplate }.replace ("$JUCE_FULL_PRODUCT_PATH",
-                                                                    "$CONFIGURATION_BUILD_DIR/$FULL_PRODUCT_NAME");
+                auto script = ScriptBuilder{}
+                    .run ("codesign --verbose=4 --force --sign -", doubleQuoted ("${CONFIGURATION_BUILD_DIR}/${FULL_PRODUCT_NAME}"))
+                    .insertLine();
 
                 if (target->type == XcodeTarget::LV2PlugIn)
                 {
                     // Note: LV2 has a non-standard config build dir
-                    script << "\"$CONFIGURATION_BUILD_DIR/../"
-                            + Project::getLV2FileWriterName()
-                            + "\" \"$CONFIGURATION_BUILD_DIR/$FULL_PRODUCT_NAME\"\n";
+                    script.run (doubleQuoted ("${CONFIGURATION_BUILD_DIR}/../" + Project::getLV2FileWriterName()),
+                                doubleQuoted ("${CONFIGURATION_BUILD_DIR}/${FULL_PRODUCT_NAME}"));
                 }
                 else if (target->type == XcodeTarget::VST3PlugIn)
                 {
-                    script << "\"$CONFIGURATION_BUILD_DIR/" << Project::getVST3FileWriterName() << "\" "
-                              "-create "
-                              "-version " << project.getVersionString().quoted() << " "
-                              "-path \"$CONFIGURATION_BUILD_DIR/$FULL_PRODUCT_NAME\" "
-                              "-output \"$CONFIGURATION_BUILD_DIR/$FULL_PRODUCT_NAME/Contents/Resources/moduleinfo.json\"\n";
+                    script.run (doubleQuoted ("${CONFIGURATION_BUILD_DIR}/" + Project::getVST3FileWriterName()),
+                                "-create",
+                                "-version", doubleQuoted (project.getVersionString()),
+                                "-path",    doubleQuoted ("${CONFIGURATION_BUILD_DIR}/${FULL_PRODUCT_NAME}"),
+                                "-output",  doubleQuoted ("${CONFIGURATION_BUILD_DIR}/${FULL_PRODUCT_NAME}/Contents/Resources/moduleinfo.json"));
                 }
 
-                target->addShellScriptBuildPhase ("Update manifest", script);
+                target->addShellScriptBuildPhase ("Update manifest", script.toStringWithDefaultShellOptions());
             }
 
             target->addShellScriptBuildPhase ("Post-build script", getPostBuildScript());
@@ -2464,51 +2561,53 @@ private:
                 && target->type == XcodeTarget::UnityPlugIn)
                 embedUnityScript();
 
-            StringArray copyPluginScript;
+            ScriptBuilder copyPluginStepScript;
 
             for (ConstConfigIterator config (*this); config.next();)
             {
                 auto& xcodeConfig = static_cast<const XcodeBuildConfiguration&> (*config);
                 auto installPath = target->getInstallPathForConfiguration (xcodeConfig);
 
-                if (target->xcodeCopyToProductInstallPathAfterBuild && installPath.isNotEmpty())
-                {
-                    if (installPath.startsWith ("~"))
-                        installPath = installPath.replace ("~", "$(HOME)");
+                if (installPath.isEmpty() || ! target->xcodeCopyToProductInstallPathAfterBuild)
+                    continue;
 
-                    installPath = installPath.replace ("$(HOME)", "$HOME");
+                if (installPath.startsWith ("~"))
+                    installPath = installPath.replace ("~", "$(HOME)");
 
-                    const auto configGuard = String { configGuardTemplate }.replace ("$JUCE_CONFIG_NAME",
-                                                                                     config->getName());
+                installPath = installPath.replace ("$(HOME)", "${HOME}");
 
-                    const auto signScript = String { adhocCodeSignTemplate }.replace ("$JUCE_FULL_PRODUCT_PATH",
-                                                                                      "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}");
+                const auto sourcePlugin = target->type == XcodeTarget::Target::LV2PlugIn
+                                        ? "${TARGET_BUILD_DIR}"
+                                        : "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}";
 
-                    const auto copyScript = [&]
-                    {
-                        const auto base = String { copyPluginScriptTemplate }
-                                              .replace ("$JUCE_CONFIG_NAME", config->getName())
-                                              .replace ("$JUCE_INSTALL_PATH", installPath);
+                const auto copyScript = ScriptBuilder{}
+                        .set ("destinationPlugin", installPath + "/$(basename " + doubleQuoted (sourcePlugin) + ")")
+                        .remove ("${destinationPlugin}")
+                        .copy (sourcePlugin, "${destinationPlugin}");
 
-                        if (target->type == XcodeTarget::Target::LV2PlugIn)
-                        {
-                            return base.replace ("$JUCE_PRODUCT_NAME", "${TARGET_BUILD_DIR##*/}")
-                                       .replace ("$JUCE_SOURCE_BUNDLE", "${TARGET_BUILD_DIR}");
-                        }
+                const auto objectToSignTail = target->type == XcodeTarget::Target::LV2PlugIn
+                                            ? "/$(basename \"${TARGET_BUILD_DIR}\")/${FULL_PRODUCT_NAME}"
+                                            : "/${FULL_PRODUCT_NAME}";
 
-                        return base.replace ("$JUCE_PRODUCT_NAME", "${FULL_PRODUCT_NAME}")
-                                   .replace ("$JUCE_SOURCE_BUNDLE", "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}");
-                    }();
+                const auto codesignScript = ScriptBuilder{}
+                        .ifSet ("CODE_SIGN_ENTITLEMENTS",
+                                R"(entitlementsArg=(--entitlements "${CODE_SIGN_ENTITLEMENTS}"))")
+                        .echo ("Signing Identity: " + doubleQuoted ("${EXPANDED_CODE_SIGN_IDENTITY_NAME}") )
+                        .run ("codesign --verbose=4 --force --sign",
+                              doubleQuoted ("${EXPANDED_CODE_SIGN_IDENTITY}"),
+                              "${entitlementsArg[*]-}",
+                              "${OTHER_CODE_SIGN_FLAGS-}",
+                              doubleQuoted (installPath + objectToSignTail));
 
-                    copyPluginScript.add (configGuard.replace ("$JUCE_GUARDED_SCRIPT", signScript + copyScript));
-                }
+                copyPluginStepScript.ifEqual (doubleQuoted ("${CONFIGURATION}"), doubleQuoted (config->getName()),
+                                              ScriptBuilder{}.insertScript (copyScript.toString())
+                                                             .insertLine()
+                                                             .insertScript (codesignScript.toString())
+                                                             .toString());
             }
 
-            if (! copyPluginScript.isEmpty())
-            {
-                copyPluginScript.insert (0, "set -e");
-                target->addShellScriptBuildPhase ("Plugin Copy Step", copyPluginScript.joinIntoString ("\n"));
-            }
+            if (! copyPluginStepScript.isEmpty())
+                target->addShellScriptBuildPhase ("Plugin Copy Step", copyPluginStepScript.toStringWithDefaultShellOptions());
 
             addTargetObject (*target);
         }
@@ -2762,6 +2861,7 @@ private:
         else
         {
             s.set ("SDKROOT", "macosx" + config.getMacOSBaseSDKString());
+            s.set ("OTHER_CODE_SIGN_FLAGS", "--timestamp");
         }
 
         s.set ("ZERO_LINK", "NO");

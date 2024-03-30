@@ -35,7 +35,7 @@
 
   ID:                 juce_midi_ci
   vendor:             juce
-  version:            7.0.9
+  version:            7.0.11
   name:               JUCE MIDI CI Classes
   description:        Classes facilitating communication via MIDI Capability Inquiry
   website:            http://www.juce.com/juce
@@ -76,6 +76,7 @@
 #include <juce_midi_ci/ci/juce_CIDeviceFeatures.h>
 #include <juce_midi_ci/ci/juce_CIDeviceMessageHandler.h>
 #include <juce_midi_ci/ci/juce_CIDeviceOptions.h>
+#include <juce_midi_ci/ci/juce_CISubscriptionManager.h>
 #include <juce_midi_ci/ci/juce_CIDeviceListener.h>
 #include <juce_midi_ci/ci/juce_CIDevice.h>
 
