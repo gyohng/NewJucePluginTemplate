@@ -167,6 +167,13 @@ public:
             else
                 p->setValueNotifyingHost(json.getProperty(p->paramID, p->getValue()));
         }
+
+        // Required for Ableton to pick the parameter values update
+        updateHostDisplay(
+            ChangeDetails{}
+                .withParameterInfoChanged(true)
+                .withProgramChanged(true)
+        );
     }
 
     bool isBusesLayoutSupported(const BusesLayout &layouts) const override {
