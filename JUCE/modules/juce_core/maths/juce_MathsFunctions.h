@@ -662,7 +662,7 @@ constexpr bool isPowerOfTwo (IntegerType value)
 }
 
 /** Returns the smallest power-of-two which is equal to or greater than the given integer. */
-inline int nextPowerOfTwo (int n) noexcept
+constexpr inline int nextPowerOfTwo (int n) noexcept
 {
     --n;
     n |= (n >> 1);
@@ -700,7 +700,7 @@ constexpr int countNumberOfBits (uint64 n) noexcept
     The divisor must be greater than zero.
 */
 template <typename IntegerType>
-IntegerType negativeAwareModulo (IntegerType dividend, const IntegerType divisor) noexcept
+inline constexpr IntegerType negativeAwareModulo (IntegerType dividend, const IntegerType divisor) noexcept
 {
     jassert (divisor > 0);
     dividend %= divisor;
