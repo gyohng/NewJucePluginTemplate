@@ -776,7 +776,7 @@ public:
     bool appendText (const String& textToAppend,
                      bool asUnicode = false,
                      bool writeUnicodeHeaderBytes = false,
-                     const char* lineEndings = "\r\n") const;
+                     const char* lineEndings = "\n") const;
 
     /** Replaces this file's contents with a given text string.
 
@@ -797,7 +797,7 @@ public:
     bool replaceWithText (const String& textToWrite,
                           bool asUnicode = false,
                           bool writeUnicodeHeaderBytes = false,
-                          const char* lineEndings = "\r\n") const;
+                          const char* lineEndings = "\n") const;
 
     /** Attempts to scan the contents of this file and compare it to another file, returning
         true if this is possible and they match byte-for-byte.
