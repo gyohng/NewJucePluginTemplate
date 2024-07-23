@@ -47,7 +47,11 @@ for platform in win64 win32; do
     mkdir -p $platform
     cd $platform
 
-    cmake -G "Ninja" "-DCMAKE_TOOLCHAIN_FILE=${MYDIR}/../tools/toolchain-clang-$platform.cmake" -DCMAKE_BUILD_TYPE=Release ../..
+    cmake -G "Ninja" \
+        "-DCMAKE_TOOLCHAIN_FILE=${MYDIR}/../tools/toolchain-clang-$platform.cmake" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DUSE_BUILDNUMBER=1 \
+        ../..
     cmake --build . --config Release
 done
 
@@ -67,11 +71,13 @@ if [ -f "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX/${PRODUCT_NAME}.aa
     cp "../win32/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX/${PRODUCT_NAME}.aaxplugin/"Contents/Win32/* "${PRODUCT_NAME}.aaxplugin/Contents/Win32"
 fi
 
+mkdir -p "${PRODUCT_NAME}.vst3/Contents/Resources"
 mkdir -p "${PRODUCT_NAME}.vst3/Contents/x86_64-win"
 mkdir -p "${PRODUCT_NAME}.vst3/Contents/x86-win"
 
 cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"desktop.ini "${PRODUCT_NAME}.vst3/"
 cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"Plugin.ico "${PRODUCT_NAME}.vst3/"
+cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"Contents/Resources/* "${PRODUCT_NAME}.vst3/Contents/Resources"
 cp "../win64/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"Contents/x86_64-win/* "${PRODUCT_NAME}.vst3/Contents/x86_64-win"
 cp "../win32/${CMAKE_PROJECT_NAME}_artefacts/Release/VST3/${PRODUCT_NAME}.vst3/"Contents/x86-win/* "${PRODUCT_NAME}.vst3/Contents/x86-win"
 
