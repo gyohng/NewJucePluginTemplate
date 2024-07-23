@@ -1243,6 +1243,11 @@ public:
     /** */
     std::string toStdString() const;
 
+#if JUCE_CXX17_IS_AVAILABLE
+    /** */
+    std::string_view toStringView() const;
+#endif
+
     //==============================================================================
     /** Creates a String from a UTF-8 encoded buffer.
         If the size is < 0, it'll keep reading until it hits a zero.
