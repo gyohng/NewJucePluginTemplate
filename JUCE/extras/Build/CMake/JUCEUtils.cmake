@@ -396,6 +396,16 @@ endfunction()
 # We use the target preprocessor definitions to work out which JUCE modules should go in the JuceHeader.h.
 function(_juce_write_generate_time_info target)
     _juce_get_module_definitions(${target} OFF module_defs)
+
+    get_target_property(project_version_string ${target} JUCE_VERSION)
+    _juce_version_code(${project_version_string} project_version_hex)
+    
+    set(module_defs ${module_defs}
+        JucePlugin_Version=${project_version_string}
+        JucePlugin_VersionString="${project_version_string}"
+        JucePlugin_VersionCode=${project_version_hex}
+    )
+
     _juce_append_record(defs MODULE_DEFINITIONS ${module_defs})
 
     _juce_append_target_property(defs EXECUTABLE_NAME                     ${target} JUCE_PRODUCT_NAME)
@@ -535,7 +545,18 @@ function(juce_generate_juce_header target)
     endif()
 
     set(juce_header ${juce_library_code}/JuceHeader.h)
-    target_sources(${target} PRIVATE ${juce_header})
+    set(juce_version ${juce_library_code}/JuceVersion.h)
+    target_sources(${target} PRIVATE ${juce_header} ${juce_version})
+
+    get_target_property(project_version_string ${target} JUCE_VERSION)
+    _juce_version_code(${project_version_string} project_version_hex)
+
+    file(GENERATE OUTPUT "${juce_version}" CONTENT "\
+#pragma once\n\
+#define JucePlugin_Version ${project_version_string}\n\
+#define JucePlugin_VersionString \"${project_version_string}\"\n\
+#define JucePlugin_VersionCode ${project_version_hex}\n\
+")
 
     set(defs_file $<GENEX_EVAL:$<TARGET_PROPERTY:${target},JUCE_DEFS_FILE>>)
 
@@ -1438,6 +1459,7 @@ function(_juce_configure_plugin_targets target)
     _juce_set_output_name(${target} $<TARGET_PROPERTY:${target},JUCE_PRODUCT_NAME>_SharedCode)
 
     target_link_libraries(${target} PRIVATE juce::juce_audio_plugin_client)
+    target_link_libraries(${target} PRIVATE juce::juce_audio_plugin_client_utils)
 
     get_target_property(enabled_formats ${target} JUCE_FORMATS)
 
@@ -1497,9 +1519,6 @@ function(_juce_configure_plugin_targets target)
         JucePlugin_EditorRequiresKeyboardFocus=$<BOOL:$<TARGET_PROPERTY:${target},JUCE_EDITOR_WANTS_KEYBOARD_FOCUS>>
         JucePlugin_Name="$<TARGET_PROPERTY:${target},JUCE_PLUGIN_NAME>"
         JucePlugin_Desc="$<TARGET_PROPERTY:${target},JUCE_DESCRIPTION>"
-        JucePlugin_Version=${project_version_string}
-        JucePlugin_VersionString="${project_version_string}"
-        JucePlugin_VersionCode=${project_version_hex}
         JucePlugin_VSTUniqueID=JucePlugin_PluginCode
         JucePlugin_VSTCategory=$<TARGET_PROPERTY:${target},JUCE_VST2_CATEGORY>
         JucePlugin_Vst3Category="${vst3_category_string}"
