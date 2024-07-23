@@ -32,6 +32,11 @@
   ==============================================================================
 */
 
+#ifndef _WINDEF_
+struct HWND__; // Forward or never
+typedef HWND__* HWND;
+#endif
+
 namespace juce
 {
 
