@@ -4,7 +4,6 @@
 
 - All project types require CMake 3.22 or higher.
 - Android targets are not currently supported.
-- WebView2 on Windows via JUCE_USE_WIN_WEBVIEW2 flag in juce_gui_extra is not currently supported.
 
 Most system package managers have packages for CMake, but we recommend using the most recent release
 from https://cmake.org/download. You should always use a CMake that's newer than your build
@@ -232,6 +231,15 @@ option is enabled, which may improve build times for established products that u
 handle plugin bundle structures, icons, plists, and so on. If this option is enabled, then
 `JUCE_ENABLE_MODULE_SOURCE_GROUPS` will have no effect.
 
+#### `JUCE_WEBVIEW2_PACKAGE_LOCATION`
+
+You can ask JUCE to link the WebView2 library statically to your target on Windows, by specifying 
+the `NEEDS_WEBVIEW2` option when creating your target. In this case JUCE will search for the 
+WebView2 package on your system. The default search location is 
+`%userprofile%\AppData\Local\PackageManagement\NuGet\Packages`. This location can be overriden by
+specifying this option. The provided location should contain the `*Microsoft.Web.WebView2*` 
+directory.
+
 ### Functions
 
 #### `juce_add_<target>`
@@ -405,6 +413,11 @@ attributes directly to these creation functions, rather than adding them later.
 - On Linux, JUCE may or may not need to link to Webkit depending on the compile definitions that
   are set on a JUCE target. By default, we don't link Webkit because you might not need it, but
   if you get linker or include errors that reference Webkit, just set this argument to `TRUE`.
+
+`NEEDS_WEBVIEW2`
+- On Windows, JUCE may or may not need to link to WebView2 depending on the compile definitions that
+  are set on a JUCE target. By default, we don't link WebView2 because you might not need it, but
+  if you get linker or include errors that reference WebView2, just set this argument to `TRUE`.
 
 `NEEDS_STORE_KIT`
 - On macOS, JUCE may or may not need to link to StoreKit depending on the compile definitions that

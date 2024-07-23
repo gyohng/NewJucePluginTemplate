@@ -10,10 +10,6 @@
 #include <cmath>
 #include <cstddef>
 
-#if !defined (MAC_OS_X_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_11_0
-#define kAudioUnitErr_InvalidParameterValue -66743
-#endif
-
 #define CATCH_EXCEPTIONS_IN_RENDER_METHODS TARGET_OS_OSX // NOLINT
 #define HAVE_MUSICDEVICE_PREPARE_RELEASE TARGET_OS_OSX   // NOLINT
 

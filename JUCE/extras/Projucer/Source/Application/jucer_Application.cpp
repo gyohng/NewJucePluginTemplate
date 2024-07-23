@@ -1,24 +1,33 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2022 - Raw Material Software Limited
+   This file is part of the JUCE framework.
+   Copyright (c) Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
+   JUCE is an open source framework subject to commercial or open source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
-   Agreement and JUCE Privacy Policy.
+   By downloading, installing, or using the JUCE framework, or combining the
+   JUCE framework with any other source code, object code, content or any other
+   copyrightable work, you agree to the terms of the JUCE End User Licence
+   Agreement, and all incorporated terms including the JUCE Privacy Policy and
+   the JUCE Website Terms of Service, as applicable, which will bind you. If you
+   do not agree to the terms of these agreements, we will not license the JUCE
+   framework to you, and you must discontinue the installation or download
+   process and cease use of the JUCE framework.
 
-   End User License Agreement: www.juce.com/juce-7-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE Privacy Policy: https://juce.com/juce-privacy-policy
+   JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   Or:
 
-   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
-   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
-   DISCLAIMED.
+   You may also use this code under the terms of the AGPLv3:
+   https://www.gnu.org/licenses/agpl-3.0.en.html
+
+   THE JUCE FRAMEWORK IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL
+   WARRANTIES, WHETHER EXPRESSED OR IMPLIED, INCLUDING WARRANTY OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.
 
   ==============================================================================
 */
@@ -152,7 +161,6 @@ void ProjucerApplication::handleAsyncUpdate()
 
 void ProjucerApplication::doBasicApplicationSetup()
 {
-    licenseController = std::make_unique<LicenseController>();
     LookAndFeel::setDefaultLookAndFeel (&lookAndFeel);
     initCommandManager();
     icons = std::make_unique<Icons>();
@@ -364,11 +372,6 @@ PopupMenu ProjucerApplication::createFileMenu()
     menu.addSeparator();
     menu.addCommandItem (commandManager.get(), CommandIDs::openInIDE);
     menu.addCommandItem (commandManager.get(), CommandIDs::saveAndOpenInIDE);
-    menu.addSeparator();
-
-   #if ! JUCER_ENABLE_GPL_MODE
-    menu.addCommandItem (commandManager.get(), CommandIDs::loginLogout);
-   #endif
 
    #if ! JUCE_MAC
     menu.addCommandItem (commandManager.get(), CommandIDs::showAboutWindow);
@@ -918,8 +921,7 @@ void ProjucerApplication::getAllCommands (Array <CommandID>& commands)
                               CommandIDs::showForum,
                               CommandIDs::showAPIModules,
                               CommandIDs::showAPIClasses,
-                              CommandIDs::showTutorials,
-                              CommandIDs::loginLogout };
+                              CommandIDs::showTutorials };
 
     commands.addArray (ids, numElementsInArray (ids));
 }
@@ -1025,19 +1027,6 @@ void ProjucerApplication::getCommandInfo (CommandID commandID, ApplicationComman
         result.setInfo ("JUCE Tutorials", "Shows the JUCE tutorials in a browser", CommandCategories::general, 0);
         break;
 
-    case CommandIDs::loginLogout:
-        {
-            auto licenseState = licenseController->getCurrentState();
-
-            if (licenseState.isGPL())
-                result.setInfo ("Disable GPL mode", "Disables GPL mode", CommandCategories::general, 0);
-            else
-                result.setInfo (licenseState.isSignedIn() ? String ("Sign out ") + licenseState.username + "..." : String ("Sign in..."),
-                                "Sign out of your JUCE account",
-                                CommandCategories::general, 0);
-            break;
-        }
-
     default:
         JUCEApplication::getCommandInfo (commandID, result);
         break;
@@ -1068,7 +1057,6 @@ bool ProjucerApplication::perform (const InvocationInfo& info)
         case CommandIDs::showAPIModules:            launchModulesBrowser(); break;
         case CommandIDs::showAPIClasses:            launchClassesBrowser(); break;
         case CommandIDs::showTutorials:             launchTutorialsBrowser(); break;
-        case CommandIDs::loginLogout:               doLoginOrLogout(); break;
         default:                                    return JUCEApplication::perform (info);
     }
 
@@ -1299,26 +1287,6 @@ void ProjucerApplication::launchTutorialsBrowser()
 
     if (tutorialsLink.isWellFormed())
         tutorialsLink.launchInDefaultBrowser();
-}
-
-void ProjucerApplication::doLoginOrLogout()
-{
-    if (licenseController->getCurrentState().isSignedIn())
-    {
-        licenseController->resetState();
-    }
-    else
-    {
-        if (auto* window = mainWindowList.getMainWindowWithLoginFormOpen())
-        {
-            window->toFront (true);
-        }
-        else
-        {
-            mainWindowList.createWindowIfNoneAreOpen();
-            mainWindowList.getFrontmostWindow()->showLoginFormOverlay();
-        }
-    }
 }
 
 //==============================================================================

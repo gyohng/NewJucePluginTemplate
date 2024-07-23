@@ -1,18 +1,22 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE examples.
-   Copyright (c) 2022 - Raw Material Software Limited
+   This file is part of the JUCE framework examples.
+   Copyright (c) Raw Material Software Limited
 
    The code included in this file is provided under the terms of the ISC license
    http://www.isc.org/downloads/software-support-policy/isc-license. Permission
-   To use, copy, modify, and/or distribute this software for any purpose with or
+   to use, copy, modify, and/or distribute this software for any purpose with or
    without fee is hereby granted provided that the above copyright notice and
    this permission notice appear in all copies.
 
-   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES,
-   WHETHER EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR
-   PURPOSE, ARE DISCLAIMED.
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+   REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+   AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+   INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+   LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+   OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+   PERFORMANCE OF THIS SOFTWARE.
 
   ==============================================================================
 */
@@ -903,7 +907,7 @@ class MonospaceEditor : public TextEditor
 public:
     MonospaceEditor()
     {
-        setFont (Font { Font::getDefaultMonospacedFontName(), 12, 0 });
+        setFont (FontOptions { Font::getDefaultMonospacedFontName(), 12, 0 });
     }
 
     void onCommit (std::function<void()> fn)
@@ -922,7 +926,7 @@ class MonospaceLabel : public Label
 public:
     MonospaceLabel()
     {
-        setFont (Font { Font::getDefaultMonospacedFontName(), 12, 0 });
+        setFont (FontOptions { Font::getDefaultMonospacedFontName(), 12, 0 });
         setMinimumHorizontalScale (1.0f);
         setInterceptsMouseClicks (false, false);
     }
@@ -1527,7 +1531,7 @@ public:
 
         const auto groupWidth = 100;
         GlyphArrangement groupArrangement;
-        groupArrangement.addJustifiedText ({},
+        groupArrangement.addJustifiedText (FontOptions{},
                                            "Group",
                                            0,
                                            0,
@@ -1567,7 +1571,7 @@ public:
             const auto bounds = buttons[(size_t) i].getBounds();
 
             GlyphArrangement channelArrangement;
-            channelArrangement.addJustifiedText ({},
+            channelArrangement.addJustifiedText (FontOptions{},
                                                  i < 16 ? String (i + 1) : "All",
                                                  0,
                                                  0,

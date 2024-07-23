@@ -1,24 +1,33 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2022 - Raw Material Software Limited
+   This file is part of the JUCE framework.
+   Copyright (c) Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
+   JUCE is an open source framework subject to commercial or open source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
-   Agreement and JUCE Privacy Policy.
+   By downloading, installing, or using the JUCE framework, or combining the
+   JUCE framework with any other source code, object code, content or any other
+   copyrightable work, you agree to the terms of the JUCE End User Licence
+   Agreement, and all incorporated terms including the JUCE Privacy Policy and
+   the JUCE Website Terms of Service, as applicable, which will bind you. If you
+   do not agree to the terms of these agreements, we will not license the JUCE
+   framework to you, and you must discontinue the installation or download
+   process and cease use of the JUCE framework.
 
-   End User License Agreement: www.juce.com/juce-7-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE Privacy Policy: https://juce.com/juce-privacy-policy
+   JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   Or:
 
-   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
-   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
-   DISCLAIMED.
+   You may also use this code under the terms of the AGPLv3:
+   https://www.gnu.org/licenses/agpl-3.0.en.html
+
+   THE JUCE FRAMEWORK IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL
+   WARRANTIES, WHETHER EXPRESSED OR IMPLIED, INCLUDING WARRANTY OF
+   MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, ARE DISCLAIMED.
 
   ==============================================================================
 */
@@ -102,7 +111,7 @@ struct CameraDevice::Pimpl  : public ChangeBroadcaster
             sampleGrabber->SetMediaType (&mt);
         }
 
-        callback = new GrabberCallback (*this);
+        callback = becomeComSmartPtrOwner (new GrabberCallback (*this));
         hr = sampleGrabber->SetCallback (callback, 1);
 
         hr = graphBuilder->AddFilter (sampleGrabberBase, _T ("Sample Grabber"));
@@ -135,9 +144,6 @@ struct CameraDevice::Pimpl  : public ChangeBroadcaster
         if (connectFilters (sampleGrabberBase, nullFilter)
               && addGraphToRot())
         {
-            activeImage = Image (Image::RGB, width, height, true);
-            loadingImage = Image (Image::RGB, width, height, true);
-
             openedSuccessfully = true;
         }
     }
@@ -284,39 +290,36 @@ struct CameraDevice::Pimpl  : public ChangeBroadcaster
             }
         }
 
+        Image loadingImage (Image::RGB, width, height, true);
+        const int lineStride = width * 3;
+
         {
-            const int lineStride = width * 3;
-            const ScopedLock sl (imageSwapLock);
+            const Image::BitmapData destData (loadingImage, 0, 0, width, height, Image::BitmapData::writeOnly);
 
-            {
-                loadingImage.duplicateIfShared();
-                const Image::BitmapData destData (loadingImage, 0, 0, width, height, Image::BitmapData::writeOnly);
-
-                for (int i = 0; i < height; ++i)
-                    memcpy (destData.getLinePointer ((height - 1) - i),
-                            buffer + lineStride * i,
-                            (size_t) lineStride);
-            }
-
-            imageNeedsFlipping = true;
+            for (int i = 0; i < height; ++i)
+                memcpy (destData.getLinePointer ((height - 1) - i),
+                        buffer + lineStride * i,
+                        (size_t) lineStride);
         }
 
-        if (listeners.size() > 0)
+        if (! listeners.isEmpty())
             callListeners (loadingImage);
 
         notifyPictureTakenIfNeeded (loadingImage);
 
         sendChangeMessage();
+
+        const ScopedLock sl (imageSwapLock);
+        activeImage = loadingImage;
     }
 
     void drawCurrentImage (Graphics& g, Rectangle<int> area)
     {
-        if (imageNeedsFlipping)
+        const auto imageToDraw = [this]
         {
             const ScopedLock sl (imageSwapLock);
-            std::swap (loadingImage, activeImage);
-            imageNeedsFlipping = false;
-        }
+            return activeImage;
+        }();
 
         Rectangle<int> centred (RectanglePlacement (RectanglePlacement::centred)
                                     .appliedTo (Rectangle<int> (width, height), area));
@@ -326,7 +329,7 @@ struct CameraDevice::Pimpl  : public ChangeBroadcaster
         g.setColour (Colours::black);
         g.fillRectList (borders);
 
-        g.drawImage (activeImage, centred.getX(), centred.getY(),
+        g.drawImage (imageToDraw, centred.getX(), centred.getY(),
                      centred.getWidth(), centred.getHeight(), 0, 0, width, height);
     }
 
@@ -527,8 +530,8 @@ struct CameraDevice::Pimpl  : public ChangeBroadcaster
 
     struct GrabberCallback   : public ComBaseClassHelperBase<ComTypes::ISampleGrabberCB>
     {
-        GrabberCallback (Pimpl& p)
-            : ComBaseClassHelperBase (0), owner (p) {}
+        explicit GrabberCallback (Pimpl& p)
+            : owner (p) {}
 
         JUCE_COMRESULT QueryInterface (REFIID refId, void** result) override
         {
@@ -580,16 +583,15 @@ struct CameraDevice::Pimpl  : public ChangeBroadcaster
     Array<int> widths, heights;
     DWORD graphRegistrationID;
 
-    CriticalSection imageSwapLock;
-    bool imageNeedsFlipping = false;
-    Image loadingImage, activeImage;
-
     bool recordNextFrameTime = false;
     int previewMaxFPS = 60;
 
     JUCE_DECLARE_WEAK_REFERENCEABLE (Pimpl)
 
 private:
+    CriticalSection imageSwapLock;
+    Image activeImage;
+
     void getVideoSizes (ComTypes::IAMStreamConfig* const streamConfig)
     {
         widths.clear();
