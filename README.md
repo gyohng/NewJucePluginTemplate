@@ -29,12 +29,7 @@ JUCE is included in the project as a git subtree, and there's a shell script to 
 
 # AAX Compilation
 
-AAX SDK is not openly available without signing an agreement with Avid. Please check the README file in the `JUCE/sdks` directory for more information.
-
-If the AAX SDK is available and PACE Tools are installed, this template should be able (after some slight configuration) to produce signed ProTools AAX plugin binaries.
-
-I recommend that for private projects, you remove `.gitignore` from the `sdks` directory and commit all downloaded SDK files directly to your repository.
-
+Starting with JUCE8, AAX SDK is shipped with JUCE. However, you won't be able to use it without a signed agreement with Avid and installed PACE Tools. Please check JUCE documentation for more information.
 
 *Have fun,  
  George Yohng*
