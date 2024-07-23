@@ -56,7 +56,7 @@ namespace ModuleInfoTool {
 namespace {
 
 //------------------------------------------------------------------------
-constexpr auto BUILD_INFO = "moduleinfotool 1.0.0 [Built " __DATE__ "]";
+constexpr auto BUILD_INFO = "moduleinfotool 1.0.0";
 
 //------------------------------------------------------------------------
 //-- Options
