@@ -1195,7 +1195,13 @@ function(_juce_set_plugin_target_properties shared_code_target kind)
             XCODE_ATTRIBUTE_LIBRARY_STYLE Bundle
             XCODE_ATTRIBUTE_GENERATE_PKGINFO_FILE YES)
 
-        _juce_create_windows_package(${shared_code_target} ${target_name} vst3 "" x86-win x86_64-win)
+        set(win64platform x86_64-win)
+        # if CMAKE_C_FLAGS contains arm64- anywhere in the middle, then change to arm64-win
+        if(CMAKE_C_FLAGS MATCHES ".*arm64-.*")
+            set(win64platform arm64-win)
+        endif()   
+
+        _juce_create_windows_package(${shared_code_target} ${target_name} vst3 "" x86-win ${win64platform})
 
         set(output_path "${products_folder}/${product_name}.vst3")
 
