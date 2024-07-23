@@ -32,4 +32,8 @@
   ==============================================================================
 */
 
+#ifdef __i386__
+#include <Carbon/Carbon.h>
+#endif
+
 #include "juce_VST3ManifestHelper.cpp"

@@ -412,7 +412,7 @@ public:
                      display: isPre10_11];
         }
 
-        if (! CGSizeEqualToSize (oldViewSize, r.size))
+        if (! CGSizeEqualToSize (NSSizeToCGSize(oldViewSize), NSSizeToCGSize(r.size)))
             [view setNeedsDisplay: true];
     }
 
@@ -970,6 +970,13 @@ public:
 
         drawRectWithContext (cg, r);
     }
+
+#ifdef __i386__
+    void drawRectWithContext (CGContextRef cg, CGRect r)
+    {
+        drawRectWithContext (cg, NSMakeRect(r.origin.x, r.origin.y, r.size.width, r.size.height));
+    }
+#endif
 
     void drawRectWithContext (CGContextRef cg, NSRect r)
     {
