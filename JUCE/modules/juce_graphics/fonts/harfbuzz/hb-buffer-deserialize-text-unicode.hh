@@ -1,5 +1,4 @@
 
-#line 1 "hb-buffer-deserialize-text-unicode.rl"
 /*
  * Copyright © 2013  Google, Inc.
  *
@@ -32,7 +31,6 @@
 #include "hb.hh"
 
 
-#line 36 "hb-buffer-deserialize-text-unicode.hh"
 static const unsigned char _deserialize_text_unicode_trans_keys[] = {
 	0u, 0u, 9u, 117u, 43u, 102u, 48u, 102u, 48u, 57u, 9u, 124u, 9u, 124u, 9u, 124u, 
 	9u, 124u, 0
@@ -162,7 +160,6 @@ static const int deserialize_text_unicode_error = 0;
 static const int deserialize_text_unicode_en_main = 1;
 
 
-#line 79 "hb-buffer-deserialize-text-unicode.rl"
 
 
 static hb_bool_t
@@ -197,12 +194,10 @@ _hb_buffer_deserialize_text_unicode (hb_buffer_t *buffer,
   hb_glyph_info_t info = {0};
   const hb_glyph_position_t pos = {0};
   
-#line 201 "hb-buffer-deserialize-text-unicode.hh"
 	{
 	cs = deserialize_text_unicode_start;
 	}
 
-#line 206 "hb-buffer-deserialize-text-unicode.hh"
 	{
 	int _slen;
 	int _trans;
@@ -228,25 +223,20 @@ _resume:
 
 	switch ( _deserialize_text_unicode_trans_actions[_trans] ) {
 	case 1:
-#line 38 "hb-buffer-deserialize-text-unicode.rl"
 	{
 	hb_memset (&info, 0, sizeof (info));
 }
 	break;
 	case 2:
-#line 51 "hb-buffer-deserialize-text-unicode.rl"
 	{
 	tok = p;
 }
 	break;
 	case 4:
-#line 55 "hb-buffer-deserialize-text-unicode.rl"
 	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
 	break;
 	case 3:
-#line 55 "hb-buffer-deserialize-text-unicode.rl"
 	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
-#line 42 "hb-buffer-deserialize-text-unicode.rl"
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -257,9 +247,7 @@ _resume:
 }
 	break;
 	case 5:
-#line 57 "hb-buffer-deserialize-text-unicode.rl"
 	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-#line 42 "hb-buffer-deserialize-text-unicode.rl"
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -269,7 +257,6 @@ _resume:
 	*end_ptr = p;
 }
 	break;
-#line 273 "hb-buffer-deserialize-text-unicode.hh"
 	}
 
 _again:
@@ -282,9 +269,7 @@ _again:
 	{
 	switch ( _deserialize_text_unicode_eof_actions[cs] ) {
 	case 3:
-#line 55 "hb-buffer-deserialize-text-unicode.rl"
 	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
-#line 42 "hb-buffer-deserialize-text-unicode.rl"
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -295,9 +280,7 @@ _again:
 }
 	break;
 	case 5:
-#line 57 "hb-buffer-deserialize-text-unicode.rl"
 	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-#line 42 "hb-buffer-deserialize-text-unicode.rl"
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -307,14 +290,12 @@ _again:
 	*end_ptr = p;
 }
 	break;
-#line 311 "hb-buffer-deserialize-text-unicode.hh"
 	}
 	}
 
 	_out: {}
 	}
 
-#line 115 "hb-buffer-deserialize-text-unicode.rl"
 
 
   if (pe < orig_pe && *pe == '>')

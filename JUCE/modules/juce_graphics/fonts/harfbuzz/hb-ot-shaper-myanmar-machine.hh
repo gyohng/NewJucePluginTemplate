@@ -1,5 +1,4 @@
 
-#line 1 "hb-ot-shaper-myanmar-machine.rl"
 /*
  * Copyright © 2011,2012  Google, Inc.
  *
@@ -50,7 +49,6 @@ enum myanmar_syllable_type_t {
 };
 
 
-#line 54 "hb-ot-shaper-myanmar-machine.hh"
 #define myanmar_syllable_machine_ex_A 9u
 #define myanmar_syllable_machine_ex_As 32u
 #define myanmar_syllable_machine_ex_C 1u
@@ -77,7 +75,6 @@ enum myanmar_syllable_type_t {
 #define myanmar_syllable_machine_ex_ZWNJ 5u
 
 
-#line 81 "hb-ot-shaper-myanmar-machine.hh"
 static const unsigned char _myanmar_syllable_machine_trans_keys[] = {
 	1u, 41u, 3u, 41u, 5u, 39u, 5u, 8u, 3u, 41u, 3u, 39u, 3u, 39u, 5u, 39u, 
 	5u, 39u, 3u, 39u, 3u, 39u, 3u, 41u, 5u, 39u, 1u, 15u, 3u, 39u, 3u, 39u, 
@@ -420,11 +417,9 @@ static const int myanmar_syllable_machine_error = -1;
 static const int myanmar_syllable_machine_en_main = 0;
 
 
-#line 55 "hb-ot-shaper-myanmar-machine.rl"
 
 
 
-#line 117 "hb-ot-shaper-myanmar-machine.rl"
 
 
 #define found_syllable(syllable_type) \
@@ -443,7 +438,6 @@ find_syllables_myanmar (hb_buffer_t *buffer)
   int cs;
   hb_glyph_info_t *info = buffer->info;
   
-#line 447 "hb-ot-shaper-myanmar-machine.hh"
 	{
 	cs = myanmar_syllable_machine_start;
 	ts = 0;
@@ -451,7 +445,6 @@ find_syllables_myanmar (hb_buffer_t *buffer)
 	act = 0;
 	}
 
-#line 137 "hb-ot-shaper-myanmar-machine.rl"
 
 
   p = 0;
@@ -459,7 +452,6 @@ find_syllables_myanmar (hb_buffer_t *buffer)
 
   unsigned int syllable_serial = 1;
   
-#line 463 "hb-ot-shaper-myanmar-machine.hh"
 	{
 	int _slen;
 	int _trans;
@@ -470,10 +462,8 @@ find_syllables_myanmar (hb_buffer_t *buffer)
 _resume:
 	switch ( _myanmar_syllable_machine_from_state_actions[cs] ) {
 	case 2:
-#line 1 "NONE"
 	{ts = p;}
 	break;
-#line 477 "hb-ot-shaper-myanmar-machine.hh"
 	}
 
 	_keys = _myanmar_syllable_machine_trans_keys + (cs<<1);
@@ -492,43 +482,33 @@ _eof_trans:
 
 	switch ( _myanmar_syllable_machine_trans_actions[_trans] ) {
 	case 6:
-#line 110 "hb-ot-shaper-myanmar-machine.rl"
 	{te = p+1;{ found_syllable (myanmar_consonant_syllable); }}
 	break;
 	case 4:
-#line 111 "hb-ot-shaper-myanmar-machine.rl"
 	{te = p+1;{ found_syllable (myanmar_non_myanmar_cluster); }}
 	break;
 	case 8:
-#line 112 "hb-ot-shaper-myanmar-machine.rl"
 	{te = p+1;{ found_syllable (myanmar_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 3:
-#line 113 "hb-ot-shaper-myanmar-machine.rl"
 	{te = p+1;{ found_syllable (myanmar_non_myanmar_cluster); }}
 	break;
 	case 5:
-#line 110 "hb-ot-shaper-myanmar-machine.rl"
 	{te = p;p--;{ found_syllable (myanmar_consonant_syllable); }}
 	break;
 	case 7:
-#line 112 "hb-ot-shaper-myanmar-machine.rl"
 	{te = p;p--;{ found_syllable (myanmar_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 9:
-#line 113 "hb-ot-shaper-myanmar-machine.rl"
 	{te = p;p--;{ found_syllable (myanmar_non_myanmar_cluster); }}
 	break;
-#line 523 "hb-ot-shaper-myanmar-machine.hh"
 	}
 
 _again:
 	switch ( _myanmar_syllable_machine_to_state_actions[cs] ) {
 	case 1:
-#line 1 "NONE"
 	{ts = 0;}
 	break;
-#line 532 "hb-ot-shaper-myanmar-machine.hh"
 	}
 
 	if ( ++p != pe )
@@ -544,7 +524,6 @@ _again:
 
 	}
 
-#line 145 "hb-ot-shaper-myanmar-machine.rl"
 
 }
 

@@ -1,5 +1,4 @@
 
-#line 1 "hb-ot-shaper-khmer-machine.rl"
 /*
  * Copyright © 2011,2012  Google, Inc.
  *
@@ -48,7 +47,6 @@ enum khmer_syllable_type_t {
 };
 
 
-#line 52 "hb-ot-shaper-khmer-machine.hh"
 #define khmer_syllable_machine_ex_C 1u
 #define khmer_syllable_machine_ex_DOTTEDCIRCLE 11u
 #define khmer_syllable_machine_ex_H 4u
@@ -66,7 +64,6 @@ enum khmer_syllable_type_t {
 #define khmer_syllable_machine_ex_ZWNJ 5u
 
 
-#line 70 "hb-ot-shaper-khmer-machine.hh"
 static const unsigned char _khmer_syllable_machine_trans_keys[] = {
 	5u, 26u, 5u, 26u, 1u, 15u, 5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 
 	5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 1u, 15u, 5u, 26u, 5u, 26u, 
@@ -271,11 +268,9 @@ static const int khmer_syllable_machine_error = -1;
 static const int khmer_syllable_machine_en_main = 21;
 
 
-#line 53 "hb-ot-shaper-khmer-machine.rl"
 
 
 
-#line 102 "hb-ot-shaper-khmer-machine.rl"
 
 
 #define found_syllable(syllable_type) \
@@ -294,7 +289,6 @@ find_syllables_khmer (hb_buffer_t *buffer)
   int cs;
   hb_glyph_info_t *info = buffer->info;
   
-#line 298 "hb-ot-shaper-khmer-machine.hh"
 	{
 	cs = khmer_syllable_machine_start;
 	ts = 0;
@@ -302,7 +296,6 @@ find_syllables_khmer (hb_buffer_t *buffer)
 	act = 0;
 	}
 
-#line 122 "hb-ot-shaper-khmer-machine.rl"
 
 
   p = 0;
@@ -310,7 +303,6 @@ find_syllables_khmer (hb_buffer_t *buffer)
 
   unsigned int syllable_serial = 1;
   
-#line 314 "hb-ot-shaper-khmer-machine.hh"
 	{
 	int _slen;
 	int _trans;
@@ -321,10 +313,8 @@ find_syllables_khmer (hb_buffer_t *buffer)
 _resume:
 	switch ( _khmer_syllable_machine_from_state_actions[cs] ) {
 	case 7:
-#line 1 "NONE"
 	{ts = p;}
 	break;
-#line 328 "hb-ot-shaper-khmer-machine.hh"
 	}
 
 	_keys = _khmer_syllable_machine_trans_keys + (cs<<1);
@@ -343,35 +333,27 @@ _eof_trans:
 
 	switch ( _khmer_syllable_machine_trans_actions[_trans] ) {
 	case 2:
-#line 1 "NONE"
 	{te = p+1;}
 	break;
 	case 8:
-#line 98 "hb-ot-shaper-khmer-machine.rl"
 	{te = p+1;{ found_syllable (khmer_non_khmer_cluster); }}
 	break;
 	case 10:
-#line 96 "hb-ot-shaper-khmer-machine.rl"
 	{te = p;p--;{ found_syllable (khmer_consonant_syllable); }}
 	break;
 	case 11:
-#line 97 "hb-ot-shaper-khmer-machine.rl"
 	{te = p;p--;{ found_syllable (khmer_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 12:
-#line 98 "hb-ot-shaper-khmer-machine.rl"
 	{te = p;p--;{ found_syllable (khmer_non_khmer_cluster); }}
 	break;
 	case 1:
-#line 96 "hb-ot-shaper-khmer-machine.rl"
 	{{p = ((te))-1;}{ found_syllable (khmer_consonant_syllable); }}
 	break;
 	case 3:
-#line 97 "hb-ot-shaper-khmer-machine.rl"
 	{{p = ((te))-1;}{ found_syllable (khmer_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 5:
-#line 1 "NONE"
 	{	switch( act ) {
 	case 2:
 	{{p = ((te))-1;} found_syllable (khmer_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }
@@ -383,27 +365,20 @@ _eof_trans:
 	}
 	break;
 	case 4:
-#line 1 "NONE"
 	{te = p+1;}
-#line 97 "hb-ot-shaper-khmer-machine.rl"
 	{act = 2;}
 	break;
 	case 9:
-#line 1 "NONE"
 	{te = p+1;}
-#line 98 "hb-ot-shaper-khmer-machine.rl"
 	{act = 3;}
 	break;
-#line 398 "hb-ot-shaper-khmer-machine.hh"
 	}
 
 _again:
 	switch ( _khmer_syllable_machine_to_state_actions[cs] ) {
 	case 6:
-#line 1 "NONE"
 	{ts = 0;}
 	break;
-#line 407 "hb-ot-shaper-khmer-machine.hh"
 	}
 
 	if ( ++p != pe )
@@ -419,7 +394,6 @@ _again:
 
 	}
 
-#line 130 "hb-ot-shaper-khmer-machine.rl"
 
 }
 

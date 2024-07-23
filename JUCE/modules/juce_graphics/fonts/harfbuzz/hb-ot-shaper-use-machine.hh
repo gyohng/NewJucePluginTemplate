@@ -1,5 +1,4 @@
 
-#line 1 "hb-ot-shaper-use-machine.rl"
 /*
  * Copyright © 2015  Mozilla Foundation.
  * Copyright © 2015  Google, Inc.
@@ -53,7 +52,6 @@ enum use_syllable_type_t {
 };
 
 
-#line 57 "hb-ot-shaper-use-machine.hh"
 #define use_syllable_machine_ex_B 1u
 #define use_syllable_machine_ex_CGJ 6u
 #define use_syllable_machine_ex_CMAbv 31u
@@ -99,7 +97,6 @@ enum use_syllable_type_t {
 #define use_syllable_machine_ex_ZWNJ 14u
 
 
-#line 103 "hb-ot-shaper-use-machine.hh"
 static const unsigned char _use_syllable_machine_trans_keys[] = {
 	49u, 51u, 0u, 53u, 11u, 53u, 11u, 53u, 1u, 53u, 14u, 48u, 14u, 47u, 14u, 47u, 
 	14u, 47u, 14u, 46u, 14u, 46u, 14u, 14u, 14u, 48u, 14u, 48u, 14u, 48u, 1u, 14u, 
@@ -817,11 +814,9 @@ static const int use_syllable_machine_error = -1;
 static const int use_syllable_machine_en_main = 1;
 
 
-#line 58 "hb-ot-shaper-use-machine.rl"
 
 
 
-#line 184 "hb-ot-shaper-use-machine.rl"
 
 
 #define found_syllable(syllable_type) \
@@ -920,7 +915,6 @@ find_syllables_use (hb_buffer_t *buffer)
   unsigned int act HB_UNUSED;
   int cs;
   
-#line 924 "hb-ot-shaper-use-machine.hh"
 	{
 	cs = use_syllable_machine_start;
 	ts = 0;
@@ -928,12 +922,10 @@ find_syllables_use (hb_buffer_t *buffer)
 	act = 0;
 	}
 
-#line 284 "hb-ot-shaper-use-machine.rl"
 
 
   unsigned int syllable_serial = 1;
   
-#line 937 "hb-ot-shaper-use-machine.hh"
 	{
 	int _slen;
 	int _trans;
@@ -944,10 +936,8 @@ find_syllables_use (hb_buffer_t *buffer)
 _resume:
 	switch ( _use_syllable_machine_from_state_actions[cs] ) {
 	case 3:
-#line 1 "NONE"
 	{ts = p;}
 	break;
-#line 951 "hb-ot-shaper-use-machine.hh"
 	}
 
 	_keys = _use_syllable_machine_trans_keys + (cs<<1);
@@ -966,95 +956,72 @@ _eof_trans:
 
 	switch ( _use_syllable_machine_trans_actions[_trans] ) {
 	case 6:
-#line 1 "NONE"
 	{te = p+1;}
 	break;
 	case 14:
-#line 172 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_virama_terminated_cluster); }}
 	break;
 	case 12:
-#line 173 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_sakot_terminated_cluster); }}
 	break;
 	case 10:
-#line 174 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_standard_cluster); }}
 	break;
 	case 18:
-#line 175 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_number_joiner_terminated_cluster); }}
 	break;
 	case 16:
-#line 176 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_numeral_cluster); }}
 	break;
 	case 8:
-#line 177 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_symbol_cluster); }}
 	break;
 	case 22:
-#line 178 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_hieroglyph_cluster); }}
 	break;
 	case 5:
-#line 179 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 4:
-#line 180 "hb-ot-shaper-use-machine.rl"
 	{te = p+1;{ found_syllable (use_non_cluster); }}
 	break;
 	case 13:
-#line 172 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_virama_terminated_cluster); }}
 	break;
 	case 11:
-#line 173 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_sakot_terminated_cluster); }}
 	break;
 	case 9:
-#line 174 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_standard_cluster); }}
 	break;
 	case 17:
-#line 175 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_number_joiner_terminated_cluster); }}
 	break;
 	case 15:
-#line 176 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_numeral_cluster); }}
 	break;
 	case 7:
-#line 177 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_symbol_cluster); }}
 	break;
 	case 21:
-#line 178 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_hieroglyph_cluster); }}
 	break;
 	case 19:
-#line 179 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 20:
-#line 180 "hb-ot-shaper-use-machine.rl"
 	{te = p;p--;{ found_syllable (use_non_cluster); }}
 	break;
 	case 1:
-#line 177 "hb-ot-shaper-use-machine.rl"
 	{{p = ((te))-1;}{ found_syllable (use_symbol_cluster); }}
 	break;
-#line 1049 "hb-ot-shaper-use-machine.hh"
 	}
 
 _again:
 	switch ( _use_syllable_machine_to_state_actions[cs] ) {
 	case 2:
-#line 1 "NONE"
 	{ts = 0;}
 	break;
-#line 1058 "hb-ot-shaper-use-machine.hh"
 	}
 
 	if ( ++p != pe )
@@ -1070,7 +1037,6 @@ _again:
 
 	}
 
-#line 289 "hb-ot-shaper-use-machine.rl"
 
 }
 

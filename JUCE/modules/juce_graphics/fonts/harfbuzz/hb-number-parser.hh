@@ -1,5 +1,4 @@
 
-#line 1 "hb-number-parser.rl"
 /*
  * Copyright © 2019  Ebrahim Byagowi
  *
@@ -31,7 +30,6 @@
 #include "hb.hh"
 
 
-#line 35 "hb-number-parser.hh"
 static const unsigned char _double_parser_trans_keys[] = {
 	0u, 0u, 43u, 57u, 46u, 57u, 48u, 57u, 43u, 57u, 48u, 57u, 48u, 101u, 48u, 57u, 
 	46u, 101u, 0
@@ -91,7 +89,6 @@ static const int double_parser_error = 0;
 static const int double_parser_en_main = 1;
 
 
-#line 68 "hb-number-parser.rl"
 
 
 /* Works only for n < 512 */
@@ -135,12 +132,10 @@ strtod_rl (const char *p, const char **end_ptr /* IN/OUT */)
 
   int cs;
   
-#line 139 "hb-number-parser.hh"
 	{
 	cs = double_parser_start;
 	}
 
-#line 144 "hb-number-parser.hh"
 	{
 	int _slen;
 	int _trans;
@@ -166,21 +161,17 @@ _resume:
 
 	switch ( _double_parser_trans_actions[_trans] ) {
 	case 1:
-#line 37 "hb-number-parser.rl"
 	{ neg = true; }
 	break;
 	case 4:
-#line 38 "hb-number-parser.rl"
 	{ exp_neg = true; }
 	break;
 	case 2:
-#line 40 "hb-number-parser.rl"
 	{
 	value = value * 10. + ((*p) - '0');
 }
 	break;
 	case 3:
-#line 43 "hb-number-parser.rl"
 	{
 	if (likely (frac <= MAX_FRACT / 10))
 	{
@@ -190,7 +181,6 @@ _resume:
 }
 	break;
 	case 5:
-#line 50 "hb-number-parser.rl"
 	{
 	if (likely (exp * 10 + ((*p) - '0') <= MAX_EXP))
 	  exp = exp * 10 + ((*p) - '0');
@@ -198,7 +188,6 @@ _resume:
 	  exp_overflow = true;
 }
 	break;
-#line 202 "hb-number-parser.hh"
 	}
 
 _again:
@@ -210,7 +199,6 @@ _again:
 	_out: {}
 	}
 
-#line 113 "hb-number-parser.rl"
 
 
   *end_ptr = p;
