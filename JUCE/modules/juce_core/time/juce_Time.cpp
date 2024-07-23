@@ -596,7 +596,7 @@ static int getMonthNumberForCompileDate (const String& m)
         if (m.equalsIgnoreCase (shortMonthNames[i]))
             return i;
 
-    // If you hit this because your compiler has an unusual __DATE__
+    // If you hit this because your compiler has an unusual DATE macro
     // format, let us know so we can add support for it!
     jassertfalse;
     return 0;

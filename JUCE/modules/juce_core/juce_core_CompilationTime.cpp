@@ -35,7 +35,7 @@
 namespace juce
 {
 
-const char* juce_compilationDate = __DATE__;
-const char* juce_compilationTime = __TIME__;
+const char* juce_compilationDate = "Jul 23 2024";
+const char* juce_compilationTime = "00:00:00";
 
 }

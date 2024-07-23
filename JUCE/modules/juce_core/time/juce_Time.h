@@ -378,7 +378,7 @@ public:
     */
     static int64 secondsToHighResolutionTicks (double seconds) noexcept;
 
-    /** Returns a Time based on the value of the __DATE__ macro when this module was compiled */
+    /** Returns a Time based on the value of the DATE macro when this module was compiled */
     static Time getCompilationDate();
 
 private:
