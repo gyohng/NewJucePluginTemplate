@@ -268,7 +268,7 @@ public:
         }
 
         int dir = 0;
-        unsigned int periods = 4;
+        unsigned int periods = 2;
         snd_pcm_uframes_t samplesPerPeriod = (snd_pcm_uframes_t) bufferSize;
 
         if (JUCE_ALSA_FAILED (snd_pcm_hw_params_set_rate_near (handle, hwParams, &sampleRate, nullptr))
