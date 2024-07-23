@@ -26,3 +26,4 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -target arm64-pc-windows-msvc -DWIN32 -D_WIN
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -target arm64-pc-windows-msvc -DWIN32 -D_WIN32 -DWIN64 -D_WIN64")
 set(CMAKE_C_COMPILER_LAUNCHER "${TCFILEDIR}/../tools/ccache.exe")
 set(CMAKE_CXX_COMPILER_LAUNCHER "${TCFILEDIR}/../tools/ccache.exe")
+set(WIN_ARM64 1)

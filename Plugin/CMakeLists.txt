@@ -63,12 +63,10 @@ endif()
 juce_set_vst2_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/modules/juce_audio_processors/format_types/VST3_SDK")
 #juce_set_vst3_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/vst3sdk")
 
-
-if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/aax")
-    juce_set_aax_sdk_path("${CMAKE_CURRENT_LIST_DIR}/../JUCE/sdks/aax")
+set(HAS_AAX 1)
+if (HAS_AAX)
     set(optAAX AAX)
     set(_optAAX _AAX)
-    set(HAS_AAX 1)
 endif()
 
 string(TIMESTAMP thisyear "%Y")
@@ -78,6 +76,12 @@ if (WIN32)
     set(copysym "(C)")
 else()
     set(copysym "©")
+endif()
+
+set(VST3_HELPER TRUE)
+
+if (WIN_ARM64)
+    set(VST3_HELPER FALSE)
 endif()
 
 juce_add_plugin(${TargetName}
@@ -99,6 +103,7 @@ juce_add_plugin(${TargetName}
     PLUGIN_CODE "TMPL"
 
     AAX_IDENTIFIER "com.yohng.plugintemplate.aax"
+    AAX_CATEGORY AAX_ePlugInCategory_Dynamics
 
     HARDENED_RUNTIME_ENABLED TRUE
     HARDENED_RUNTIME_OPTIONS "com.apple.security.device.audio-input"
@@ -109,6 +114,8 @@ juce_add_plugin(${TargetName}
     # check JUCE's File::getContainerForSecurityApplicationGroupIdentifier
     APP_GROUPS_ENABLED TRUE
     APP_GROUP_IDS "group.com.yohng.plugintemplate"
+
+    VST3_AUTO_MANIFEST ${VST3_HELPER}
 
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE # set also to true if IS_SYNTH is true
@@ -131,8 +138,13 @@ target_compile_definitions(${TargetName} PUBLIC
 
 juce_generate_juce_header(${TargetName})
 
+juce_add_binary_data("${TargetName}_resources" SOURCES
+    resources/sample.txt
+)
+
 # Change this to only include the modules you need
 target_link_libraries(${TargetName} PUBLIC
+    "${TargetName}_resources"
     juce::juce_recommended_config_flags
     juce::juce_audio_basics
     juce::juce_audio_devices
@@ -191,9 +203,13 @@ if (WIN32 AND CMAKE_C_COMPILER_ID STREQUAL Clang)
         add_compile_options(-Xclang -triple=i686-pc-win32-msvc)
         add_link_options(-Xclang -triple=i686-pc-win32-msvc)
     endif()
-    if (CLANG_WIN64)
+    if (CLANG_WIN64 AND NOT WIN_ARM64)
         add_compile_options(-Xclang -triple=x86_64-pc-windows-msvc)
         add_link_options(-Xclang -triple=x86_64-pc-windows-msvc)
+    endif()
+    if (CLANG_WIN64 AND WIN_ARM64)
+        add_compile_options(-Xclang -triple=arm64-pc-windows-msvc)
+        add_link_options(-Xclang -triple=arm64-pc-windows-msvc)
     endif()
 
     foreach(ttype "" ${_optAAX} _Standalone _VST _VST3)
@@ -201,8 +217,10 @@ if (WIN32 AND CMAKE_C_COMPILER_ID STREQUAL Clang)
             -O3 -ffast-math -ftree-vectorize
             -fpascal-strings
             -ffunction-sections -fdata-sections
-            -fvisibility=hidden -fvisibility-inlines-hidden
-            -msse4.1)
+            -fvisibility=hidden -fvisibility-inlines-hidden)
+        if (NOT WIN_ARM64)
+            target_compile_options(${TargetName}${ttype} PUBLIC -msse4.1)
+        endif()
     endforeach()
 endif()
 
