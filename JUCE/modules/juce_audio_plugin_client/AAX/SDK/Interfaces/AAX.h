@@ -682,7 +682,7 @@ struct AAX_CMidiStream
 	#include AAX_ALIGN_FILE_END
 #else
     #if defined (__GNUC__)
-        #pragma pack()  // To maintian backwards-compatibility with pre-10 versions of Pro Tools
+        #pragma pack(pop)  // To maintian backwards-compatibility with pre-10 versions of Pro Tools
     #else
 		#include AAX_ALIGN_FILE_BEGIN
         #include AAX_ALIGN_FILE_RESET
