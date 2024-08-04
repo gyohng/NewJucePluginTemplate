@@ -38,11 +38,20 @@ else()
     set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "" FORCE)
 endif()
 
+include(buildoffset.cmake)
+
 if (USE_BUILDNUMBER)
     execute_process(COMMAND git rev-list --count HEAD
         OUTPUT_VARIABLE BUILDNUMBER
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET)
+
+    math(EXPR BUILDNUMBER "${BUILDNUMBER} - ${BUILDNUMBER_OFFSET}")
+    if (BUILDNUMBER GREATER 255)
+        message(FATAL_ERROR 
+            "We ran out of subversions (${BUILDNUMBER} > 255)\n"
+            "Please change BUILDNUMBER_OFFSET and increase the middle version number")
+    endif()
 else()
     set(BUILDNUMBER 9999)
 endif()
