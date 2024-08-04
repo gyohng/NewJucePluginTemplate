@@ -37,6 +37,14 @@ namespace juce
 
 #if ! defined (DOXYGEN) && (JUCE_MAC || JUCE_IOS)
 
+#ifndef MAC_OS_VERSION_11_0
+#define kAudioChannelLayoutTag_Atmos_7_1_4 ((192U<<16) | 12)
+#define kAudioChannelLayoutTag_Atmos_9_1_6 ((193U<<16) | 16)
+#define kAudioChannelLayoutTag_Atmos_5_1_2 ((194U<<16) | 8)
+#define kAudioChannelLayoutTag_Atmos_5_1_4 ((195U<<16) | 10)
+#define kAudioChannelLayoutTag_Atmos_7_1_2 ((196U<<16) | 10)
+#endif
+
 struct CoreAudioLayouts
 {
     //==============================================================================

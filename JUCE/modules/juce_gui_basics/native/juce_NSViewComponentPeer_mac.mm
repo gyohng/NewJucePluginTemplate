@@ -37,6 +37,13 @@
 - (float)deviceDeltaY;
 @end
 
+#ifndef MAC_OS_X_VERSION_10_15
+    #define NSEventTypeSmartMagnify 32
+    #define NSEventTypePressure 34
+    #define NSEventTypeDirectTouch 37
+    #define NSEventTypeChangeMode 38
+#endif
+
 //==============================================================================
 namespace juce
 {
