@@ -265,7 +265,7 @@ Font LookAndFeel_V2::getTextButtonFont (TextButton&, int buttonHeight)
 
 int LookAndFeel_V2::getTextButtonWidthToFitText (TextButton& b, int buttonHeight)
 {
-    return getTextButtonFont (b, buttonHeight).getStringWidth (b.getButtonText()) + buttonHeight;
+    return GlyphArrangement::getStringWidthInt (getTextButtonFont (b, buttonHeight), b.getButtonText()) + buttonHeight;
 }
 
 void LookAndFeel_V2::drawButtonText (Graphics& g, TextButton& button,
@@ -361,7 +361,7 @@ void LookAndFeel_V2::changeToggleButtonWidthToFitText (ToggleButton& button)
 
     Font font (withDefaultMetrics (FontOptions { fontSize }));
 
-    button.setSize (font.getStringWidth (button.getButtonText()) + roundToInt (tickWidth) + 9,
+    button.setSize (GlyphArrangement::getStringWidthInt (font, button.getButtonText()) + roundToInt (tickWidth) + 9,
                     button.getHeight());
 }
 
@@ -883,7 +883,7 @@ void LookAndFeel_V2::getIdealPopupMenuItemSize (const String& text, const bool i
             font.setHeight ((float) standardMenuItemHeight / 1.3f);
 
         idealHeight = standardMenuItemHeight > 0 ? standardMenuItemHeight : roundToInt (font.getHeight() * 1.3f);
-        idealWidth = font.getStringWidth (text) + idealHeight * 2;
+        idealWidth = GlyphArrangement::getStringWidthInt (font, text) + idealHeight * 2;
     }
 }
 
@@ -899,6 +899,22 @@ void LookAndFeel_V2::getIdealPopupMenuItemSizeWithOptions (const String& text,
                                standardMenuItemHeight,
                                idealWidth,
                                idealHeight);
+}
+
+void LookAndFeel_V2::getIdealPopupMenuSectionHeaderSizeWithOptions (const String& text,
+                                                                    int standardMenuItemHeight,
+                                                                    int& idealWidth,
+                                                                    int& idealHeight,
+                                                                    const PopupMenu::Options& options)
+{
+    getIdealPopupMenuItemSizeWithOptions (text,
+                                          false,
+                                          standardMenuItemHeight,
+                                          idealWidth,
+                                          idealHeight,
+                                          options);
+    idealHeight += idealHeight / 2;
+    idealWidth += idealWidth / 4;
 }
 
 void LookAndFeel_V2::drawPopupMenuBackground (Graphics& g, int width, int height)
@@ -1117,8 +1133,7 @@ Font LookAndFeel_V2::getMenuBarFont (MenuBarComponent& menuBar, int /*itemIndex*
 
 int LookAndFeel_V2::getMenuBarItemWidth (MenuBarComponent& menuBar, int itemIndex, const String& itemText)
 {
-    return getMenuBarFont (menuBar, itemIndex, itemText)
-            .getStringWidth (itemText) + menuBar.getHeight();
+    return GlyphArrangement::getStringWidthInt (getMenuBarFont (menuBar, itemIndex, itemText), itemText) + menuBar.getHeight();
 }
 
 void LookAndFeel_V2::drawMenuBarItem (Graphics& g, int width, int height,
@@ -1887,7 +1902,7 @@ void LookAndFeel_V2::drawDocumentWindowTitleBar (DocumentWindow& window, Graphic
     Font font (withDefaultMetrics (FontOptions { (float) h * 0.65f, Font::bold }));
     g.setFont (font);
 
-    int textW = font.getStringWidth (window.getName());
+    int textW = GlyphArrangement::getStringWidthInt (font, window.getName());
     int iconW = 0;
     int iconH = 0;
 
@@ -2137,7 +2152,7 @@ void LookAndFeel_V2::drawGroupComponentOutline (Graphics& g, int width, int heig
     auto textW = text.isEmpty() ? 0
                                 : jlimit (0.0f,
                                           jmax (0.0f, w - cs2 - textEdgeGap * 2),
-                                          (float) f.getStringWidth (text) + textEdgeGap * 2.0f);
+                                          (float) GlyphArrangement::getStringWidthInt (f, text) + textEdgeGap * 2.0f);
     auto textX = cs + textEdgeGap;
 
     if (position.testFlags (Justification::horizontallyCentred))
@@ -2190,8 +2205,9 @@ int LookAndFeel_V2::getTabButtonSpaceAroundImage()
 
 int LookAndFeel_V2::getTabButtonBestWidth (TabBarButton& button, int tabDepth)
 {
-    int width = Font (withDefaultMetrics (FontOptions { (float) tabDepth * 0.6f })).getStringWidth (button.getButtonText().trim())
-                   + getTabButtonOverlap (tabDepth) * 2;
+    int width = GlyphArrangement::getStringWidthInt (withDefaultMetrics (FontOptions { (float) tabDepth * 0.6f }),
+                                                     button.getButtonText().trim())
+              + getTabButtonOverlap (tabDepth) * 2;
 
     if (auto* extraComponent = button.getExtraComponent())
         width += button.getTabbedButtonBar().isVertical() ? extraComponent->getHeight()

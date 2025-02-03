@@ -172,6 +172,50 @@ private:
     JUCE_DECLARE_NON_COPYABLE (MouseListenerList)
 };
 
+class Component::EffectState
+{
+public:
+    explicit EffectState (ImageEffectFilter& i) : effect (&i) {}
+
+    ImageEffectFilter& getEffect() const
+    {
+        return *effect;
+    }
+
+    bool setEffect (ImageEffectFilter& i)
+    {
+        return std::exchange (effect, &i) != &i;
+    }
+
+    void paint (Graphics& g, Component& c, bool ignoreAlphaLevel)
+    {
+        auto scale = g.getInternalContext().getPhysicalPixelScaleFactor();
+        auto scaledBounds = c.getLocalBounds() * scale;
+
+        if (effectImage.getBounds() != scaledBounds)
+            effectImage = Image { c.isOpaque() ? Image::RGB : Image::ARGB, scaledBounds.getWidth(), scaledBounds.getHeight(), false };
+
+        if (! c.isOpaque())
+            effectImage.clear (effectImage.getBounds());
+
+        {
+            Graphics g2 (effectImage);
+            g2.addTransform (AffineTransform::scale ((float) scaledBounds.getWidth()  / (float) c.getWidth(),
+                                                     (float) scaledBounds.getHeight() / (float) c.getHeight()));
+            c.paintComponentAndChildren (g2);
+        }
+
+        Graphics::ScopedSaveState ss (g);
+
+        g.addTransform (AffineTransform::scale (1.0f / scale));
+        effect->applyEffect (effectImage, g, scale, ignoreAlphaLevel ? 1.0f : c.getAlpha());
+    }
+
+private:
+    Image effectImage;
+    ImageEffectFilter* effect;
+};
+
 //==============================================================================
 Component::Component() noexcept
   : componentFlags (0)
@@ -1695,50 +1739,6 @@ void Component::paintComponentAndChildren (Graphics& g)
     paintOverChildren (g);
 }
 
-class Component::EffectState
-{
-public:
-    explicit EffectState (ImageEffectFilter& i) : effect (&i) {}
-
-    ImageEffectFilter& getEffect() const
-    {
-        return *effect;
-    }
-
-    bool setEffect (ImageEffectFilter& i)
-    {
-        return std::exchange (effect, &i) != &i;
-    }
-
-    void paint (Graphics& g, Component& c, bool ignoreAlphaLevel)
-    {
-        auto scale = g.getInternalContext().getPhysicalPixelScaleFactor();
-        auto scaledBounds = c.getLocalBounds() * scale;
-
-        if (effectImage.getBounds() != scaledBounds)
-            effectImage = Image { c.isOpaque() ? Image::RGB : Image::ARGB, scaledBounds.getWidth(), scaledBounds.getHeight(), false };
-
-        if (! c.isOpaque())
-            effectImage.clear (effectImage.getBounds());
-
-        {
-            Graphics g2 (effectImage);
-            g2.addTransform (AffineTransform::scale ((float) scaledBounds.getWidth()  / (float) c.getWidth(),
-                                                     (float) scaledBounds.getHeight() / (float) c.getHeight()));
-            c.paintComponentAndChildren (g2);
-        }
-
-        Graphics::ScopedSaveState ss (g);
-
-        g.addTransform (AffineTransform::scale (1.0f / scale));
-        effect->applyEffect (effectImage, g, scale, ignoreAlphaLevel ? 1.0f : c.getAlpha());
-    }
-
-private:
-    Image effectImage;
-    ImageEffectFilter* effect;
-};
-
 void Component::paintEntireComponent (Graphics& g, bool ignoreAlphaLevel)
 {
     // If sizing a top-level-window and the OS paint message is delivered synchronously
@@ -2226,9 +2226,6 @@ void Component::internalMouseUp (MouseInputSource source,
                                  Time time,
                                  const ModifierKeys oldModifiers)
 {
-    if (flags.mouseDownWasBlocked && isCurrentlyBlockedByAnotherModalComponent())
-        return;
-
     const auto me = makeMouseEvent (source,
                                     relativePointerState,
                                     oldModifiers,
@@ -2241,6 +2238,14 @@ void Component::internalMouseUp (MouseInputSource source,
                                     source.isLongPressOrDrag());
 
     HierarchyChecker checker (this, me);
+
+    if (flags.mouseDownWasBlocked && isCurrentlyBlockedByAnotherModalComponent())
+    {
+        // Global listeners still need to know about the mouse up
+        auto& desktop = Desktop::getInstance();
+        desktop.getMouseListeners().callChecked (checker, [&] (MouseListener& l) { l.mouseUp (checker.eventWithNearestParent()); });
+        return;
+    }
 
     if (flags.repaintOnMouseActivityFlag)
         repaint();

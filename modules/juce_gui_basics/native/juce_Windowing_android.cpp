@@ -1462,6 +1462,11 @@ public:
         return false;
     }
 
+    bool isShowing() const override
+    {
+        return true;
+    }
+
     void setFullScreen (bool shouldBeFullScreen) override
     {
         if (shouldNavBarsBeHidden (shouldBeFullScreen))
@@ -1843,7 +1848,8 @@ public:
     //==============================================================================
     static void handleDoFrameCallback (JNIEnv*, AndroidComponentPeer& t, [[maybe_unused]] int64 frameTimeNanos)
     {
-        t.vBlankListeners.call ([] (auto& l) { l.onVBlank(); });
+        const auto timestampSec = (double) frameTimeNanos / (double) 1'000'000'000;
+        t.callVBlankListeners (timestampSec);
     }
 
     static void handlePaintCallback (JNIEnv* env, AndroidComponentPeer& t, jobject canvas, jobject paint)

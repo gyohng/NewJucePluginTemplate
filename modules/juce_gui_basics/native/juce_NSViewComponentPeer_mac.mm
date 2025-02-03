@@ -129,14 +129,16 @@ static constexpr int translateVirtualToAsciiKeyCode (int keyCode) noexcept
 constexpr int extendedKeyModifier = 0x30000;
 
 //==============================================================================
-class JuceCALayerDelegate final : public ObjCClass<NSObject<CALayerDelegate>>
+struct JuceCALayerDelegateCallback
+{
+    virtual ~JuceCALayerDelegateCallback() = default;
+    virtual void displayLayer (CALayer*) = 0;
+};
+
+class API_AVAILABLE (macos (10.12)) JuceCALayerDelegate final : public ObjCClass<NSObject<CALayerDelegate>>
 {
 public:
-    struct Callback
-    {
-        virtual ~Callback() = default;
-        virtual void displayLayer (CALayer*) = 0;
-    };
+    using Callback = JuceCALayerDelegateCallback;
 
     static NSObject<CALayerDelegate>* construct (Callback* owner)
     {
@@ -176,7 +178,7 @@ private:
 
 //==============================================================================
 class NSViewComponentPeer final : public ComponentPeer,
-                                  private JuceCALayerDelegate::Callback
+                                  private JuceCALayerDelegateCallback
 {
 public:
     NSViewComponentPeer (Component& comp, const int windowStyleFlags, NSView* viewToAttachTo)
@@ -465,6 +467,11 @@ public:
         return [window isMiniaturized];
     }
 
+    bool isShowing() const override
+    {
+        return [window isVisible] && ! isMinimised();
+    }
+
     NSWindowCollectionBehavior getCollectionBehavior (bool forceFullScreen) const
     {
         if (forceFullScreen)
@@ -535,12 +542,20 @@ public:
 
                 if (! isWindowAtPoint (viewWindow, screenPoint))
                     return false;
-
             }
         }
 
-        NSView* v = [view hitTest: NSMakePoint (viewFrame.origin.x + localPos.getX(),
-                                                viewFrame.origin.y + localPos.getY())];
+        const auto pointInSuperview = std::invoke ([&]
+        {
+            const auto local = NSMakePoint (localPos.x, localPos.y);
+
+            if (auto* superview = [view superview])
+                return [view convertPoint: local toView: superview];
+
+            return local;
+        });
+
+        NSView* v = [view hitTest: pointInSuperview];
 
         return trueIfInAChildWindow ? (v != nil)
                                     : (v == view);
@@ -741,7 +756,10 @@ public:
         NSPoint screenPos = [[ev window] convertRectToScreen: NSMakeRect (windowPos.x, windowPos.y, 1.0f, 1.0f)].origin;
 
         if (isWindowAtPoint ([ev window], screenPos))
-            sendMouseEvent (ev);
+        {
+            if (contains (getMousePos (ev, view).roundToInt(), false))
+                sendMouseEvent (ev);
+        }
         else
             // moved into another window which overlaps this one, so trigger an exit
             handleMouseEvent (MouseInputSource::InputSourceType::mouse, MouseInputSource::offscreenMousePos, ModifierKeys::currentModifiers,
@@ -1070,9 +1088,9 @@ public:
         return areAnyWindowsInLiveResize();
     }
 
-    void onVBlank()
+    void onVBlank (double timestampSec)
     {
-        vBlankListeners.call ([] (auto& l) { l.onVBlank(); });
+        callVBlankListeners (timestampSec);
         setNeedsDisplayRectangles();
     }
 
@@ -1444,9 +1462,9 @@ public:
             if (@available (macOS 10.13, *))
                 return NSPasteboardTypeFileURL;
 
-            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+            JUCE_BEGIN_IGNORE_DEPRECATION_WARNINGS
             return (NSString*) kUTTypeFileURL;
-            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+            JUCE_END_IGNORE_DEPRECATION_WARNINGS
         }();
 
         return [NSArray arrayWithObjects: type, (NSString*) kPasteboardTypeFileURLPromise, NSPasteboardTypeString, nil];
@@ -1617,7 +1635,7 @@ public:
 
         const auto handled = [&]() -> bool
         {
-            if (auto* target = findCurrentTextInputTarget())
+            if (findCurrentTextInputTarget() != nullptr)
                 if (const auto* inputContext = [view inputContext])
                     return [inputContext handleEvent: ev] && ! viewCannotHandleEvent;
 
@@ -1753,13 +1771,18 @@ private:
         explicit AsyncRepainter (NSViewComponentPeer& o) : owner (o) {}
         ~AsyncRepainter() override { cancelPendingUpdate(); }
 
-        void markUpdated (const CGDirectDisplayID x)
+        void markUpdated (const CGDirectDisplayID x, double timestampSec)
         {
             {
                 const std::scoped_lock lock { mutex };
 
-                if (std::find (backgroundDisplays.cbegin(), backgroundDisplays.cend(), x) == backgroundDisplays.cend())
-                    backgroundDisplays.push_back (x);
+                if (const auto it = std::find_if (backgroundVBlankEvents.cbegin(),
+                                                  backgroundVBlankEvents.cend(),
+                                                  [&x] (const auto& event) { return event.display == x; });
+                    it == backgroundVBlankEvents.cend())
+                {
+                    backgroundVBlankEvents.push_back ({ x, timestampSec });
+                }
             }
 
             triggerAsyncUpdate();
@@ -1770,20 +1793,28 @@ private:
         {
             {
                 const std::scoped_lock lock { mutex };
-                mainThreadDisplays = backgroundDisplays;
-                backgroundDisplays.clear();
+                mainThreadVBlankEvents = backgroundVBlankEvents;
+                backgroundVBlankEvents.clear();
             }
 
-            for (const auto& display : mainThreadDisplays)
+            for (const auto& event : mainThreadVBlankEvents)
+            {
                 if (auto* peerView = owner.view)
                     if (auto* peerWindow = [peerView window])
-                        if (display == ScopedDisplayLink::getDisplayIdForScreen ([peerWindow screen]))
-                            owner.onVBlank();
+                        if (event.display == ScopedDisplayLink::getDisplayIdForScreen ([peerWindow screen]))
+                            owner.onVBlank (event.timeSec);
+            }
         }
+
+        struct VBlankEvent
+        {
+            CGDirectDisplayID display{};
+            double timeSec{};
+        };
 
         NSViewComponentPeer& owner;
         std::mutex mutex;
-        std::vector<CGDirectDisplayID> backgroundDisplays, mainThreadDisplays;
+        std::vector<VBlankEvent> backgroundVBlankEvents, mainThreadVBlankEvents;
     };
 
     AsyncRepainter asyncRepainter { *this };
@@ -1796,7 +1827,10 @@ private:
     {
         sharedDisplayLinks->registerFactory ([this] (CGDirectDisplayID display)
         {
-            return [this, display] { asyncRepainter.markUpdated (display); };
+            return [this, display] (double timestampSec)
+                   {
+                       asyncRepainter.markUpdated (display, timestampSec);
+                   };
         })
     };
 

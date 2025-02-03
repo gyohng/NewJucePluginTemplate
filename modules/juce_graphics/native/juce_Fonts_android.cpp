@@ -93,7 +93,7 @@ DECLARE_JNI_CLASS (AndroidAssetManager, "android/content/res/AssetManager")
 #undef JNI_CLASS_MEMBERS
 
 // Defined in juce_core
-std::unique_ptr<InputStream> makeAndroidInputStreamWrapper (jobject stream);
+std::unique_ptr<InputStream> makeAndroidInputStreamWrapper (LocalRef<jobject> stream);
 
 struct AndroidCachedTypeface
 {
@@ -176,14 +176,12 @@ public:
         return {};
     }
 
-    JUCE_DECLARE_SINGLETON (MemoryFontCache, true)
+    JUCE_DECLARE_SINGLETON_INLINE (MemoryFontCache, true)
 
 private:
     std::map<Key, Value> cache;
     mutable std::mutex mutex;
 };
-
-JUCE_IMPLEMENT_SINGLETON (MemoryFontCache)
 
 StringArray Font::findAllTypefaceNames()
 {

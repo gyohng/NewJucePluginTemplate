@@ -424,11 +424,9 @@ struct DisplaySettingsChangeCallback final : private DeletedAtShutdown
 
     std::function<void()> forceDisplayUpdate;
 
-    JUCE_DECLARE_SINGLETON (DisplaySettingsChangeCallback, false)
+    JUCE_DECLARE_SINGLETON_INLINE (DisplaySettingsChangeCallback, false)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DisplaySettingsChangeCallback)
 };
-
-JUCE_IMPLEMENT_SINGLETON (DisplaySettingsChangeCallback)
 
 static Rectangle<int> convertDisplayRect (NSRect r, CGFloat mainScreenBottom)
 {
@@ -455,7 +453,7 @@ static Displays::Display getDisplayFromScreen (NSScreen* s, CGFloat& mainScreenB
     NSSize dpi = [[[s deviceDescription] objectForKey: NSDeviceResolution] sizeValue];
     d.dpi = (dpi.width + dpi.height) / 2.0;
 
-   #if defined (MAC_OS_VERSION_12_0) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_12_0
+   #if JUCE_MAC_API_VERSION_CAN_BE_BUILT (12, 0)
     if (@available (macOS 12.0, *))
     {
         const auto safeInsets = [s safeAreaInsets];
@@ -487,7 +485,6 @@ void Displays::findDisplays (const float masterScale)
 static void selectImageForDrawing (const Image& image)
 {
     [NSGraphicsContext saveGraphicsState];
-
     [NSGraphicsContext setCurrentContext: [NSGraphicsContext graphicsContextWithCGContext: juce_getImageContext (image)
                                                                                   flipped: false]];
 }
@@ -520,37 +517,100 @@ static Image createNSWindowSnapshot (NSWindow* nsWindow)
 {
     JUCE_AUTORELEASEPOOL
     {
-        // CGWindowListCreateImage is replaced by functions in the ScreenCaptureKit framework, but
-        // that framework is only available from macOS 12.3 onwards.
-        // A suitable @available check should be added once the minimum build OS is 12.3 or greater,
-        // so that ScreenCaptureKit can be weak-linked.
-       #if defined (MAC_OS_VERSION_14_0) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_14_0
-        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
-        #define JUCE_DEPRECATION_IGNORED 1
+        const auto createImageFromCGImage = [&] (CGImageRef cgImage)
+        {
+            jassert (cgImage != nullptr);
+
+            const auto width = CGImageGetWidth (cgImage);
+            const auto height = CGImageGetHeight (cgImage);
+            const auto cgRect = CGRectMake (0, 0, (CGFloat) width, (CGFloat) height);
+            const Image image (Image::ARGB, (int) width, (int) height, true);
+
+            CGContextDrawImage (juce_getImageContext (image), cgRect, cgImage);
+
+            return image;
+        };
+
+       #if JUCE_MAC_API_VERSION_MIN_REQUIRED_AT_LEAST (14, 4)
+
+        if (dlopen ("/System/Library/Frameworks/ScreenCaptureKit.framework/ScreenCaptureKit", RTLD_LAZY) == nullptr)
+        {
+            DBG (dlerror());
+            jassertfalse;
+            return {};
+        }
+
+        std::promise<Image> result;
+
+        const auto windowId = nsWindow.windowNumber;
+        const auto windowRect = [nsWindow.screen convertRectToBacking: nsWindow.frame].size;
+
+        const auto onSharableContent = [&] (SCShareableContent* content, NSError* contentError)
+        {
+            if (contentError != nullptr)
+            {
+                jassertfalse;
+                result.set_value (Image{});
+                return;
+            }
+
+            const auto window = [&]() -> SCWindow*
+            {
+                for (SCWindow* w in content.windows)
+                    if (w.windowID == windowId)
+                        return w;
+
+                return nullptr;
+            }();
+
+            if (window == nullptr)
+            {
+                jassertfalse;
+                result.set_value (Image{});
+                return;
+            }
+
+            Class contentFilterClass = NSClassFromString (@"SCContentFilter");
+            SCContentFilter* filter = [[[contentFilterClass alloc] initWithDesktopIndependentWindow: window] autorelease];
+
+            Class streamConfigurationClass = NSClassFromString (@"SCStreamConfiguration");
+            SCStreamConfiguration* config = [[[streamConfigurationClass alloc] init] autorelease];
+            config.colorSpaceName = kCGColorSpaceSRGB;
+            config.showsCursor = NO;
+            config.ignoreShadowsSingleWindow = YES;
+            config.captureResolution = SCCaptureResolutionBest;
+            config.ignoreGlobalClipSingleWindow = YES;
+            config.includeChildWindows = NO;
+            config.width = (size_t) windowRect.width;
+            config.height = (size_t) windowRect.height;
+
+            const auto onScreenshot = [&] (CGImageRef screenshot, NSError* screenshotError)
+            {
+                jassert (screenshotError == nullptr);
+                result.set_value (screenshotError == nullptr ? createImageFromCGImage (screenshot) : Image{});
+            };
+
+            Class screenshotManagerClass = NSClassFromString (@"SCScreenshotManager");
+            [screenshotManagerClass captureImageWithFilter: filter
+                                             configuration: config
+                                         completionHandler: onScreenshot];
+        };
+
+        Class shareableContentClass = NSClassFromString (@"SCShareableContent");
+        [shareableContentClass getCurrentProcessShareableContentWithCompletionHandler: onSharableContent];
+
+        return result.get_future().get();
+
+       #else
+
+        JUCE_BEGIN_IGNORE_DEPRECATION_WARNINGS
+        return createImageFromCGImage ((CGImageRef) CFAutorelease (CGWindowListCreateImage (CGRectNull,
+                                                                                            kCGWindowListOptionIncludingWindow,
+                                                                                            (CGWindowID) [nsWindow windowNumber],
+                                                                                            kCGWindowImageBoundsIgnoreFraming)));
+        JUCE_END_IGNORE_DEPRECATION_WARNINGS
+
        #endif
-
-        CGImageRef screenShot = CGWindowListCreateImage (CGRectNull,
-                                                         kCGWindowListOptionIncludingWindow,
-                                                         (CGWindowID) [nsWindow windowNumber],
-                                                         kCGWindowImageBoundsIgnoreFraming);
-
-       #if JUCE_DEPRECATION_IGNORED
-        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
-        #undef JUCE_DEPRECATION_IGNORED
-       #endif
-
-        NSBitmapImageRep* bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage: screenShot];
-
-        Image result (Image::ARGB, (int) [bitmapRep size].width, (int) [bitmapRep size].height, true);
-
-        selectImageForDrawing (result);
-        [bitmapRep drawAtPoint: NSMakePoint (0, 0)];
-        releaseImageAfterDrawing();
-
-        [bitmapRep release];
-        CGImageRelease (screenShot);
-
-        return result;
     }
 }
 

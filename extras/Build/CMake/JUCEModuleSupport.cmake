@@ -44,6 +44,10 @@
 include_guard(GLOBAL)
 cmake_minimum_required(VERSION 3.22)
 
+if(NOT CMAKE_C_COMPILE_OBJECT)
+    message(FATAL_ERROR "A C compiler is required to build JUCE. Add 'C' to your project's LANGUAGES.")
+endif()
+
 # ==================================================================================================
 
 set(JUCE_CMAKE_UTILS_DIR ${CMAKE_CURRENT_LIST_DIR}
@@ -62,13 +66,29 @@ function(_juce_find_target_architecture result)
     set("${result}" "${match_result}" PARENT_SCOPE)
 endfunction()
 
-if((CMAKE_SYSTEM_NAME STREQUAL "Linux") OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD") OR MSYS OR MINGW)
+if((CMAKE_SYSTEM_NAME STREQUAL "Windows")
+   OR (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+   OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD"))
     # If you really need to override the detected arch for some reason,
     # you can configure the build with -DJUCE_TARGET_ARCHITECTURE=<custom arch>
     if(NOT DEFINED JUCE_TARGET_ARCHITECTURE)
         _juce_find_target_architecture(target_arch)
         set(JUCE_TARGET_ARCHITECTURE "${target_arch}"
             CACHE INTERNAL "The target architecture, used to name internal folders in VST3 bundles, and to locate bundled libraries in modules")
+    endif()
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        if ((CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "X86" AND NOT JUCE_TARGET_ARCHITECTURE STREQUAL "i386")
+            OR (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "AMD64"
+                AND NOT (JUCE_TARGET_ARCHITECTURE STREQUAL "i386"
+                         OR JUCE_TARGET_ARCHITECTURE STREQUAL "x86_64")))
+            set(windows_helpers_can_run FALSE)
+        else()
+            set(windows_helpers_can_run TRUE)
+        endif()
+
+        set(JUCE_WINDOWS_HELPERS_CAN_RUN ${windows_helpers_can_run}
+            CACHE INTERNAL "Signals whether plugin related helper utilities can run on the build machine")
     endif()
 endif()
 
@@ -159,7 +179,9 @@ endfunction()
 function(_juce_get_metadata target key out_var)
     get_target_property(content "${target}" "INTERFACE_JUCE_${key}")
 
-    if(NOT "${content}" STREQUAL "content-NOTFOUND")
+    if("${content}" STREQUAL "content-NOTFOUND")
+        set(${out_var} PARENT_SCOPE)
+    else()
         set(${out_var} "${content}" PARENT_SCOPE)
     endif()
 endfunction()
@@ -268,7 +290,9 @@ function(_juce_get_platform_plugin_kinds out)
         endif()
     endif()
 
-    if((CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Windows") AND NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+       AND (CMAKE_SYSTEM_NAME STREQUAL "Darwin"
+            OR (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND JUCE_TARGET_ARCHITECTURE STREQUAL "x86_64")))
         list(APPEND result AAX)
     endif()
 
@@ -357,12 +381,15 @@ endfunction()
 # ==================================================================================================
 
 function(_juce_create_pkgconfig_target name)
+    set(options NOLINK)
+    cmake_parse_arguments(JUCE_ARG "${options}" "" "" ${ARGN})
+
     if(TARGET juce::pkgconfig_${name})
         return()
     endif()
 
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(${name} ${ARGN})
+    pkg_check_modules(${name} ${JUCE_ARG_UNPARSED_ARGUMENTS})
 
     add_library(pkgconfig_${name} INTERFACE)
     add_library(juce::pkgconfig_${name} ALIAS pkgconfig_${name})
@@ -370,9 +397,12 @@ function(_juce_create_pkgconfig_target name)
 
     set(pairs
         "INCLUDE_DIRECTORIES\;INCLUDE_DIRS"
-        "LINK_LIBRARIES\;LINK_LIBRARIES"
         "LINK_OPTIONS\;LDFLAGS_OTHER"
         "COMPILE_OPTIONS\;CFLAGS_OTHER")
+
+    if(NOT JUCE_ARG_NOLINK)
+        list(APPEND pairs "LINK_LIBRARIES\;LINK_LIBRARIES")
+    endif()
 
     foreach(pair IN LISTS pairs)
         list(GET pair 0 key)
@@ -449,6 +479,8 @@ function(juce_add_module module_path)
     set(base_path "${module_parent_path}")
 
     _juce_module_sources("${module_path}" "${base_path}" globbed_sources headers)
+
+    set(all_module_sources)
 
     if(${module_name} STREQUAL "juce_audio_plugin_client")
         list(REMOVE_ITEM headers
@@ -620,12 +652,6 @@ function(juce_add_module module_path)
             endif()
 
             _juce_link_libs_from_metadata("${module_name}" "${metadata_dict}" windowsLibs)
-        elseif(MSYS OR MINGW)
-            if(module_name STREQUAL "juce_gui_basics")
-                target_compile_options(${module_name} INTERFACE "-Wa,-mbig-obj")
-            endif()
-
-            _juce_link_libs_from_metadata("${module_name}" "${metadata_dict}" mingwLibs)
         endif()
     endif()
 

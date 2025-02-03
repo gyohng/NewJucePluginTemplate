@@ -107,7 +107,9 @@ endfunction()
 if((CMAKE_SYSTEM_NAME STREQUAL "Linux") OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD"))
     _juce_create_pkgconfig_target(JUCE_CURL_LINUX_DEPS libcurl)
     _juce_available_pkgconfig_module_or_else(webkit_package_name webkit2gtk-4.1 webkit2gtk-4.0)
-    _juce_create_pkgconfig_target(JUCE_BROWSER_LINUX_DEPS ${webkit_package_name} gtk+-x11-3.0)
+
+    # All browser related libs are loaded dynamically only if they are available during runtime
+    _juce_create_pkgconfig_target(JUCE_BROWSER_LINUX_DEPS NOLINK ${webkit_package_name} gtk+-x11-3.0)
 endif()
 
 # We set up default/fallback copy dirs here. If you need different copy dirs, use
@@ -207,9 +209,9 @@ function(_juce_create_embedded_linux_subprocess_target output_target_name target
     get_target_property(generated_sources_directory ${target} JUCE_GENERATED_SOURCES_DIRECTORY)
 
     if(generated_sources_directory)
-        set(juce_linux_subprocess_helper_binary_dir "${generated_sources_directory}")
+        set(juce_linux_subprocess_helper_binary_dir "${generated_sources_directory}/$<CONFIG>/")
     else()
-        set(juce_linux_subprocess_helper_binary_dir "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper")
+        set(juce_linux_subprocess_helper_binary_dir "${CMAKE_CURRENT_BINARY_DIR}/juce_LinuxSubprocessHelper/$<CONFIG>/")
     endif()
 
     set(binary_header_file  "${juce_linux_subprocess_helper_binary_dir}/juce_LinuxSubprocessHelperBinaryData.h")
@@ -316,7 +318,14 @@ endfunction()
 function(_juce_append_record output key)
     string(ASCII 30 RS)
     string(ASCII 31 US)
-    set(${output} "${${output}}${key}${US}${ARGN}${RS}" PARENT_SCOPE)
+
+    set(prev)
+
+    if(DEFINED "${output}")
+        set(prev "${${output}}")
+    endif()
+
+    set(${output} "${prev}${key}${US}${ARGN}${RS}" PARENT_SCOPE)
 endfunction()
 
 function(_juce_append_target_property output key target property)
@@ -674,6 +683,10 @@ function(_juce_generate_icon source_target dest_target)
 endfunction()
 
 function(_juce_add_xcode_entitlements source_target dest_target)
+    if(NOT APPLE)
+        return()
+    endif()
+
     get_target_property(juce_kind_string ${dest_target} JUCE_TARGET_KIND_STRING)
     get_target_property(input_info_file ${source_target} JUCE_INFO_FILE)
 
@@ -682,7 +695,10 @@ function(_juce_add_xcode_entitlements source_target dest_target)
 
     _juce_execute_juceaide(entitlements "${juce_kind_string}" "${input_info_file}" "${entitlements_file}")
     set_target_properties(${dest_target} PROPERTIES
-        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${entitlements_file}")
+        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
+        "${entitlements_file}"
+        XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME
+        "$<TARGET_PROPERTY:${source_target},JUCE_HARDENED_RUNTIME_ENABLED>")
 endfunction()
 
 function(_juce_configure_bundle source_target dest_target)
@@ -726,7 +742,6 @@ function(_juce_configure_bundle source_target dest_target)
         GENERATED TRUE)
     add_custom_command(TARGET ${dest_target} POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy "${this_output_pkginfo}" "${output_folder}"
-        DEPENDS "${this_output_pkginfo}"
         VERBATIM)
 
     _juce_add_xcode_entitlements(${source_target} ${dest_target})
@@ -752,8 +767,6 @@ function(_juce_configure_bundle source_target dest_target)
     endif()
 
     set_target_properties(${dest_target} PROPERTIES
-        XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME
-            "$<TARGET_PROPERTY:${source_target},JUCE_HARDENED_RUNTIME_ENABLED>"
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY
             "$<TARGET_PROPERTY:${source_target},JUCE_TARGETED_DEVICE_FAMILY>")
 
@@ -843,18 +856,11 @@ endfunction()
 
 # ==================================================================================================
 
-function(_juce_create_windows_package source_target dest_target extension default_icon x32folder x64folder)
-    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        return()
-    endif()
-
+function(_juce_create_windows_package source_target dest_target extension default_icon arch_string)
     get_target_property(products_folder ${dest_target} LIBRARY_OUTPUT_DIRECTORY)
 
     set(product_name $<TARGET_PROPERTY:${source_target},JUCE_PRODUCT_NAME>)
     set(output_folder "${products_folder}/${product_name}.${extension}")
-
-    set(is_x64 $<EQUAL:${CMAKE_SIZEOF_VOID_P},8>)
-    set(arch_string $<IF:${is_x64},${x64folder},${x32folder}>)
 
     set_target_properties(${dest_target}
         PROPERTIES
@@ -871,6 +877,8 @@ function(_juce_create_windows_package source_target dest_target extension defaul
         set(desktop_ini "${output_folder}/desktop.ini")
         set(plugin_ico "${output_folder}/Plugin.ico")
 
+        target_sources(${dest_target} PRIVATE "${desktop_ini}" "${icon_file}")
+
         file(GENERATE OUTPUT "${desktop_ini}"
             CONTENT
             "[.ShellClassInfo]\nIconResource=Plugin.ico,0\nIconFile=Plugin.ico\nIconIndex=0\n")
@@ -878,7 +886,6 @@ function(_juce_create_windows_package source_target dest_target extension defaul
             COMMAND "${CMAKE_COMMAND}" -E copy "${icon_file}" "${plugin_ico}"
             COMMAND attrib +s "${desktop_ini}"
             COMMAND attrib +s "${output_folder}"
-            DEPENDS "${icon_file}" "${desktop_ini}"
             VERBATIM)
     endif()
 endfunction()
@@ -1045,10 +1052,6 @@ function(_juce_add_vst3_manifest_helper_target)
         target_compile_options(juce_vst3_helper PRIVATE -fobjc-arc)
     endif()
 
-    if(MSYS OR MINGW)
-        target_link_options(juce_vst3_helper PRIVATE -municode)
-    endif()
-
     set_target_properties(juce_vst3_helper PROPERTIES BUILD_WITH_INSTALL_RPATH ON)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
@@ -1077,8 +1080,10 @@ function(juce_enable_vst3_manifest_step shared_code_target)
             "juce_enable_copy_plugin_step too.")
     endif()
 
-    if((MSYS OR MINGW) AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-        message(WARNING "VST3 manifest generation is disabled for ${shared_code_target} because the compiler is not supported.")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT JUCE_WINDOWS_HELPERS_CAN_RUN)
+        message(WARNING "VST3 manifest generation is disabled for ${shared_code_target} because a "
+            "${JUCE_TARGET_ARCHITECTURE} manifest helper cannot run on a host system processor detected to be "
+            "${CMAKE_HOST_SYSTEM_PROCESSOR}.")
         return()
     endif()
 
@@ -1094,14 +1099,17 @@ function(juce_enable_vst3_manifest_step shared_code_target)
 
     get_target_property(target_version_string ${shared_code_target} JUCE_VERSION)
 
+    set(ouput_path "${product}/Contents/Resources/moduleinfo.json")
+
     # Use the helper tool to write out the moduleinfo.json
     add_custom_command(TARGET ${target_name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "creating ${ouput_path}"
         COMMAND ${CMAKE_COMMAND} -E make_directory "${product}/Contents/Resources"
         COMMAND juce_vst3_helper
             -create
             -version "${target_version_string}"
             -path "${product}"
-            -output "${product}/Contents/Resources/moduleinfo.json"
+            -output "${ouput_path}"
         VERBATIM)
 
     set_target_properties(${shared_code_target} PROPERTIES _JUCE_VST3_MANIFEST_STEP_ADDED TRUE)
@@ -1186,7 +1194,21 @@ function(_juce_set_plugin_target_properties shared_code_target kind)
             XCODE_ATTRIBUTE_LIBRARY_STYLE Bundle
             XCODE_ATTRIBUTE_GENERATE_PKGINFO_FILE YES)
 
-        _juce_create_windows_package(${shared_code_target} ${target_name} vst3 "" x86-win x86_64-win)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+            if(JUCE_TARGET_ARCHITECTURE STREQUAL "x86_64")
+                set(windows_arch "x86_64")
+            elseif(JUCE_TARGET_ARCHITECTURE STREQUAL "i386")
+                set(windows_arch "x86")
+            elseif(JUCE_TARGET_ARCHITECTURE STREQUAL "arm64ec")
+                set(windows_arch "arm64ec")
+            elseif(JUCE_TARGET_ARCHITECTURE STREQUAL "aarch64")
+                set(windows_arch "arm64")
+            else()
+                message(FATAL_ERROR "Unsupported target architecture for VST3: ${JUCE_TARGET_ARCHITECTURE}")
+            endif()
+
+            _juce_create_windows_package(${shared_code_target} ${target_name} vst3 "" "${windows_arch}-win")
+        endif()
 
         set(output_path "${products_folder}/${product_name}.vst3")
 
@@ -1254,7 +1276,18 @@ function(_juce_set_plugin_target_properties shared_code_target kind)
 
         _juce_init_bundled_aax_sdk()
         get_target_property(default_icon juce_aax_sdk INTERFACE_JUCE_AAX_DEFAULT_ICON)
-        _juce_create_windows_package(${shared_code_target} ${target_name} aaxplugin "${default_icon}" Win32 x64)
+
+        if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+            if(JUCE_TARGET_ARCHITECTURE STREQUAL "x86_64")
+                set(windows_arch "x64")
+            elseif(JUCE_TARGET_ARCHITECTURE STREQUAL "i386")
+                set(windows_arch "Win32")
+            else()
+                message(FATAL_ERROR "Unsupported target architecture for AAX: ${JUCE_TARGET_ARCHITECTURE}")
+            endif()
+
+            _juce_create_windows_package(${shared_code_target} ${target_name} aaxplugin "${default_icon}" "${windows_arch}")
+        endif()
 
         set(output_path "${products_folder}/${product_name}.aaxplugin")
         _juce_set_copy_properties(${shared_code_target} ${target_name} "${output_path}" JUCE_AAX_COPY_DIR)
@@ -1277,9 +1310,9 @@ function(_juce_set_plugin_target_properties shared_code_target kind)
             _juce_set_copy_properties(${shared_code_target} ${target_name} "${output_path}" JUCE_UNITY_COPY_DIR)
         else()
             # On windows and linux, the gui script needs to be copied next to the unity output
+            target_sources(${target_name} PRIVATE "${script_file}")
             add_custom_command(TARGET ${target_name} POST_BUILD
                 COMMAND "${CMAKE_COMMAND}" -E copy "${script_file}" "${products_folder}"
-                DEPENDS "${script_file}"
                 VERBATIM)
 
             _juce_set_copy_properties(${shared_code_target}
@@ -1292,6 +1325,11 @@ function(_juce_set_plugin_target_properties shared_code_target kind)
                 JUCE_UNITY_COPY_DIR)
         endif()
     elseif(kind STREQUAL "LV2")
+        if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT JUCE_WINDOWS_HELPERS_CAN_RUN)
+            message(FATAL_ERROR "You cannot build a ${JUCE_TARGET_ARCHITECTURE} LV2 plug-in on a host "
+                "system processor detected to be ${CMAKE_HOST_SYSTEM_PROCESSOR}.")
+        endif()
+
         set_target_properties(${target_name} PROPERTIES BUNDLE FALSE)
 
         get_target_property(JUCE_LV2URI "${shared_code_target}" JUCE_LV2URI)
@@ -1581,6 +1619,58 @@ endfunction()
 
 # ==================================================================================================
 
+# Only sets result if the categories list contains valid entries
+function(_juce_aax_categories_to_int categories_list result)
+    set(aax_category_strings
+        None
+        EQ
+        Dynamics
+        PitchShift
+        Reverb
+        Delay
+        Modulation
+        Harmonic
+        NoiseReduction
+        Dither
+        SoundField
+        HWGenerators
+        SWGenerators
+        WrappedPlugin
+        Effect
+        placeholder    # These placeholders are because there's a gap between Effect
+        placeholder    # and MIDIEffect in the definition of AAX_EPlugInCategory.
+        MIDIEffect)
+
+    unset(aax_category_int)
+
+    foreach(category_string IN LISTS categories_list)
+        string(REGEX REPLACE "^AAX_[eE]PlugInCategory_" "" category_string "${category_string}")
+        list(FIND aax_category_strings ${category_string} aax_index)
+
+        if(aax_index GREATER_EQUAL 0)
+            if(aax_index EQUAL 0)
+                set(aax_category_bit 0)
+            else()
+                set(aax_category_bit "1 << (${aax_index} - 1)")
+            endif()
+
+            if(NOT DEFINED aax_category_int)
+                set(aax_category_int 0)
+            endif()
+
+            math(EXPR aax_category_int "${aax_category_int} | (${aax_category_bit})")
+        else()
+            message(WARNING "Unrecognised AAX category: '${category_string}'. See the `CMake API.md` entry for `AAX_CATEGORY` for valid values.")
+        endif()
+    endforeach()
+
+    if(DEFINED aax_category_int)
+        set(${result} "${aax_category_int}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+# ==================================================================================================
+
 function(_juce_set_generic_property_if_not_set target property)
     list(LENGTH ARGN num_extra_args)
 
@@ -1760,57 +1850,20 @@ function(_juce_set_fallback_properties target)
 
     # AAX category
 
-    # The order of these strings is important, as the index of each string
-    # will be used to set an appropriate bit in the category bitfield.
-    set(aax_category_strings
-        ePlugInCategory_None
-        ePlugInCategory_EQ
-        ePlugInCategory_Dynamics
-        ePlugInCategory_PitchShift
-        ePlugInCategory_Reverb
-        ePlugInCategory_Delay
-        ePlugInCategory_Modulation
-        ePlugInCategory_Harmonic
-        ePlugInCategory_NoiseReduction
-        ePlugInCategory_Dither
-        ePlugInCategory_SoundField
-        ePlugInCategory_HWGenerators
-        ePlugInCategory_SWGenerators
-        ePlugInCategory_WrappedPlugin
-        ePlugInCategory_Effect)
-
-    if(is_synth)
-        set(default_aax_category ePlugInCategory_SWGenerators)
+    if(is_midi_effect)
+        set(default_aax_category AAX_ePlugInCategory_MIDIEffect)
+    elseif(is_synth)
+        set(default_aax_category AAX_ePlugInCategory_SWGenerators)
     else()
-        set(default_aax_category ePlugInCategory_None)
+        set(default_aax_category AAX_ePlugInCategory_None)
     endif()
 
     _juce_set_property_if_not_set(${target} AAX_CATEGORY ${default_aax_category})
 
-    # Replace AAX category string with its integral representation
     get_target_property(actual_aax_category ${target} JUCE_AAX_CATEGORY)
+    _juce_aax_categories_to_int("${actual_aax_category}" aax_category_int)
 
-    set(aax_category_int "")
-
-    foreach(category_string IN LISTS actual_aax_category)
-        list(FIND aax_category_strings ${category_string} aax_index)
-
-        if(aax_index GREATER_EQUAL 0)
-            if(aax_index EQUAL 0)
-                set(aax_category_bit 0)
-            else()
-                set(aax_category_bit "1 << (${aax_index} - 1)")
-            endif()
-
-            if(aax_category_int STREQUAL "")
-                set(aax_category_int 0)
-            endif()
-
-            math(EXPR aax_category_int "${aax_category_int} | (${aax_category_bit})")
-        endif()
-    endforeach()
-
-    if(NOT aax_category_int STREQUAL "")
+    if(DEFINED aax_category_int)
         set_target_properties(${target} PROPERTIES JUCE_AAX_CATEGORY ${aax_category_int})
     endif()
 
@@ -2081,11 +2134,28 @@ function(juce_add_console_app target)
         target_compile_definitions(${target} PRIVATE _CONSOLE=1)
     endif()
 
+    # When building for iOS, these properties will be read in order to populate
+    # a plist for the app. We probably don't care whether these values are sane;
+    # if we wanted to run on iOS, we'd use juce_gui_app instead.
+    # We clear these explicitly to avoid warnings when configuring with
+    # --warn-uninitialized
+    set_target_properties(${target} PROPERTIES
+        MACOSX_BUNDLE_BUNDLE_NAME           ""
+        MACOSX_BUNDLE_BUNDLE_VERSION        ""
+        MACOSX_BUNDLE_COPYRIGHT             ""
+        MACOSX_BUNDLE_GUI_IDENTIFIER        ""
+        MACOSX_BUNDLE_ICON_FILE             ""
+        MACOSX_BUNDLE_INFO_STRING           ""
+        MACOSX_BUNDLE_LONG_VERSION_STRING   ""
+        MACOSX_BUNDLE_SHORT_VERSION_STRING  "")
+
     _juce_initialise_target(${target} ${ARGN})
 
     if(NOT JUCE_ARG__NO_RESOURCERC)
+        set_target_properties(${target} PROPERTIES JUCE_TARGET_KIND_STRING "ConsoleApp")
         _juce_write_configure_time_info(${target})
         _juce_add_resources_rc(${target} ${target})
+        _juce_add_xcode_entitlements(${target} ${target})
     endif()
 endfunction()
 
@@ -2226,23 +2296,22 @@ function(juce_add_pip header)
         else()
             set(source_main "${JUCE_CMAKE_UTILS_DIR}/PIPAudioProcessor.cpp.in")
 
+            set(formats AAX AU AUv3 LV2 Standalone Unity VST3)
+
             # We add VST2 targets too, if the user has set up those SDKs
-
-            set(extra_formats)
-
             if(TARGET juce_vst2_sdk)
-                list(APPEND extra_formats VST)
+                list(APPEND formats VST)
             endif()
 
-            if(NOT (CMAKE_SYSTEM_NAME MATCHES ".*BSD"))
-                list(APPEND extra_formats VST3)
+            if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT JUCE_WINDOWS_HELPERS_CAN_RUN)
+                list(REMOVE_ITEM formats LV2)
             endif()
 
             # Standalone plugins might want to access the mic
             list(APPEND extra_target_args MICROPHONE_PERMISSION_ENABLED TRUE)
 
             juce_add_plugin(${JUCE_PIP_NAME}
-                FORMATS AU AUv3 LV2 Standalone Unity AAX ${extra_formats}
+                FORMATS ${formats}
                 ${extra_target_args})
         endif()
     elseif(pip_kind STREQUAL "Component")

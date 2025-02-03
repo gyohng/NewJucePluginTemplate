@@ -577,13 +577,9 @@ attributes directly to these creation functions, rather than adding them later.
   in GarageBand.
 
 `AAX_CATEGORY`
-- Should be one or more of: `AAX_ePlugInCategory_None`, `AAX_ePlugInCategory_EQ`,
-  `AAX_ePlugInCategory_Dynamics`, `AAX_ePlugInCategory_PitchShift`, `AAX_ePlugInCategory_Reverb`,
-  `AAX_ePlugInCategory_Delay`, `AAX_ePlugInCategory_Modulation`, `AAX_ePlugInCategory_Harmonic`,
-  `AAX_ePlugInCategory_NoiseReduction`, `AAX_ePlugInCategory_Dither`,
-  `AAX_ePlugInCategory_SoundField`, `AAX_ePlugInCategory_HWGenerators`,
-  `AAX_ePlugInCategory_SWGenerators`, `AAX_ePlugInCategory_WrappedPlugin`,
-  `AAX_EPlugInCategory_Effect`
+- Should be one or more of: `None`, `EQ`, `Dynamics`, `PitchShift`, `Reverb`, `Delay`, `Modulation`,
+  `Harmonic`, `NoiseReduction`, `Dither`, `SoundField`, `HWGenerators`, `SWGenerators`,
+  `WrappedPlugin`, `Effect`, and `MIDIEffect`. You may also add the prefix `AAX_ePlugInCategory_`.
 
 `PLUGINHOST_AU`
 - May be either TRUE or FALSE (defaults to FALSE). If TRUE, will add the preprocessor definition
@@ -799,8 +795,8 @@ CMakeLists in the `modules` directory.
 
 This function parses the PIP metadata block in the provided header, and adds appropriate build
 targets for a console app, GUI app, or audio plugin. For audio plugin targets, it builds as many
-plugin formats as possible. To build AAX or VST2 targets, call `juce_set_aax_sdk_path` and/or
-`juce_set_vst2_sdk_path` *before* calling `juce_add_pip`.
+plugin formats as possible. To build VST2 targets, call `juce_set_vst2_sdk_path` *before* calling
+`juce_add_pip`.
 
 This is mainly provided to build the built-in example projects in the JUCE repo, and for building
 quick proof-of-concept demo apps with minimal set-up. For any use-case more complex than a
