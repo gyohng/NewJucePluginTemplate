@@ -38,7 +38,8 @@ namespace juce
 extern ComponentPeer* createNonRepaintingEmbeddedWindowsPeer (Component&, Component* parent);
 
 //==============================================================================
-class OpenGLContext::NativeContext  : private ComponentPeer::ScaleFactorListener
+class OpenGLContext::NativeContext  : private ComponentPeer::ScaleFactorListener,
+                                      private AsyncUpdater
 {
 public:
     NativeContext (Component& component,
@@ -46,8 +47,9 @@ public:
                    void* contextToShareWithIn,
                    bool /*useMultisampling*/,
                    OpenGLVersion version)
+        : sharedContext (contextToShareWithIn)
     {
-        dummyComponent.reset (new DummyComponent (*this));
+        placeholderComponent.reset (new PlaceholderComponent (*this));
         createNativeWindow (component);
 
         PIXELFORMATDESCRIPTOR pfd;
@@ -83,9 +85,6 @@ public:
                 }
             }
 
-            if (contextToShareWithIn != nullptr)
-                wglShareLists ((HGLRC) contextToShareWithIn, renderContext.get());
-
             component.getTopLevelComponent()->repaint();
             component.repaint();
         }
@@ -93,6 +92,7 @@ public:
 
     ~NativeContext() override
     {
+        cancelPendingUpdate();
         renderContext.reset();
         dc.reset();
 
@@ -105,6 +105,26 @@ public:
     {
         threadAwarenessSetter = std::make_unique<ScopedThreadDPIAwarenessSetter> (nativeWindow->getNativeHandle());
         context = &c;
+
+        if (sharedContext != nullptr)
+        {
+            if (! wglShareLists ((HGLRC) sharedContext, renderContext.get()))
+            {
+                TCHAR messageBuffer[256] = {};
+
+                FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                               nullptr,
+                               GetLastError(),
+                               MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+                               messageBuffer,
+                               (DWORD) numElementsInArray (messageBuffer) - 1,
+                               nullptr);
+
+                DBG (messageBuffer);
+                jassertfalse;
+            }
+        }
+
         return InitResult::success;
     }
 
@@ -118,7 +138,12 @@ public:
     static void deactivateCurrentContext()  { wglMakeCurrent (nullptr, nullptr); }
     bool makeActive() const noexcept        { return isActive() || wglMakeCurrent (dc.get(), renderContext.get()) != FALSE; }
     bool isActive() const noexcept          { return wglGetCurrentContext() == renderContext.get(); }
-    void swapBuffers() const noexcept       { SwapBuffers (dc.get()); }
+
+    void swapBuffers() noexcept
+    {
+        SwapBuffers (dc.get());
+        triggerAsyncUpdate();
+    }
 
     bool setSwapInterval (int numFramesPerSwap)
     {
@@ -171,6 +196,11 @@ public:
 
 private:
     //==============================================================================
+    void handleAsyncUpdate() override
+    {
+        nativeWindow->setVisible (true);
+    }
+
     static void initialiseWGLExtensions (HDC dcIn)
     {
         static bool initialised = false;
@@ -263,9 +293,13 @@ private:
     }
 
     //==============================================================================
-    struct DummyComponent  : public Component
+    struct PlaceholderComponent  : public Component
     {
-        DummyComponent (NativeContext& c) : context (c) {}
+        explicit PlaceholderComponent (NativeContext& c)
+            : context (c)
+        {
+            setOpaque (true);
+        }
 
         // The windowing code will call this when a paint callback happens
         void handleCommandMessage (int) override   { context.triggerRepaint(); }
@@ -295,7 +329,7 @@ private:
             auto* parentHWND = topComp->getWindowHandle();
 
             ScopedThreadDPIAwarenessSetter setter { parentHWND };
-            nativeWindow.reset (createNonRepaintingEmbeddedWindowsPeer (*dummyComponent, topComp));
+            nativeWindow.reset (createNonRepaintingEmbeddedWindowsPeer (*placeholderComponent, topComp));
         }
 
         if (auto* peer = topComp->getPeer())
@@ -307,7 +341,6 @@ private:
             peer->addScaleFactorListener (this);
         }
 
-        nativeWindow->setVisible (true);
         dc = std::unique_ptr<std::remove_pointer_t<HDC>, DeviceContextDeleter> { GetDC ((HWND) nativeWindow->getNativeHandle()),
                                                                                  DeviceContextDeleter { (HWND) nativeWindow->getNativeHandle() } };
     }
@@ -383,13 +416,14 @@ private:
     };
 
     CriticalSection mutex;
-    std::unique_ptr<DummyComponent> dummyComponent;
+    std::unique_ptr<PlaceholderComponent> placeholderComponent;
     std::unique_ptr<ComponentPeer> nativeWindow;
     std::unique_ptr<ScopedThreadDPIAwarenessSetter> threadAwarenessSetter;
     Component::SafePointer<Component> safeComponent;
     std::unique_ptr<std::remove_pointer_t<HGLRC>, RenderContextDeleter> renderContext;
     std::unique_ptr<std::remove_pointer_t<HDC>, DeviceContextDeleter> dc;
     OpenGLContext* context = nullptr;
+    void* sharedContext = nullptr;
     double nativeScaleFactor = 1.0;
 
     //==============================================================================

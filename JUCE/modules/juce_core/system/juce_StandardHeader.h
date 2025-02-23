@@ -41,7 +41,7 @@
 */
 #define JUCE_MAJOR_VERSION      8
 #define JUCE_MINOR_VERSION      0
-#define JUCE_BUILDNUMBER        1
+#define JUCE_BUILDNUMBER        6
 
 /** Current JUCE version number.
 
@@ -81,6 +81,7 @@
 #include <sstream>
 #include <string_view>
 #include <thread>
+#include <type_traits>
 #include <typeindex>
 #include <unordered_map>
 #include <unordered_set>

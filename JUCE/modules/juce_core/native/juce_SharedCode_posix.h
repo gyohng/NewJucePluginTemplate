@@ -113,12 +113,12 @@ static MaxNumFileHandlesInitialiser maxNumFileHandlesInitialiser;
 //==============================================================================
 #if JUCE_ALLOW_STATIC_NULL_VARIABLES
 
-JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
+JUCE_BEGIN_IGNORE_DEPRECATION_WARNINGS
 
 const juce_wchar File::separator = '/';
 const StringRef File::separatorString ("/");
 
-JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+JUCE_END_IGNORE_DEPRECATION_WARNINGS
 
 #endif
 
@@ -152,7 +152,7 @@ bool File::setAsCurrentWorkingDirectory() const
 
 //==============================================================================
 // The unix siginterrupt function is deprecated - this does the same job.
-int juce_siginterrupt ([[maybe_unused]] int sig, [[maybe_unused]] int flag)
+inline int juce_siginterrupt ([[maybe_unused]] int sig, [[maybe_unused]] int flag)
 {
    #if JUCE_WASM
     return 0;

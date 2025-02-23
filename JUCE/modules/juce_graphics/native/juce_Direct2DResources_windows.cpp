@@ -35,156 +35,6 @@
 namespace juce
 {
 
-struct Direct2DDeviceContext
-{
-    HRESULT createHwndRenderTarget (HWND hwnd)
-    {
-        if (hwndRenderTarget != nullptr)
-            return S_OK;
-
-        SharedResourcePointer<DirectX> directX;
-
-        D2D1_SIZE_U size { 1, 1 };
-
-        D2D1_RENDER_TARGET_PROPERTIES renderTargetProps{};
-        renderTargetProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-        renderTargetProps.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-
-        D2D1_HWND_RENDER_TARGET_PROPERTIES hwndRenderTargetProps{};
-        hwndRenderTargetProps.hwnd = hwnd;
-        hwndRenderTargetProps.pixelSize = size;
-        hwndRenderTargetProps.presentOptions = D2D1_PRESENT_OPTIONS_IMMEDIATELY | D2D1_PRESENT_OPTIONS_RETAIN_CONTENTS;
-        return directX->getD2DFactory()->CreateHwndRenderTarget (&renderTargetProps,
-                                                                 &hwndRenderTargetProps,
-                                                                 hwndRenderTarget.resetAndGetPointerAddress());
-    }
-
-    void resetTransform()
-    {
-        context->SetTransform (D2D1::IdentityMatrix());
-    }
-
-    void setTransform (AffineTransform newTransform)
-    {
-        context->SetTransform (D2DUtilities::transformToMatrix (newTransform));
-    }
-
-    void release()
-    {
-        hwndRenderTarget = nullptr;
-        context = nullptr;
-    }
-
-    static ComSmartPtr<ID2D1DeviceContext1> createContext (DxgiAdapter::Ptr adapter)
-    {
-        ComSmartPtr<ID2D1DeviceContext1> result;
-
-        if (const auto hr = adapter->direct2DDevice->CreateDeviceContext (D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS,
-                                                                          result.resetAndGetPointerAddress());
-            FAILED (hr))
-        {
-            jassertfalse;
-            return {};
-        }
-
-        result->SetTextAntialiasMode (D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
-        result->SetAntialiasMode (D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-        result->SetUnitMode (D2D1_UNIT_MODE_PIXELS);
-
-        return result;
-    }
-
-    ComSmartPtr<ID2D1DeviceContext1> context;
-    ComSmartPtr<ID2D1HwndRenderTarget> hwndRenderTarget;
-};
-
-class Direct2DBitmap final
-{
-public:
-    static ComSmartPtr<ID2D1Bitmap1> fromImage (const Image& image,
-                                                ComSmartPtr<ID2D1DeviceContext1> deviceContext,
-                                                Image::PixelFormat outputFormat)
-    {
-        JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (Direct2DMetricsHub::getInstance()->imageContextMetrics, createBitmapTime);
-
-        jassert (outputFormat == Image::ARGB || outputFormat == Image::SingleChannel);
-
-        JUCE_TRACE_LOG_D2D_PAINT_CALL (etw::createDirect2DBitmapFromImage, etw::graphicsKeyword);
-
-        // Calling Image::convertedToFormat could cause unchecked recursion since convertedToFormat
-        // calls Graphics::drawImageAt which calls Direct2DGraphicsContext::drawImage which calls this function...
-        //
-        // Use a software image for the conversion instead so the Graphics::drawImageAt call doesn't go
-        // through the Direct2D renderer
-        //
-        // Be sure to explicitly set the DPI to 96.0 for the image; otherwise it will default to the screen DPI
-        // and may be scaled incorrectly
-        const auto convertedImage = SoftwareImageType{}.convert (image).convertedToFormat (outputFormat);
-
-        if (! convertedImage.isValid())
-            return {};
-
-        Image::BitmapData bitmapData { convertedImage, Image::BitmapData::readWrite };
-
-        D2D1_BITMAP_PROPERTIES1 bitmapProperties{};
-        bitmapProperties.pixelFormat.format = outputFormat == Image::SingleChannel
-                                            ? DXGI_FORMAT_A8_UNORM
-                                            : DXGI_FORMAT_B8G8R8A8_UNORM;
-        bitmapProperties.pixelFormat.alphaMode = outputFormat == Image::RGB
-                                               ? D2D1_ALPHA_MODE_IGNORE
-                                               : D2D1_ALPHA_MODE_PREMULTIPLIED;
-        bitmapProperties.dpiX = USER_DEFAULT_SCREEN_DPI;
-        bitmapProperties.dpiY = USER_DEFAULT_SCREEN_DPI;
-
-        const D2D1_SIZE_U size { (UINT32) image.getWidth(), (UINT32) image.getHeight() };
-
-        ComSmartPtr<ID2D1Bitmap1> bitmap;
-        deviceContext->CreateBitmap (size,
-                                     bitmapData.data,
-                                     (UINT32) bitmapData.lineStride,
-                                     bitmapProperties,
-                                     bitmap.resetAndGetPointerAddress());
-        return bitmap;
-    }
-
-    static ComSmartPtr<ID2D1Bitmap1> createBitmap (ComSmartPtr<ID2D1DeviceContext1> deviceContext,
-                                                   Image::PixelFormat format,
-                                                   D2D_SIZE_U size,
-                                                   D2D1_BITMAP_OPTIONS options)
-    {
-        JUCE_TRACE_LOG_D2D_PAINT_CALL (etw::createDirect2DBitmap, etw::graphicsKeyword);
-
-        JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (Direct2DMetricsHub::getInstance()->imageContextMetrics, createBitmapTime);
-
-       #if JUCE_DEBUG
-        // Verify that the GPU can handle a bitmap of this size
-        //
-        // If you need a bitmap larger than this, you'll need to either split it up into multiple bitmaps
-        // or use a software image (see SoftwareImageType).
-        auto maxBitmapSize = deviceContext->GetMaximumBitmapSize();
-        jassert (size.width <= maxBitmapSize && size.height <= maxBitmapSize);
-       #endif
-
-        const auto pixelFormat = D2D1::PixelFormat (format == Image::SingleChannel
-                                                        ? DXGI_FORMAT_A8_UNORM
-                                                        : DXGI_FORMAT_B8G8R8A8_UNORM,
-                                                    format == Image::RGB
-                                                        ? D2D1_ALPHA_MODE_IGNORE
-                                                        : D2D1_ALPHA_MODE_PREMULTIPLIED);
-        const auto bitmapProperties = D2D1::BitmapProperties1 (options, pixelFormat);
-
-        ComSmartPtr<ID2D1Bitmap1> bitmap;
-        deviceContext->CreateBitmap (size,
-                                     {},
-                                     {},
-                                     bitmapProperties,
-                                     bitmap.resetAndGetPointerAddress());
-        return bitmap;
-    }
-
-    Direct2DBitmap() = delete;
-};
-
 static ComSmartPtr<ID2D1GradientStopCollection> makeGradientStopCollection (const ColourGradient& gradient,
                                                                             ComSmartPtr<ID2D1DeviceContext1> deviceContext,
                                                                             [[maybe_unused]] Direct2DMetrics* metrics) noexcept
@@ -404,52 +254,111 @@ private:
 class Direct2DDeviceResources
 {
 public:
-    Direct2DDeviceResources() = default;
-
-    // Create a Direct2D device context for a DXGI adapter
-    HRESULT create (DxgiAdapter::Ptr adapter)
+    static DxgiAdapter::Ptr findAdapter (const DxgiAdapters& adapters, ID2D1Bitmap1* bitmap)
     {
-        jassert (adapter);
+        if (bitmap == nullptr)
+            return {};
 
-        if (deviceContext.context == nullptr)
-            deviceContext.context = Direct2DDeviceContext::createContext (adapter);
+        ComSmartPtr<IDXGISurface> surface;
+        bitmap->GetSurface (surface.resetAndGetPointerAddress());
 
-        if (colourBrush == nullptr)
+        if (surface == nullptr)
+            return {};
+
+        ComSmartPtr<IDXGIDevice> device;
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+        surface->GetDevice (__uuidof (device), (void**) device.resetAndGetPointerAddress());
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+        return findAdapter (adapters, device);
+    }
+
+    static DxgiAdapter::Ptr findAdapter (const DxgiAdapters& dxgiAdapters, IDXGIDevice* dxgiDevice)
+    {
+        if (dxgiDevice == nullptr)
+            return {};
+
+        ComSmartPtr<IDXGIAdapter> adapter;
+        dxgiDevice->GetAdapter (adapter.resetAndGetPointerAddress());
+
+        if (adapter == nullptr)
+            return {};
+
+        ComSmartPtr<IDXGIAdapter1> adapter1;
+        adapter.QueryInterface (adapter1);
+
+        if (adapter1 == nullptr)
+            return {};
+
+        const auto adapterLuid = getLUID (adapter1);
+
+        const auto& adapters = dxgiAdapters.getAdapterArray();
+
+        const auto it = std::find_if (adapters.begin(), adapters.end(), [&] (DxgiAdapter::Ptr ptr)
         {
-            if (const auto hr = deviceContext.context->CreateSolidColorBrush (D2D1::ColorF (0.0f, 0.0f, 0.0f, 1.0f),
-                                                                              colourBrush.resetAndGetPointerAddress());
-                FAILED (hr))
-            {
-                jassertfalse;
-                return hr;
-            }
+            const auto tie = [] (const LUID& x) { return std::tie (x.LowPart, x.HighPart); };
+
+            const auto thisLuid = getLUID (ptr->dxgiAdapter);
+            return tie (thisLuid) == tie (adapterLuid);
+        });
+
+        if (it == adapters.end())
+            return {};
+
+        return *it;
+    }
+
+    static DxgiAdapter::Ptr findAdapter (const DxgiAdapters& dxgiAdapters, ID2D1DeviceContext1* context)
+    {
+        if (context == nullptr)
+            return {};
+
+        ComSmartPtr<ID2D1Device> device;
+        context->GetDevice (device.resetAndGetPointerAddress());
+
+        if (device == nullptr)
+            return {};
+
+        ComSmartPtr<IDXGIDevice> dxgiDevice;
+        device.QueryInterface (dxgiDevice);
+
+        return findAdapter (dxgiAdapters, dxgiDevice);
+    }
+
+    static LUID getLUID (ComSmartPtr<IDXGIAdapter1> adapter)
+    {
+        DXGI_ADAPTER_DESC1 desc{};
+        adapter->GetDesc1 (&desc);
+        return desc.AdapterLuid;
+    }
+
+    static std::optional<Direct2DDeviceResources> create (ComSmartPtr<ID2D1DeviceContext1> context)
+    {
+        if (context == nullptr)
+            return {};
+
+        Direct2DDeviceResources result;
+
+        if (const auto hr = context->CreateSolidColorBrush (D2D1::ColorF (0.0f, 0.0f, 0.0f, 1.0f),
+                                                            result.colourBrush.resetAndGetPointerAddress());
+            FAILED (hr))
+        {
+            jassertfalse;
+            return {};
         }
 
-        if (rectangleListSpriteBatch == nullptr)
-            rectangleListSpriteBatch = std::make_unique<RectangleListSpriteBatch>();
+        result.rectangleListSpriteBatch = std::make_unique<RectangleListSpriteBatch>();
 
-        return S_OK;
+        return result;
     }
 
-    void release()
-    {
-        rectangleListSpriteBatch = nullptr;
-        linearGradientCache = {};
-        radialGradientCache = {};
-        colourBrush = nullptr;
-        deviceContext.release();
-    }
-
-    bool canPaint (DxgiAdapter::Ptr adapter) const
-    {
-        return adapter->direct2DDevice != nullptr && deviceContext.context != nullptr && colourBrush != nullptr;
-    }
-
-    Direct2DDeviceContext deviceContext;
     ComSmartPtr<ID2D1SolidColorBrush> colourBrush;
     LinearGradientCache linearGradientCache;
     RadialGradientCache radialGradientCache;
     std::unique_ptr<RectangleListSpriteBatch> rectangleListSpriteBatch;
+
+private:
+    Direct2DDeviceResources() = default;
 };
 
 class SwapChain
@@ -507,48 +416,18 @@ public:
         if (swapChainEvent->getHandle() == INVALID_HANDLE_VALUE)
             return E_NOINTERFACE;
 
-        if (const auto hr = chain2->SetMaximumFrameLatency (1); SUCCEEDED (hr))
-            state = State::chainAllocated;
+        chain2->SetMaximumFrameLatency (1);
 
-        return S_OK;
-    }
-
-    HRESULT createBuffer (ComSmartPtr<ID2D1DeviceContext> deviceContext)
-    {
-        if (deviceContext == nullptr || chain == nullptr || buffer != nullptr)
-            return S_OK;
-
-        ComSmartPtr<IDXGISurface> surface;
-        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
-        if (const auto hr = chain->GetBuffer (0, __uuidof (surface), reinterpret_cast<void**> (surface.resetAndGetPointerAddress())); FAILED (hr))
-            return hr;
-        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
-
-        D2D1_BITMAP_PROPERTIES1 bitmapProperties{};
-        bitmapProperties.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
-        bitmapProperties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        bitmapProperties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
-
-        if (const auto hr = deviceContext->CreateBitmapFromDxgiSurface (surface, bitmapProperties, buffer.resetAndGetPointerAddress()); FAILED (hr))
-            return hr;
-
-        state = State::bufferAllocated;
-        return S_OK;
-    }
-
-    void release()
-    {
-        buffer = nullptr;
-        chain = nullptr;
-        state = State::idle;
+        createBuffer (adapter);
+        return buffer != nullptr ? S_OK : E_FAIL;
     }
 
     bool canPaint() const
     {
-        return chain != nullptr && buffer != nullptr && state >= State::bufferAllocated;
+        return chain != nullptr && buffer != nullptr;
     }
 
-    HRESULT resize (Rectangle<int> newSize, ComSmartPtr<ID2D1DeviceContext> deviceContext)
+    HRESULT resize (Rectangle<int> newSize)
     {
         if (chain == nullptr)
             return E_FAIL;
@@ -557,44 +436,97 @@ public:
                                  .getIntersection ({ Direct2DGraphicsContext::maxFrameSize, Direct2DGraphicsContext::maxFrameSize });
 
         buffer = nullptr;
-        state = State::chainAllocated;
 
         if (const auto hr = chain->ResizeBuffers (0, (UINT) scaledSize.getWidth(), (UINT) scaledSize.getHeight(), DXGI_FORMAT_B8G8R8A8_UNORM, swapChainFlags); FAILED (hr))
             return hr;
 
-        if (const auto hr = createBuffer (deviceContext); FAILED (hr))
-        {
-            release();
-            return hr;
-        }
+        ComSmartPtr<IDXGIDevice> device;
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+        chain->GetDevice (__uuidof (device), (void**) device.resetAndGetPointerAddress());
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
-        return S_OK;
+        SharedResourcePointer<DirectX> directX;
+        createBuffer (Direct2DDeviceResources::findAdapter (directX->adapters, device));
+
+        return buffer != nullptr ? S_OK : E_FAIL;
     }
 
     Rectangle<int> getSize() const
     {
-        if (buffer == nullptr)
+        const auto surface = getSurface();
+
+        if (surface == nullptr)
             return {};
 
-        auto size = buffer->GetPixelSize();
-        return { (int) size.width, (int) size.height };
+        DXGI_SURFACE_DESC desc{};
+        if (FAILED (surface->GetDesc (&desc)))
+            return {};
+
+        return { (int) desc.Width, (int) desc.Height };
+    }
+
+    WindowsScopedEvent* getEvent()
+    {
+        if (swapChainEvent.has_value())
+            return &*swapChainEvent;
+
+        return nullptr;
+    }
+
+    auto getChain() const
+    {
+        return chain;
+    }
+
+    ComSmartPtr<ID2D1Bitmap1> getBuffer() const
+    {
+        return buffer;
     }
 
     static constexpr uint32 swapChainFlags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
     static constexpr uint32 presentSyncInterval = 1;
     static constexpr uint32 presentFlags = 0;
+
+private:
+    ComSmartPtr<IDXGISurface> getSurface() const
+    {
+        if (chain == nullptr)
+            return nullptr;
+
+        ComSmartPtr<IDXGISurface> surface;
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+        if (const auto hr = chain->GetBuffer (0, __uuidof (surface), reinterpret_cast<void**> (surface.resetAndGetPointerAddress())); FAILED (hr))
+            return nullptr;
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+        return surface;
+    }
+
+    void createBuffer (DxgiAdapter::Ptr adapter)
+    {
+        buffer = nullptr;
+
+        const auto deviceContext = Direct2DDeviceContext::create (adapter);
+
+        if (deviceContext == nullptr)
+            return;
+
+        const auto surface = getSurface();
+
+        if (surface == nullptr)
+            return;
+
+        D2D1_BITMAP_PROPERTIES1 bitmapProperties{};
+        bitmapProperties.bitmapOptions = D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW;
+        bitmapProperties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        bitmapProperties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_PREMULTIPLIED;
+
+        deviceContext->CreateBitmapFromDxgiSurface (surface, bitmapProperties, buffer.resetAndGetPointerAddress());
+    }
+
     ComSmartPtr<IDXGISwapChain1> chain;
     ComSmartPtr<ID2D1Bitmap1> buffer;
     std::optional<WindowsScopedEvent> swapChainEvent;
-
-    enum class State
-    {
-        idle,
-        chainAllocated,
-        bufferAllocated,
-        bufferFilled
-    };
-    State state = State::idle;
 };
 
 //==============================================================================
@@ -608,51 +540,40 @@ public:
 class CompositionTree
 {
 public:
-    HRESULT create (IDXGIDevice* const dxgiDevice, HWND hwnd, IDXGISwapChain1* const swapChain)
+    static std::optional<CompositionTree> create (IDXGIDevice* dxgiDevice, HWND hwnd, IDXGISwapChain1* swapChain)
     {
-        if (compositionDevice != nullptr)
-            return S_OK;
-
         if (dxgiDevice == nullptr)
-            return E_FAIL;
+            return {};
+
+        CompositionTree result;
 
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
         if (const auto hr = DCompositionCreateDevice (dxgiDevice,
                                                       __uuidof (IDCompositionDevice),
-                                                      reinterpret_cast<void**> (compositionDevice.resetAndGetPointerAddress()));
-            FAILED (hr))
+                                                      reinterpret_cast<void**> (result.compositionDevice.resetAndGetPointerAddress()));
+                FAILED (hr))
         {
-            return hr;
+            return {};
         }
         JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
-        if (const auto hr = compositionDevice->CreateTargetForHwnd (hwnd, FALSE, compositionTarget.resetAndGetPointerAddress()); FAILED (hr))
-            return hr;
-        if (const auto hr = compositionDevice->CreateVisual (compositionVisual.resetAndGetPointerAddress()); FAILED (hr))
-            return hr;
-        if (const auto hr = compositionTarget->SetRoot (compositionVisual); FAILED (hr))
-            return hr;
-        if (const auto hr = compositionVisual->SetContent (swapChain); FAILED (hr))
-            return hr;
-        if (const auto hr = compositionDevice->Commit(); FAILED (hr))
-            return hr;
+        if (const auto hr = result.compositionDevice->CreateTargetForHwnd (hwnd, FALSE, result.compositionTarget.resetAndGetPointerAddress()); FAILED (hr))
+            return {};
+        if (const auto hr = result.compositionDevice->CreateVisual (result.compositionVisual.resetAndGetPointerAddress()); FAILED (hr))
+            return {};
+        if (const auto hr = result.compositionTarget->SetRoot (result.compositionVisual); FAILED (hr))
+            return {};
+        if (const auto hr = result.compositionVisual->SetContent (swapChain); FAILED (hr))
+            return {};
+        if (const auto hr = result.compositionDevice->Commit(); FAILED (hr))
+            return {};
 
-        return S_OK;
-    }
-
-    void release()
-    {
-        compositionVisual = nullptr;
-        compositionTarget = nullptr;
-        compositionDevice = nullptr;
-    }
-
-    bool canPaint() const
-    {
-        return compositionVisual != nullptr;
+        return result;
     }
 
 private:
+    CompositionTree() = default;
+
     ComSmartPtr<IDCompositionDevice> compositionDevice;
     ComSmartPtr<IDCompositionTarget> compositionTarget;
     ComSmartPtr<IDCompositionVisual> compositionVisual;

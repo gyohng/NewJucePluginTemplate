@@ -56,6 +56,7 @@ target_compile_definitions(DemoRunner PRIVATE
     JUCE_DEMO_RUNNER=1
     JUCE_PLUGINHOST_LV2=1
     JUCE_PLUGINHOST_VST3=1
+    JUCE_PUSH_NOTIFICATIONS=1
     JUCE_STRICT_REFCOUNTEDPOINTER=1
     JUCE_UNIT_TESTS=1
     JUCE_USE_CAMERA=1
@@ -77,6 +78,7 @@ target_link_libraries(DemoRunner PRIVATE
     juce::juce_osc
     juce::juce_product_unlocking
     juce::juce_video
+    juce::juce_javascript
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags)

@@ -86,6 +86,24 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 #include <set>
 
+JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wfour-char-constants")
+constexpr auto pluginIsMidiEffect = JucePlugin_AUMainType == kAudioUnitType_MIDIProcessor;
+JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+constexpr auto pluginProducesMidiOutput =
+#if JucePlugin_ProducesMidiOutput
+        true;
+#else
+        pluginIsMidiEffect;
+#endif
+
+constexpr auto pluginWantsMidiInput =
+#if JucePlugin_WantsMidiInput
+        true;
+#else
+        pluginIsMidiEffect;
+#endif
+
 //==============================================================================
 using namespace juce;
 
@@ -264,31 +282,34 @@ public:
      #ifdef JucePlugin_PreferredChannelConfigurations
         return false;
      #else
-        bool isInput;
-
-        if (scopeToDirection (scope, isInput) != noErr)
+        if constexpr (pluginIsMidiEffect)
             return false;
 
-      #if JucePlugin_IsMidiEffect
-        return false;
-      #else
+        const auto optIsInput = scopeToDirection (scope);
+
+        if (! optIsInput.has_value())
+            return false;
+
+        const auto isInput = *optIsInput;
+
        #if JucePlugin_IsSynth
-        if (isInput) return false;
+        if (isInput)
+            return false;
        #endif
 
-        const int busCount = AudioUnitHelpers::getBusCount (*juceFilter, isInput);
+        const auto busCount = AudioUnitHelpers::getBusCount (*juceFilter, isInput);
         return (juceFilter->canAddBus (isInput) || (busCount > 0 && juceFilter->canRemoveBus (isInput)));
-      #endif
      #endif
     }
 
     OSStatus SetBusCount (AudioUnitScope scope, UInt32 count) override
     {
-        OSStatus err = noErr;
-        bool isInput;
+        const auto optIsInput = scopeToDirection (scope);
 
-        if ((err = scopeToDirection (scope, isInput)) != noErr)
-            return err;
+        if (! optIsInput.has_value())
+            return kAudioUnitErr_InvalidScope;
+
+        const auto isInput = *optIsInput;
 
         if (count != (UInt32) AudioUnitHelpers::getBusCount (*juceFilter, isInput))
         {
@@ -301,7 +322,7 @@ public:
                 return kAudioUnitErr_PropertyNotWritable;
 
             // we need to already create the underlying elements so that we can change their formats
-            err = MusicDeviceBase::SetBusCount (scope, count);
+            auto err = MusicDeviceBase::SetBusCount (scope, count);
 
             if (err != noErr)
                 return err;
@@ -426,24 +447,34 @@ public:
                     return noErr;
                #endif
 
-              #if JucePlugin_ProducesMidiOutput || JucePlugin_IsMidiEffect
                 case kAudioUnitProperty_MIDIOutputCallbackInfo:
-                    outDataSize = sizeof (CFArrayRef);
-                    outWritable = false;
-                    return noErr;
+                    if constexpr (pluginProducesMidiOutput)
+                    {
+                        outDataSize = sizeof (CFArrayRef);
+                        outWritable = false;
+                        return noErr;
+                    }
+                    break;
 
                 case kAudioUnitProperty_MIDIOutputCallback:
-                    outDataSize = sizeof (AUMIDIOutputCallbackStruct);
-                    outWritable = true;
-                    return noErr;
+                    if constexpr (pluginProducesMidiOutput)
+                    {
+                        outDataSize = sizeof (AUMIDIOutputCallbackStruct);
+                        outWritable = true;
+                        return noErr;
+                    }
+                    break;
 
                #if JUCE_APPLE_MIDI_EVENT_LIST_SUPPORTED
                 case kAudioUnitProperty_MIDIOutputEventListCallback:
-                    outDataSize = sizeof (AUMIDIEventListBlock);
-                    outWritable = true;
-                    return noErr;
+                    if constexpr (pluginProducesMidiOutput)
+                    {
+                        outDataSize = sizeof (AUMIDIEventListBlock);
+                        outWritable = true;
+                        return noErr;
+                    }
+                    break;
                #endif
-              #endif
 
                 case kAudioUnitProperty_ParameterStringFromValue:
                      outDataSize = sizeof (AudioUnitParameterStringFromValue);
@@ -611,17 +642,17 @@ public:
                 }
                #endif
 
-               #if JucePlugin_ProducesMidiOutput || JucePlugin_IsMidiEffect
                 case kAudioUnitProperty_MIDIOutputCallbackInfo:
-                {
-                    CFStringRef strs[1];
-                    strs[0] = CFSTR ("MIDI Callback");
+                    if constexpr (pluginProducesMidiOutput)
+                    {
+                        CFStringRef strs[1];
+                        strs[0] = CFSTR ("MIDI Callback");
 
-                    CFArrayRef callbackArray = CFArrayCreate (nullptr, (const void**) strs, 1, &kCFTypeArrayCallBacks);
-                    *(CFArrayRef*) outData = callbackArray;
-                    return noErr;
-                }
-               #endif
+                        CFArrayRef callbackArray = CFArrayCreate (nullptr, (const void**) strs, 1, &kCFTypeArrayCallBacks);
+                        *(CFArrayRef*) outData = callbackArray;
+                        return noErr;
+                    }
+                    break;
 
                 case kAudioUnitProperty_ParameterValueFromString:
                 {
@@ -689,27 +720,33 @@ public:
         {
             switch (inID)
             {
-              #if JucePlugin_ProducesMidiOutput || JucePlugin_IsMidiEffect
                 case kAudioUnitProperty_MIDIOutputCallback:
-                    if (inDataSize < sizeof (AUMIDIOutputCallbackStruct))
-                        return kAudioUnitErr_InvalidPropertyValue;
+                    if constexpr (pluginProducesMidiOutput)
+                    {
+                        if (inDataSize < sizeof (AUMIDIOutputCallbackStruct))
+                            return kAudioUnitErr_InvalidPropertyValue;
 
-                    if (AUMIDIOutputCallbackStruct* callbackStruct = (AUMIDIOutputCallbackStruct*) inData)
-                        midiCallback = *callbackStruct;
+                        if (AUMIDIOutputCallbackStruct* callbackStruct = (AUMIDIOutputCallbackStruct*) inData)
+                            midiCallback = *callbackStruct;
 
-                    return noErr;
+                        return noErr;
+                    }
+                    break;
 
                #if JUCE_APPLE_MIDI_EVENT_LIST_SUPPORTED
                 case kAudioUnitProperty_MIDIOutputEventListCallback:
-                {
-                    if (inDataSize != sizeof (AUMIDIEventListBlock))
-                        return kAudioUnitErr_InvalidPropertyValue;
+                    if constexpr (pluginProducesMidiOutput)
+                    {
+                        if (inDataSize != sizeof (AUMIDIEventListBlock))
+                            return kAudioUnitErr_InvalidPropertyValue;
 
-                    midiEventListBlock = ScopedMIDIEventListBlock::copy (*static_cast<const AUMIDIEventListBlock*> (inData));
-                    return noErr;
-                }
+                        if (@available (macos 12, *))
+                            eventListOutput.setBlock (*static_cast<const AUMIDIEventListBlock*> (inData));
+
+                        return noErr;
+                    }
+                    break;
                #endif
-              #endif
 
                #if JUCE_APPLE_MIDI_EVENT_LIST_SUPPORTED
                 case kAudioUnitProperty_HostMIDIProtocol:
@@ -1496,9 +1533,8 @@ public:
         }
 
         // process midi output
-      #if JucePlugin_ProducesMidiOutput || JucePlugin_IsMidiEffect
-        pushMidiOutput (nFrames);
-      #endif
+        if constexpr (pluginProducesMidiOutput)
+            pushMidiOutput (nFrames);
 
         midiEvents.clear();
 
@@ -1516,28 +1552,30 @@ public:
                               [[maybe_unused]] UInt8 inData2,
                               [[maybe_unused]] UInt32 inStartFrame) override
     {
-       #if JucePlugin_WantsMidiInput || JucePlugin_IsMidiEffect
-        const juce::uint8 data[] = { (juce::uint8) (inStatus | inChannel),
-                                     (juce::uint8) inData1,
-                                     (juce::uint8) inData2 };
+        if constexpr (pluginWantsMidiInput)
+        {
+            const juce::uint8 data[] = { (juce::uint8) (inStatus | inChannel),
+                                         (juce::uint8) inData1,
+                                         (juce::uint8) inData2 };
 
-        const ScopedLock sl (incomingMidiLock);
-        incomingEvents.addEvent (data, 3, (int) inStartFrame);
-        return noErr;
-       #else
+            const ScopedLock sl (incomingMidiLock);
+            incomingEvents.addEvent (data, 3, (int) inStartFrame);
+            return noErr;
+        }
+
         return kAudioUnitErr_PropertyNotInUse;
-       #endif
     }
 
     OSStatus HandleSysEx ([[maybe_unused]] const UInt8* inData, [[maybe_unused]] UInt32 inLength) override
     {
-       #if JucePlugin_WantsMidiInput || JucePlugin_IsMidiEffect
-        const ScopedLock sl (incomingMidiLock);
-        incomingEvents.addEvent (inData, (int) inLength, 0);
-        return noErr;
-       #else
+        if constexpr (pluginWantsMidiInput)
+        {
+            const ScopedLock sl (incomingMidiLock);
+            incomingEvents.addEvent (inData, (int) inLength, 0);
+            return noErr;
+        }
+
         return kAudioUnitErr_PropertyNotInUse;
-       #endif
     }
 
    #if JUCE_APPLE_MIDI_EVENT_LIST_SUPPORTED
@@ -1988,53 +2026,8 @@ private:
     AUMIDIOutputCallbackStruct midiCallback;
 
    #if JUCE_APPLE_MIDI_EVENT_LIST_SUPPORTED
-    class ScopedMIDIEventListBlock
-    {
-    public:
-        ScopedMIDIEventListBlock() = default;
-
-        ScopedMIDIEventListBlock (ScopedMIDIEventListBlock&& other) noexcept
-            : midiEventListBlock (std::exchange (other.midiEventListBlock, nil)) {}
-
-        ScopedMIDIEventListBlock& operator= (ScopedMIDIEventListBlock&& other) noexcept
-        {
-            ScopedMIDIEventListBlock { std::move (other) }.swap (*this);
-            return *this;
-        }
-
-        ~ScopedMIDIEventListBlock()
-        {
-            if (midiEventListBlock != nil)
-                [midiEventListBlock release];
-        }
-
-        static ScopedMIDIEventListBlock copy (AUMIDIEventListBlock b)
-        {
-            return ScopedMIDIEventListBlock { b };
-        }
-
-        explicit operator bool() const { return midiEventListBlock != nil; }
-
-        void operator() (AUEventSampleTime eventSampleTime, uint8_t cable, const struct MIDIEventList * eventList) const
-        {
-            jassert (midiEventListBlock != nil);
-            midiEventListBlock (eventSampleTime, cable, eventList);
-        }
-
-    private:
-        void swap (ScopedMIDIEventListBlock& other) noexcept
-        {
-            std::swap (other.midiEventListBlock, midiEventListBlock);
-        }
-
-        explicit ScopedMIDIEventListBlock (AUMIDIEventListBlock b) : midiEventListBlock ([b copy]) {}
-
-        AUMIDIEventListBlock midiEventListBlock = nil;
-    };
-
-    ScopedMIDIEventListBlock midiEventListBlock;
+    AudioUnitHelpers::EventListOutput eventListOutput;
     std::optional<SInt32> hostProtocol;
-    ump::ToUMP1Converter toUmp1Converter;
     ump::ToBytestreamDispatcher toBytestreamDispatcher { 2048 };
    #endif
 
@@ -2150,57 +2143,8 @@ private:
        #if JUCE_APPLE_MIDI_EVENT_LIST_SUPPORTED
         if (@available (macOS 12.0, iOS 15.0, *))
         {
-            if (midiEventListBlock)
-            {
-                struct MIDIEventList stackList = {};
-                MIDIEventPacket* end = nullptr;
-
-                const auto init = [&]
-                {
-                    end = MIDIEventListInit (&stackList, kMIDIProtocol_1_0);
-                };
-
-                const auto send = [&]
-                {
-                    midiEventListBlock (static_cast<int64_t> (lastTimeStamp.mSampleTime), 0, &stackList);
-                };
-
-                const auto add = [&] (const ump::View& view, int timeStamp)
-                {
-                    static_assert (sizeof (uint32_t) == sizeof (UInt32)
-                                   && alignof (uint32_t) == alignof (UInt32),
-                                   "If this fails, the cast below will be broken too!");
-                    using List = struct MIDIEventList;
-                    end = MIDIEventListAdd (&stackList,
-                                            sizeof (List::packet),
-                                            end,
-                                            (MIDITimeStamp) timeStamp,
-                                            view.size(),
-                                            reinterpret_cast<const UInt32*> (view.data()));
-                };
-
-                init();
-
-                for (const auto metadata : midiEvents)
-                {
-                    toUmp1Converter.convert (ump::BytestreamMidiView (metadata), [&] (const ump::View& view)
-                    {
-                        add (view, metadata.samplePosition);
-
-                        if (end != nullptr)
-                            return;
-
-                        send();
-                        init();
-                        add (view, metadata.samplePosition);
-                    });
-
-                }
-
-                send();
-
+            if (eventListOutput.trySend (midiEvents, (int64_t) lastTimeStamp.mSampleTime))
                 return;
-            }
         }
        #endif
 
@@ -2271,13 +2215,12 @@ private:
     }
 
     //==============================================================================
-    static OSStatus scopeToDirection (AudioUnitScope scope, bool& isInput) noexcept
+    static std::optional<bool> scopeToDirection (AudioUnitScope scope) noexcept
     {
-        isInput = (scope == kAudioUnitScope_Input);
+        if (scope != kAudioUnitScope_Input && scope != kAudioUnitScope_Output)
+            return {};
 
-        return (scope != kAudioUnitScope_Input
-             && scope != kAudioUnitScope_Output)
-              ? (OSStatus) kAudioUnitErr_InvalidScope : (OSStatus) noErr;
+        return scope == kAudioUnitScope_Input;
     }
 
     enum class BusKind
@@ -2296,12 +2239,12 @@ private:
 
     ElementInfo getElementInfo (AudioUnitScope scope, AudioUnitElement element) noexcept
     {
-        bool isInput = false;
-        OSStatus err;
+        const auto optIsInput = scopeToDirection (scope);
 
-        if ((err = scopeToDirection (scope, isInput)) != noErr)
-            return { {}, {}, {}, err };
+        if (! optIsInput.has_value())
+            return { {}, {}, {}, kAudioUnitErr_InvalidScope };
 
+        const auto isInput = *optIsInput;
         const auto busIdx = static_cast<int> (element);
 
         if (isPositiveAndBelow (busIdx, AudioUnitHelpers::getBusCount (*juceFilter, isInput)))
@@ -2646,7 +2589,7 @@ private:
              && juceFilter != nullptr && GetContextName() != nullptr)
         {
             AudioProcessor::TrackProperties props;
-            props.name = String::fromCFString (GetContextName());
+            props.name = std::make_optional (String::fromCFString (GetContextName()));
 
             juceFilter->updateTrackProperties (props);
         }
@@ -2662,13 +2605,14 @@ private:
 };
 
 //==============================================================================
-#if JucePlugin_ProducesMidiOutput || JucePlugin_WantsMidiInput || JucePlugin_IsMidiEffect
- #define FACTORY_BASE_CLASS ausdk::AUMusicDeviceFactory
-#else
- #define FACTORY_BASE_CLASS ausdk::AUBaseFactory
-#endif
-
-AUSDK_COMPONENT_ENTRY (FACTORY_BASE_CLASS, JuceAU)
+             extern "C" void* JuceAUFactory (const AudioComponentDescription* inDesc);
+AUSDK_EXPORT extern "C" void* JuceAUFactory (const AudioComponentDescription* inDesc)
+{
+    if constexpr (pluginWantsMidiInput || pluginProducesMidiOutput)
+        return ausdk::AUMusicDeviceFactory<JuceAU>::Factory (inDesc);
+    else
+        return ausdk::AUBaseFactory<JuceAU>::Factory (inDesc);
+}
 
 #define JUCE_AU_ENTRY_POINT_NAME JUCE_CONCAT (JucePlugin_AUExportPrefix, Factory)
 

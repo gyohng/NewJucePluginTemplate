@@ -35,10 +35,6 @@
 namespace juce
 {
 
-#if JUCE_DIRECT2D_METRICS
-JUCE_IMPLEMENT_SINGLETON (Direct2DMetricsHub)
-#endif
-
 struct ScopedBlendCopy
 {
     explicit ScopedBlendCopy (ComSmartPtr<ID2D1DeviceContext1> c)
@@ -255,13 +251,13 @@ public:
     // Constructor for first stack entry
     SavedState (Direct2DGraphicsContext& ownerIn,
                 Rectangle<int> frameSizeIn,
+                ComSmartPtr<ID2D1DeviceContext1> deviceContext,
                 ComSmartPtr<ID2D1SolidColorBrush>& colourBrushIn,
-                DxgiAdapter::Ptr& adapterIn,
                 Direct2DDeviceResources& deviceResourcesIn)
         : owner (ownerIn),
+          context (deviceContext),
           currentBrush (colourBrushIn),
           colourBrush (colourBrushIn),
-          adapter (adapterIn),
           deviceResources (deviceResourcesIn),
           deviceSpaceClipList (frameSizeIn.toFloat())
     {
@@ -269,7 +265,7 @@ public:
 
     void pushLayer (const D2D1_LAYER_PARAMETERS1& layerParameters)
     {
-        layers.push (deviceResources.deviceContext.context, layerParameters);
+        layers.push (context, layerParameters);
     }
 
     void pushGeometryClipLayer (ComSmartPtr<ID2D1Geometry> geometry)
@@ -292,7 +288,7 @@ public:
     {
         JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (owner.metrics, pushAliasedAxisAlignedLayerTime)
 
-        layers.push (deviceResources.deviceContext.context, r);
+        layers.push (context, r);
     }
 
     void pushTransparencyLayer (float opacity)
@@ -303,12 +299,12 @@ public:
     void popLayers()
     {
         while (! layers.isEmpty())
-            layers.popOne (deviceResources.deviceContext.context);
+            layers.popOne (context);
     }
 
     void popTopLayer()
     {
-        layers.popOne (deviceResources.deviceContext.context);
+        layers.popOne (context);
     }
 
     void setFont (const Font& newFont)
@@ -344,24 +340,24 @@ public:
 
             const auto d2d1Bitmap = [&]
             {
-                if (auto direct2DPixelData = dynamic_cast<Direct2DPixelData*> (fillType.image.getPixelData()))
-                    if (auto bitmap = direct2DPixelData->getAdapterD2D1Bitmap())
-                        if (bitmap->GetPixelFormat().format == DXGI_FORMAT_B8G8R8A8_UNORM)
-                            return bitmap;
+                if (auto direct2DPixelData = dynamic_cast<Direct2DPixelData*> (fillType.image.getPixelData().get()))
+                    if (const auto page = direct2DPixelData->getFirstPageForDevice (D2DUtilities::getDeviceForContext (context)))
+                        if (page->GetPixelFormat().format == DXGI_FORMAT_B8G8R8A8_UNORM)
+                            return page;
 
                 JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (Direct2DMetricsHub::getInstance()->imageContextMetrics, createBitmapTime);
 
-                return Direct2DBitmap::fromImage (fillType.image, deviceResources.deviceContext.context, Image::ARGB);
+                return Direct2DBitmap::toBitmap (fillType.image, context, Image::ARGB);
             }();
 
             if (d2d1Bitmap != nullptr)
             {
                 D2D1_BRUSH_PROPERTIES brushProps { fillType.getOpacity(), D2DUtilities::transformToMatrix (fillType.transform) };
                 auto bmProps = D2D1::BitmapBrushProperties (D2D1_EXTEND_MODE_WRAP, D2D1_EXTEND_MODE_WRAP);
-                if (const auto hr = deviceResources.deviceContext.context->CreateBitmapBrush (d2d1Bitmap,
-                                                                                              bmProps,
-                                                                                              brushProps,
-                                                                                              bitmapBrush.resetAndGetPointerAddress()); SUCCEEDED (hr))
+                if (const auto hr = context->CreateBitmapBrush (d2d1Bitmap,
+                                                                bmProps,
+                                                                brushProps,
+                                                                bitmapBrush.resetAndGetPointerAddress()); SUCCEEDED (hr))
                 {
                     currentBrush = bitmapBrush;
                 }
@@ -371,12 +367,12 @@ public:
         {
             if (fillType.gradient->isRadial)
             {
-                radialGradient = deviceResources.radialGradientCache.get (*fillType.gradient, deviceResources.deviceContext.context, owner.metrics.get());
+                radialGradient = deviceResources.radialGradientCache.get (*fillType.gradient, context, owner.metrics.get());
                 currentBrush = radialGradient;
             }
             else
             {
-                linearGradient = deviceResources.linearGradientCache.get (*fillType.gradient, deviceResources.deviceContext.context, owner.metrics.get());
+                linearGradient = deviceResources.linearGradientCache.get (*fillType.gradient, context, owner.metrics.get());
                 currentBrush = linearGradient;
             }
         }
@@ -511,7 +507,8 @@ public:
 
     Direct2DGraphicsContext& owner;
 
-    ComSmartPtr<ID2D1Brush> currentBrush = nullptr;
+    ComSmartPtr<ID2D1DeviceContext1> context;
+    ComSmartPtr<ID2D1Brush> currentBrush;
     ComSmartPtr<ID2D1SolidColorBrush>& colourBrush; // reference to shared colour brush
     ComSmartPtr<ID2D1BitmapBrush> bitmapBrush;
     ComSmartPtr<ID2D1LinearGradientBrush> linearGradient;
@@ -519,11 +516,10 @@ public:
 
     RenderingHelpers::TranslationOrTransform currentTransform;
 
-    DxgiAdapter::Ptr& adapter;
     Direct2DDeviceResources& deviceResources;
     RectangleList<float> deviceSpaceClipList;
 
-    Font font { FontOptions {} };
+    Font font { FontOptions{} };
 
     FillType fillType;
 
@@ -550,44 +546,33 @@ protected:
     Direct2DGraphicsContext& owner;
     SharedResourcePointer<DirectX> directX;
     SharedResourcePointer<Direct2DFactories> directWrite;
-    RectangleList<int> paintAreas;
 
-    DxgiAdapter::Ptr adapter;
-    Direct2DDeviceResources deviceResources;
+    std::optional<Direct2DDeviceResources> deviceResources;
 
     std::vector<std::unique_ptr<Direct2DGraphicsContext::SavedState>> savedClientStates;
 
-    virtual HRESULT prepare()
+    virtual bool prepare()
     {
-        if (! deviceResources.canPaint (adapter))
-        {
-            if (auto hr = deviceResources.create (adapter); FAILED (hr))
-                return hr;
-        }
+        if (! deviceResources.has_value())
+            deviceResources = Direct2DDeviceResources::create (getDeviceContext());
 
-        return S_OK;
+        return deviceResources.has_value();
     }
 
     virtual void teardown()
     {
-        deviceResources.release();
+        deviceResources.reset();
     }
-
-    virtual ComSmartPtr<ID2D1Image> getDeviceContextTarget() const = 0;
-
-    virtual void updatePaintAreas() = 0;
 
     virtual bool checkPaintReady()
     {
-        return deviceResources.canPaint (adapter);
+        return deviceResources.has_value();
     }
 
 public:
-    Pimpl (Direct2DGraphicsContext& ownerIn, bool opaqueIn)
-        : owner (ownerIn), opaque (opaqueIn)
+    explicit Pimpl (Direct2DGraphicsContext& ownerIn)
+        : owner (ownerIn)
     {
-        setTargetAlpha (1.0f);
-
         directX->adapters.addListener (*this);
     }
 
@@ -598,21 +583,15 @@ public:
         popAllSavedStates();
     }
 
-    void setTargetAlpha (float alpha)
-    {
-        backgroundColor = D2DUtilities::toCOLOR_F (Colours::black.withAlpha (opaque ? targetAlpha : 0.0f));
-        targetAlpha = alpha;
-    }
-
     virtual SavedState* startFrame (float dpiScale)
     {
         prepare();
 
         // Anything to paint?
-        updatePaintAreas();
-        auto paintBounds = paintAreas.getBounds();
+        const auto paintAreas = getPaintAreas();
+        const auto paintBounds = paintAreas.getBounds();
 
-        if (! getFrameSize().intersects (paintBounds) || paintBounds.isEmpty())
+        if (! getFrameSize().intersects (paintBounds) || paintBounds.isEmpty() || paintAreas.isEmpty())
             return nullptr;
 
         // Is Direct2D ready to paint?
@@ -625,15 +604,17 @@ public:
 
         JUCE_TRACE_EVENT_INT_RECT_LIST (etw::startD2DFrame, etw::direct2dKeyword, owner.getFrameId(), paintAreas);
 
+        const auto deviceContext = getDeviceContext();
+
         // Init device context transform
-        deviceResources.deviceContext.resetTransform();
+        resetTransform (deviceContext);
 
         const auto effectiveDpi = USER_DEFAULT_SCREEN_DPI * dpiScale;
-        deviceResources.deviceContext.context->SetDpi (effectiveDpi, effectiveDpi);
+        deviceContext->SetDpi (effectiveDpi, effectiveDpi);
 
         // Start drawing
-        deviceResources.deviceContext.context->SetTarget (getDeviceContextTarget());
-        deviceResources.deviceContext.context->BeginDraw();
+        deviceContext->SetTarget (getDeviceContextTarget());
+        deviceContext->BeginDraw();
 
         // Init the save state stack and return the first saved state
         return pushFirstSavedState (paintBounds);
@@ -651,8 +632,9 @@ public:
             JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (owner.metrics, endDrawDuration)
             JUCE_SCOPED_TRACE_EVENT_FRAME (etw::endDraw, etw::direct2dKeyword, owner.getFrameId());
 
-            hr = deviceResources.deviceContext.context->EndDraw();
-            deviceResources.deviceContext.context->SetTarget (nullptr);
+            const auto deviceContext = getDeviceContext();
+            hr = deviceContext->EndDraw();
+            deviceContext->SetTarget (nullptr);
         }
 
         jassert (SUCCEEDED (hr));
@@ -678,9 +660,9 @@ public:
 
         savedClientStates.push_back (std::make_unique<SavedState> (owner,
                                                                    initialClipRegion,
-                                                                   deviceResources.colourBrush,
-                                                                   adapter,
-                                                                   deviceResources));
+                                                                   getDeviceContext(),
+                                                                   deviceResources->colourBrush,
+                                                                   *deviceResources));
 
         return getCurrentSavedState();
     }
@@ -708,31 +690,19 @@ public:
             popSavedState();
     }
 
-    DxgiAdapter& getAdapter() const noexcept
-    {
-        return *adapter;
-    }
-
-    ComSmartPtr<ID2D1DeviceContext1> getDeviceContext() const noexcept
-    {
-        return deviceResources.deviceContext.context;
-    }
-
-    const auto& getPaintAreas() const noexcept
-    {
-        return paintAreas;
-    }
-
-    virtual Rectangle<int> getFrameSize() = 0;
+    virtual RectangleList<int> getPaintAreas() const = 0;
+    virtual Rectangle<int> getFrameSize() const = 0;
+    virtual ComSmartPtr<ID2D1DeviceContext1> getDeviceContext() const = 0;
+    virtual ComSmartPtr<ID2D1Image> getDeviceContextTarget() const = 0;
 
     void setDeviceContextTransform (AffineTransform transform)
     {
-        deviceResources.deviceContext.setTransform (transform);
+        setTransform (getDeviceContext(), transform);
     }
 
     void resetDeviceContextTransform()
     {
-        deviceResources.deviceContext.setTransform ({});
+        resetTransform (getDeviceContext());
     }
 
     auto getDirect2DFactory()
@@ -760,12 +730,12 @@ public:
         if (! owner.currentState->fillType.isColour())
             return false;
 
-        auto* rectangleListSpriteBatch = deviceResources.rectangleListSpriteBatch.get();
+        auto* rectangleListSpriteBatch = deviceResources->rectangleListSpriteBatch.get();
 
         if (rectangleListSpriteBatch == nullptr)
             return false;
 
-        auto deviceContext = getDeviceContext();
+        const auto deviceContext = getDeviceContext();
 
         if (deviceContext == nullptr)
             return false;
@@ -826,7 +796,7 @@ public:
 
         owner.applyPendingClipList();
 
-        auto deviceContext = deviceResources.deviceContext.context;
+        auto deviceContext = getDeviceContext();
 
         if (deviceContext == nullptr)
             return;
@@ -852,29 +822,37 @@ public:
     }
 
     DirectWriteGlyphRun glyphRun;
-    bool opaque = true;
-    float targetAlpha = 1.0f;
-    D2D1_COLOR_F backgroundColor{};
 
 private:
+    static void resetTransform (ID2D1DeviceContext1* context)
+    {
+        context->SetTransform (D2D1::IdentityMatrix());
+    }
+
+    static void setTransform (ID2D1DeviceContext1* context, AffineTransform newTransform)
+    {
+        context->SetTransform (D2DUtilities::transformToMatrix (newTransform));
+    }
+
+    DxgiAdapter::Ptr findAdapter() const
+    {
+        return Direct2DDeviceResources::findAdapter (directX->adapters, getDeviceContext());
+    }
+
     void adapterCreated (DxgiAdapter::Ptr newAdapter) override
     {
-        if (! adapter || adapter->uniqueIDMatches (newAdapter))
-        {
-            teardown();
+        const auto adapter = findAdapter();
 
-            adapter = newAdapter;
-        }
+        if (adapter == nullptr || ! adapter->uniqueIDMatches (newAdapter))
+            teardown();
     }
 
     void adapterRemoved (DxgiAdapter::Ptr expiringAdapter) override
     {
-        if (adapter && adapter->uniqueIDMatches (expiringAdapter))
-        {
-            teardown();
+        const auto adapter = findAdapter();
 
-            adapter = nullptr;
-        }
+        if (adapter != nullptr && adapter->uniqueIDMatches (expiringAdapter))
+            teardown();
     }
 
     HWND hwnd = nullptr;
@@ -892,7 +870,8 @@ Direct2DGraphicsContext::~Direct2DGraphicsContext() = default;
 
 bool Direct2DGraphicsContext::startFrame (float dpiScale)
 {
-    auto pimpl = getPimpl();
+    const auto pimpl = getPimpl();
+    const auto paintAreas = pimpl->getPaintAreas();
     currentState = pimpl->startFrame (dpiScale);
 
     if (currentState == nullptr)
@@ -902,7 +881,7 @@ bool Direct2DGraphicsContext::startFrame (float dpiScale)
     {
         resetPendingClipList();
 
-        clipToRectangleList (pimpl->getPaintAreas());
+        clipToRectangleList (paintAreas);
 
         // Clear the buffer *after* setting the clip region
         clearTargetBuffer();
@@ -1091,21 +1070,24 @@ void Direct2DGraphicsContext::resetPendingClipList()
 
 void Direct2DGraphicsContext::applyPendingClipList()
 {
+    if (! pendingClipList.isClipApplied())
+        return;
+
     auto& transform = currentState->currentTransform;
-    bool const axisAligned = currentState->isCurrentTransformAxisAligned();
+    const auto axisAligned = currentState->isCurrentTransformAxisAligned();
     const auto list = pendingClipList.getList();
 
     // Clip if the pending clip list is not empty and smaller than the frame size
     if (! list.containsRectangle (getPimpl()->getFrameSize().toFloat()) && ! list.isEmpty())
     {
-        if (list.getNumRectangles() == 1 && (transform.isOnlyTranslated || axisAligned))
+        if (list.getNumRectangles() == 1 && axisAligned)
         {
             auto r = list.getRectangle (0);
             currentState->pushAliasedAxisAlignedClipLayer (r);
         }
         else
         {
-            auto clipTransform = transform.isOnlyTranslated || axisAligned ? AffineTransform{} : transform.getTransform();
+            auto clipTransform = axisAligned ? AffineTransform{} : transform.getTransform();
             if (auto clipGeometry = D2DHelpers::rectListToPathGeometry (getPimpl()->getDirect2DFactory(),
                                                                         list,
                                                                         clipTransform,
@@ -1179,16 +1161,25 @@ void Direct2DGraphicsContext::clipToImageAlpha (const Image& sourceImage, const 
 
     if (auto deviceContext = getPimpl()->getDeviceContext())
     {
+        const auto maxDim = (int) deviceContext->GetMaximumBitmapSize();
+
+        if (sourceImage.getWidth() > maxDim || sourceImage.getHeight() > maxDim)
+        {
+            // The Direct2D renderer doesn't currently support clipping to very large images
+            jassertfalse;
+            return;
+        }
+
         // Is this a Direct2D image already?
         ComSmartPtr<ID2D1Bitmap> d2d1Bitmap;
 
-        if (auto direct2DPixelData = dynamic_cast<Direct2DPixelData*> (sourceImage.getPixelData()))
-            d2d1Bitmap = direct2DPixelData->getAdapterD2D1Bitmap();
+        if (auto direct2DPixelData = dynamic_cast<Direct2DPixelData*> (sourceImage.getPixelData().get()))
+            d2d1Bitmap = direct2DPixelData->getFirstPageForDevice (D2DUtilities::getDeviceForContext (deviceContext));
 
         if (! d2d1Bitmap)
         {
             // Convert sourceImage to single-channel alpha-only maskImage
-            d2d1Bitmap = Direct2DBitmap::fromImage (sourceImage, deviceContext, Image::SingleChannel);
+            d2d1Bitmap = Direct2DBitmap::toBitmap (sourceImage, deviceContext, Image::SingleChannel);
         }
 
         if (d2d1Bitmap)
@@ -1322,7 +1313,7 @@ void Direct2DGraphicsContext::fillRect (const Rectangle<int>& r, bool replaceExi
     {
         applyPendingClipList();
 
-        const auto asRectF = D2DUtilities::toRECT_F (getPimpl()->getFrameSize().toFloat());
+        const auto asRectF = D2DUtilities::toRECT_F (r.toFloat());
         ComSmartPtr<ID2D1RectangleGeometry> rectGeometry;
         getPimpl()->getDirect2DFactory()->CreateRectangleGeometry (asRectF,
                                                                    rectGeometry.resetAndGetPointerAddress());
@@ -1447,78 +1438,108 @@ void Direct2DGraphicsContext::strokePath (const Path& p, const PathStrokeType& s
     deviceContext->DrawGeometry (geometry, brush, strokeType.getStrokeThickness(), strokeStyle);
 }
 
-void Direct2DGraphicsContext::drawImage (const Image& image, const AffineTransform& transform)
+void Direct2DGraphicsContext::drawImage (const Image& imageIn, const AffineTransform& transform)
 {
     JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (metrics, drawImageTime)
 
     JUCE_SCOPED_TRACE_EVENT_FRAME (etw::drawImage, etw::direct2dKeyword, getFrameId());
 
-    if (image.isNull())
+    if (imageIn.isNull())
         return;
 
     applyPendingClipList();
 
     if (auto deviceContext = getPimpl()->getDeviceContext())
     {
-        // Is this a Direct2D image already with the correct format?
-        ComSmartPtr<ID2D1Bitmap1> d2d1Bitmap;
+        auto image = NativeImageType{}.convert (imageIn);
+        Direct2DPixelData* nativeBitmap = nullptr;
         Rectangle<int> imageClipArea;
 
-        if (auto direct2DPixelData = dynamic_cast<Direct2DPixelData*> (image.getPixelData()))
+        const auto imageTransform = currentState->currentTransform.getTransformWith (transform);
+
+        if (auto* subsectionPixelData = dynamic_cast<SubsectionPixelData*> (image.getPixelData().get()))
         {
-            d2d1Bitmap = direct2DPixelData->getAdapterD2D1Bitmap();
+            if (auto direct2DPixelData = dynamic_cast<Direct2DPixelData*> (subsectionPixelData->getSourcePixelData().get()))
+            {
+                nativeBitmap  = direct2DPixelData;
+                imageClipArea = subsectionPixelData->getSubsection();
+            }
+        }
+        else if (auto direct2DPixelData = dynamic_cast<Direct2DPixelData*> (image.getPixelData().get()))
+        {
+            nativeBitmap  = direct2DPixelData;
             imageClipArea = { direct2DPixelData->width, direct2DPixelData->height };
         }
-
-        if (! d2d1Bitmap || d2d1Bitmap->GetPixelFormat().format != DXGI_FORMAT_B8G8R8A8_UNORM)
+        else
         {
-            JUCE_D2DMETRICS_SCOPED_ELAPSED_TIME (Direct2DMetricsHub::getInstance()->imageContextMetrics, createBitmapTime);
-
-            d2d1Bitmap = Direct2DBitmap::fromImage (image, deviceContext, Image::ARGB);
-            imageClipArea = image.getBounds();
+            // This shouldn't happen, we converted the image to a native type already
+            jassertfalse;
         }
 
-        if (d2d1Bitmap)
+        if (! nativeBitmap)
         {
-            auto sourceRectF = D2DUtilities::toRECT_F (imageClipArea);
-
-            auto imageTransform = currentState->currentTransform.getTransformWith (transform);
-
-            if (imageTransform.isOnlyTranslation())
-            {
-                auto destinationRect = D2DUtilities::toRECT_F (imageClipArea.toFloat() + Point<float> { imageTransform.getTranslationX(), imageTransform.getTranslationY() });
-
-                deviceContext->DrawBitmap (d2d1Bitmap,
-                                           &destinationRect,
-                                           currentState->fillType.getOpacity(),
-                                           currentState->interpolationMode,
-                                           &sourceRectF,
-                                           {});
-
-                return;
-            }
-
-            if (D2DHelpers::isTransformAxisAligned (imageTransform))
-            {
-                auto destinationRect = D2DUtilities::toRECT_F (imageClipArea.toFloat().transformedBy (imageTransform));
-
-                deviceContext->DrawBitmap (d2d1Bitmap,
-                                           &destinationRect,
-                                           currentState->fillType.getOpacity(),
-                                           currentState->interpolationMode,
-                                           &sourceRectF,
-                                           {});
-                return;
-            }
-
-            ScopedTransform scopedTransform { *getPimpl(), currentState, transform };
-            deviceContext->DrawBitmap (d2d1Bitmap,
-                                       nullptr,
-                                       currentState->fillType.getOpacity(),
-                                       currentState->interpolationMode,
-                                       &sourceRectF,
-                                       {});
+            jassertfalse;
+            return;
         }
+
+        auto drawTiles = [&] (const auto& pixelData, auto&& getRect)
+        {
+            for (const auto& page : pixelData->getPagesForDevice (D2DUtilities::getDeviceForContext (deviceContext)))
+            {
+                const auto pageBounds = page.getBounds();
+                const auto intersection = pageBounds.toFloat().getIntersection (imageClipArea.toFloat());
+
+                if (intersection.isEmpty())
+                    continue;
+
+                const auto src = intersection - pageBounds.getPosition().toFloat();
+                const auto dst = getRect (intersection - imageClipArea.getPosition().toFloat());
+                const auto [srcConverted, dstConverted] = std::tuple (D2DUtilities::toRECT_F (src),
+                                                                      D2DUtilities::toRECT_F (dst));
+
+                if (nativeBitmap->pixelFormat == Image::SingleChannel)
+                {
+                    const auto lastColour = currentState->colourBrush->GetColor();
+                    const auto lastMode = deviceContext->GetAntialiasMode();
+
+                    currentState->colourBrush->SetColor (D2D1::ColorF (1.0f, 1.0f, 1.0f, currentState->fillType.getOpacity()));
+                    deviceContext->SetAntialiasMode (D2D1_ANTIALIAS_MODE_ALIASED);
+                    deviceContext->FillOpacityMask (page.bitmap,
+                                                    currentState->colourBrush,
+                                                    dstConverted,
+                                                    srcConverted);
+
+                    deviceContext->SetAntialiasMode (lastMode);
+                    currentState->colourBrush->SetColor (lastColour);
+                }
+                else
+                {
+                    deviceContext->DrawBitmap (page.bitmap,
+                                               dstConverted,
+                                               currentState->fillType.getOpacity(),
+                                               currentState->interpolationMode,
+                                               srcConverted,
+                                               {});
+                }
+            }
+        };
+
+        if (imageTransform.isOnlyTranslation() || D2DHelpers::isTransformAxisAligned (imageTransform))
+        {
+            drawTiles (nativeBitmap, [&] (auto intersection)
+            {
+                return intersection.transformedBy (imageTransform);
+            });
+
+            return;
+        }
+
+        ScopedTransform scopedTransform { *getPimpl(), currentState, transform };
+
+        drawTiles (nativeBitmap, [] (auto intersection)
+        {
+            return intersection;
+        });
     }
 }
 
@@ -1803,5 +1824,103 @@ Direct2DGraphicsContext::ScopedTransform::~ScopedTransform()
 {
     pimpl.resetDeviceContextTransform();
 }
+
+//==============================================================================
+//==============================================================================
+
+#if JUCE_UNIT_TESTS
+
+class Direct2DGraphicsContextTests : public UnitTest
+{
+public:
+    Direct2DGraphicsContextTests() : UnitTest ("Direct2D Graphics Context", UnitTestCategories::graphics) {}
+
+    void runTest() override
+    {
+        const auto imageWidth = 1 << 15;
+        const auto imageHeight = 128;
+        Image largeImageSoftware { Image::RGB, imageWidth, imageHeight, false, SoftwareImageType{} };
+
+        {
+            Graphics g { largeImageSoftware };
+            g.setGradientFill ({ Colours::red, 0, 0, Colours::cyan, (float) largeImageSoftware.getWidth(), 0, false });
+            g.fillAll();
+        }
+
+        constexpr auto targetDim = 512;
+
+        const auto largeImageNative = NativeImageType{}.convert (largeImageSoftware);
+        const auto subsection = largeImageNative.getClippedImage (largeImageNative.getBounds().withSizeKeepingCentre (1 << 14, 64));
+
+        beginTest ("Render large images");
+        {
+            for (const auto& imageToDraw : { largeImageNative, subsection })
+            {
+                const AffineTransform transformsToTest[]
+                {
+                    {},
+                    AffineTransform::translation ((float) targetDim - (float) imageToDraw.getWidth(), 0),
+                    AffineTransform::translation (0, (float) targetDim - (float) imageToDraw.getHeight()),
+                    AffineTransform::scale ((float) targetDim / imageWidth),
+                    AffineTransform::scale ((float) targetDim / imageWidth)
+                            .followedBy (AffineTransform::translation (32, 64)),
+                    AffineTransform::scale (1.1f),
+                    AffineTransform::scale ((float) targetDim / imageWidth,
+                                            (float) targetDim / imageHeight),
+                    AffineTransform::rotation (MathConstants<float>::pi * 0.25f),
+                    AffineTransform::rotation (MathConstants<float>::pi * 0.25f, imageWidth * 0.5f, 0)
+                            .followedBy (AffineTransform::translation (-imageWidth * 0.5f, 0)),
+                };
+
+                for (const auto& transform : transformsToTest)
+                {
+                    Image targetNative { Image::RGB, targetDim, targetDim, true, NativeImageType{} };
+                    Image targetSoftware { Image::RGB, targetDim, targetDim, true, SoftwareImageType{} };
+
+                    for (auto& image : { &targetNative, &targetSoftware })
+                    {
+                        Graphics g { *image };
+                        g.drawImageTransformed (imageToDraw, transform);
+                    }
+
+                    compareImages (targetNative, targetSoftware);
+                }
+            }
+        }
+    }
+
+    void compareImages (const Image& a, const Image& b)
+    {
+        expect (a.getBounds() == b.getBounds());
+
+        const Image::BitmapData bitmapA { a, Image::BitmapData::readOnly };
+        const Image::BitmapData bitmapB { b, Image::BitmapData::readOnly };
+
+        int64_t accumulatedError{};
+        int64_t numSamples{};
+
+        for (auto y = 0; y < a.getHeight(); y += 16)
+        {
+            for (auto x = 0; x < a.getWidth(); x += 16)
+            {
+                const auto expected = bitmapA.getPixelColour (x, y);
+                const auto actual   = bitmapB.getPixelColour (x, y);
+
+                for (auto& fn : { &Colour::getRed, &Colour::getGreen, &Colour::getBlue, &Colour::getAlpha })
+                {
+                    accumulatedError += ((int64_t) (actual.*fn)() - (int64_t) (expected.*fn)());
+                    ++numSamples;
+                }
+            }
+        }
+
+        const auto averageError = (double) accumulatedError / (double) numSamples;
+        expect (std::abs (averageError) < 1.0);
+    }
+};
+
+static Direct2DGraphicsContextTests direct2DGraphicsContextTests;
+
+#endif
 
 } // namespace juce

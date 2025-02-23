@@ -39,9 +39,12 @@ namespace juce
 
 /** Helper class that relays audio parameter information to an object inside a WebBrowserComponent.
 
-    In order to create a relay you need to specify a WebBrowserComponent object and an identifier
-    for the relayed state. This will result in a Javascript object becoming available inside the
-    WebBrowserComponent under the provided identifier.
+    In order to create a relay you need to specify an identifier for the relayed state. This will
+    result in a Javascript object becoming available inside the WebBrowserComponent under the
+    provided identifier.
+
+    Pass the relay object to WebBrowserComponent::Options::withOptionsFrom() to associate it with
+    a WebBrowserComponent instance.
 
     You can then use a WebSliderParameterAttachment as you would a SliderAttachment, to attach the
     relay to a RangedAudioParameter. This will synchronise the state and events of the Javascript
@@ -49,7 +52,8 @@ namespace juce
 
     @code
     // Add a relay to your AudioProcessorEditor members
-    WebSliderRelay cutoffSliderRelay { webComponent, "cutoffSlider" };
+    WebSliderRelay cutoffSliderRelay { "cutoffSlider" };
+    WebBrowserComponent webComponent { WebBrowserComponent::Options{}::withOptionsFrom (cutoffSliderRelay) };
     @endcode
 
     @code
@@ -62,14 +66,15 @@ namespace juce
 
     @tags{GUI}
 */
-class JUCE_API  WebSliderRelay : public OptionsBuilder<WebBrowserComponent::Options>
+class JUCE_API  WebSliderRelay : public OptionsBuilder<WebBrowserComponent::Options>,
+                                 private WebViewLifetimeListener
 {
 public:
     /** Creating a relay will ensure that a Javascript object under the provided name will be
         available in the specified WebBrowserComponent's context. Use the frontend framework's
         getSliderState function with the same name to get a hold of this object.
     */
-    WebSliderRelay (WebBrowserComponent& browserIn, StringRef nameIn);
+    WebSliderRelay (StringRef nameIn);
 
     //==============================================================================
     /** @internal */
@@ -98,8 +103,10 @@ public:
 
 private:
     void handleEvent (const var& event);
+    void webViewConstructed (WebBrowserComponent*) override;
+    void webViewDestructed (WebBrowserComponent*) override;
 
-    WebBrowserComponent& browser;
+    WebBrowserComponent* browser = nullptr;
     String name;
     float value{};
     Identifier eventId { "__juce__slider" + name };
@@ -111,9 +118,12 @@ private:
 
 /** Helper class that relays audio parameter information to an object inside a WebBrowserComponent.
 
-    In order to create a relay you need to specify a WebBrowserComponent object and an identifier
-    for the relayed state. This will result in a Javascript object becoming available inside the
-    WebBrowserComponent under the provided identifier.
+    In order to create a relay you need to specify an identifier for the relayed state. This will
+    result in a Javascript object becoming available inside the WebBrowserComponent under the
+    provided identifier.
+
+    Pass the relay object to WebBrowserComponent::Options::withOptionsFrom() to associate it with
+    a WebBrowserComponent instance.
 
     You can then use a WebToggleButtonParameterAttachment as you would a ButtonParameterAttachment,
     to attach the relay to a RangedAudioParameter. This will synchronise the state and events of
@@ -121,7 +131,8 @@ private:
 
     @code
     // Add a relay to your AudioProcessorEditor members
-    WebToggleButtonRelay muteToggleRelay { webComponent, "muteToggle" };
+    WebToggleButtonRelay muteToggleRelay { "muteToggle" };
+    WebBrowserComponent webComponent { WebBrowserComponent::Options{}::withOptionsFrom (muteToggleRelay) };
     @endcode
 
     @code
@@ -134,14 +145,15 @@ private:
 
     @tags{GUI}
 */
-class JUCE_API  WebToggleButtonRelay  : public OptionsBuilder<WebBrowserComponent::Options>
+class JUCE_API  WebToggleButtonRelay  : public OptionsBuilder<WebBrowserComponent::Options>,
+                                        private WebViewLifetimeListener
 {
 public:
     /** Creating a relay will ensure that a Javascript object under the provided name will be
         available in the specified WebBrowserComponent's context. Use the frontend framework's
         getToggleState function with the same name to get a hold of this object.
     */
-    WebToggleButtonRelay (WebBrowserComponent& browserIn, StringRef nameIn);
+    WebToggleButtonRelay (StringRef nameIn);
 
     //==============================================================================
     /** @internal */
@@ -169,8 +181,10 @@ public:
 
 private:
     void handleEvent (const var& event);
+    void webViewConstructed (WebBrowserComponent*) override;
+    void webViewDestructed (WebBrowserComponent*) override;
 
-    WebBrowserComponent& browser;
+    WebBrowserComponent* browser = nullptr;
     String name;
     Identifier eventId { "__juce__toggle" + name };
     ListenerList<Listener> listeners;
@@ -181,9 +195,12 @@ private:
 
 /** Helper class that relays audio parameter information to an object inside a WebBrowserComponent.
 
-    In order to create a relay you need to specify a WebBrowserComponent object and an identifier
-    for the relayed state. This will result in a Javascript object becoming available inside the
-    WebBrowserComponent under the provided identifier.
+    In order to create a relay you need to specify an identifier for the relayed state. This will
+    result in a Javascript object becoming available inside the WebBrowserComponent under the
+    provided identifier.
+
+    Pass the relay object to WebBrowserComponent::Options::withOptionsFrom() to associate it with
+    a WebBrowserComponent instance.
 
     You can then use a WebComboBoxParameterAttachment as you would a ComboBoxParameterAttachment,
     to attach the relay to a RangedAudioParameter. This will synchronise the state and events of
@@ -191,7 +208,8 @@ private:
 
     @code
     // Add a relay to your AudioProcessorEditor members
-    WebComboBoxRelay filterTypeComboRelay { webComponent, "filterTypeCombo" };
+    WebComboBoxRelay filterTypeComboRelay { "filterTypeCombo" };
+    WebBrowserComponent webComponent { WebBrowserComponent::Options{}::withOptionsFrom (filterTypeComboRelay) };
     @endcode
 
     @code
@@ -204,14 +222,15 @@ private:
 
     @tags{GUI}
 */
-class JUCE_API  WebComboBoxRelay  : public OptionsBuilder<WebBrowserComponent::Options>
+class JUCE_API  WebComboBoxRelay  : public OptionsBuilder<WebBrowserComponent::Options>,
+                                    private WebViewLifetimeListener
 {
 public:
     /** Creating a relay will ensure that a Javascript object under the provided name will be
         available in the specified WebBrowserComponent's context. Use the frontend framework's
         getComboBoxState function with the same name to get a hold of this object.
     */
-    WebComboBoxRelay (WebBrowserComponent& browserIn, StringRef nameIn);
+    WebComboBoxRelay (StringRef nameIn);
 
     //==============================================================================
     /** @internal */
@@ -239,8 +258,10 @@ public:
 
 private:
     void handleEvent (const var& event);
+    void webViewConstructed (WebBrowserComponent*) override;
+    void webViewDestructed (WebBrowserComponent*) override;
 
-    WebBrowserComponent& browser;
+    WebBrowserComponent* browser = nullptr;
     String name;
     Identifier eventId { "__juce__comboBox" + name };
     ListenerList<Listener> listeners;
