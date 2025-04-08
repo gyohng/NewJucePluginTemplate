@@ -44,7 +44,7 @@
 
   ID:                 juce_core
   vendor:             juce
-  version:            8.0.6
+  version:            8.0.7
   name:               JUCE core classes
   description:        The essential set of basic JUCE classes, as required by all the other JUCE modules. Includes text, container, memory, threading and i/o functionality.
   website:            http://www.juce.com/juce
@@ -318,6 +318,7 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 #include "files/juce_File.h"
 #include "files/juce_DirectoryIterator.h"
 #include "files/juce_RangedDirectoryIterator.h"
+#include "detail/juce_NativeFileHandle.h"
 #include "files/juce_FileInputStream.h"
 #include "files/juce_FileOutputStream.h"
 #include "files/juce_FileSearchPath.h"

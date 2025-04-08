@@ -190,7 +190,7 @@ public:
         appFocusChangeCallback = appFocusChanged;
         isEventBlockedByModalComps = checkEventBlockedByModalComps;
 
-        auto r = makeNSRect (component.getLocalBounds());
+        auto r = makeCGRect (component.getLocalBounds());
 
         view = [createViewInstance() initWithFrame: r];
         setOwner (view, this);
@@ -391,7 +391,7 @@ public:
 
     void setBounds (const Rectangle<int>& newBounds, bool) override
     {
-        auto r = makeNSRect (newBounds);
+        auto r = makeCGRect (newBounds);
         auto oldViewSize = [view frame].size;
 
         if (isSharedWindow)
@@ -1115,7 +1115,7 @@ public:
         const Rectangle currentBounds { (float) frameSize.width, (float) frameSize.height };
 
         for (auto& i : deferredRepaints)
-            [view setNeedsDisplayInRect: makeNSRect (i)];
+            [view setNeedsDisplayInRect: makeCGRect (i)];
 
         lastRepaintTime = Time::getMillisecondCounter();
 
@@ -1312,7 +1312,7 @@ public:
         constrainer->checkBounds (pos, original, screenBounds,
                                   isStretchingTop, isStretchingLeft, isStretchingBottom, isStretchingRight);
 
-        return flippedScreenRect (makeNSRect (detail::ScalingHelpers::scaledScreenPosToUnscaled (scale, pos)));
+        return flippedScreenRect (makeCGRect (detail::ScalingHelpers::scaledScreenPosToUnscaled (scale, pos)));
     }
 
     static void showArrowCursorIfNeeded()
@@ -1731,6 +1731,7 @@ public:
     bool isStretchingTop = false, isStretchingLeft = false, isStretchingBottom = false, isStretchingRight = false;
     bool windowRepresentsFile = false;
     bool isAlwaysOnTop = false, wasAlwaysOnTop = false, inBecomeKeyWindow = false;
+    bool inPerformKeyEquivalent = false;
     String stringBeingComposed;
     int startOfMarkedTextInTextInputTarget = 0;
 
@@ -2333,6 +2334,13 @@ struct JuceNSViewClass final : public NSViewComponentPeerWrapper<ObjCClass<NSVie
             if (auto* owner = getOwner (self))
             {
                 const auto ref = owner->safeComponent;
+                const auto prev = std::exchange (owner->inPerformKeyEquivalent, true);
+
+                const ScopeGuard scope { [&ref, owner, prev]
+                {
+                    if (ref != nullptr)
+                        owner->inPerformKeyEquivalent = prev;
+                } };
 
                 if (owner->sendEventToInputContextOrComponent (ev))
                 {
@@ -2574,7 +2582,7 @@ struct JuceNSViewClass final : public NSViewComponentPeerWrapper<ObjCClass<NSVie
                                                                    : target->getTextBounds (codePointRange).getRectangle (0);
                         const auto areaOnDesktop = comp->localAreaToGlobal (rect);
 
-                        return flippedScreenRect (makeNSRect (detail::ScalingHelpers::scaledScreenPosToUnscaled (areaOnDesktop)));
+                        return flippedScreenRect (makeCGRect (detail::ScalingHelpers::scaledScreenPosToUnscaled (areaOnDesktop)));
                     }
                 }
             }
@@ -2842,7 +2850,7 @@ struct JuceNSWindowClass final : public NSViewComponentPeerWrapper<ObjCClass<NSW
                                                             .withHeight ((float) constrainer->getMaximumHeight());
                         const auto constrained = expanded.constrainedWithin (safeScreenBounds);
 
-                        return flippedScreenRect (makeNSRect ([&]
+                        return flippedScreenRect (makeCGRect ([&]
                                                               {
                                                                   if (constrained == owner->getBounds().toFloat())
                                                                       return owner->lastSizeBeforeZoom.toFloat();
@@ -2982,7 +2990,7 @@ void Desktop::setKioskComponent (Component* kioskComp, bool shouldBeEnabled, boo
         else if (! shouldBeEnabled)
             [NSApp setPresentationOptions: NSApplicationPresentationDefault];
 
-        peer->setFullScreen (true);
+        peer->setFullScreen (shouldBeEnabled);
     }
     else
     {

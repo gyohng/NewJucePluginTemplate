@@ -75,6 +75,7 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 #include <juce_audio_basics/native/juce_AudioWorkgroup_mac.h>
 #include <juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp>
 #include <juce_audio_processors/format_types/juce_AU_Shared.h>
+#include <juce_gui_basics/detail/juce_ComponentPeerHelpers.h>
 
 #if JucePlugin_Enable_ARA
  #include <juce_audio_processors/utilities/ARA/juce_AudioProcessor_ARAExtensions.h>
@@ -1687,7 +1688,7 @@ public:
         static NSView* createViewFor (AudioProcessor* filter, JuceAU* au, AudioProcessorEditor* const editor)
         {
             auto* editorCompHolder = new EditorCompHolder (editor);
-            auto r = convertToHostBounds (makeNSRect (editorCompHolder->getSizeToContainChild()));
+            auto r = convertToHostBounds (makeCGRect (editorCompHolder->getSizeToContainChild()));
 
             static JuceUIViewClass cls;
             auto* view = [[cls.createInstance() initWithFrame: r] autorelease];
@@ -1747,13 +1748,19 @@ public:
                     {
                         lastEventTime = eventTime;
 
+                        if (auto* peer = getPeer())
+                            if (detail::ComponentPeerHelpers::isInPerformKeyEquivalent (*peer))
+                                return false;
+
                         auto* view = (NSView*) getWindowHandle();
                         auto* hostView = [view superview];
-                        auto* hostWindow = [hostView window];
 
-                        [hostWindow makeFirstResponder: hostView];
+                        [[hostView window] makeFirstResponder: hostView];
                         [hostView keyDown: currentEvent];
-                        [hostWindow makeFirstResponder: view];
+
+                        if ((hostView = [view superview]))
+                            if (auto* hostWindow = [hostView window])
+                                [hostWindow makeFirstResponder: view];
                     }
                 }
             }
@@ -1766,7 +1773,7 @@ public:
             [CATransaction begin];
             [CATransaction setValue: (id) kCFBooleanTrue forKey:kCATransactionDisableActions];
 
-            auto rect = convertToHostBounds (makeNSRect (lastBounds));
+            auto rect = convertToHostBounds (makeCGRect (lastBounds));
             auto* view = (NSView*) getWindowHandle();
 
             auto superRect = [[view superview] frame];

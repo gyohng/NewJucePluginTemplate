@@ -52,7 +52,7 @@
 //==============================================================================
 #if JUCE_MAC
  #import <QuartzCore/QuartzCore.h>
- #include <CoreImage/CIRenderDestination.h>
+ #include <CoreImage/CoreImage.h>
  #include <CoreText/CTFont.h>
 
 #elif JUCE_WINDOWS
@@ -94,6 +94,8 @@
   #pragma comment(lib, "DComp.lib")
   #pragma comment(lib, "dxguid.lib")
  #endif
+
+ #include "native/juce_Direct2DPixelDataPage_windows.h"
 
 #elif JUCE_IOS
  #import <QuartzCore/QuartzCore.h>
@@ -157,6 +159,8 @@ extern "C"
 #endif
 
 //==============================================================================
+#include "juce_core/zip/juce_zlib.h"
+
 #include "fonts/juce_FunctionPointerDestructor.h"
 #include "native/juce_EventTracing.h"
 
@@ -190,9 +194,9 @@ extern "C"
 #include "fonts/juce_FontOptions.cpp"
 #include "fonts/juce_Font.cpp"
 #include "detail/juce_Ranges.cpp"
-#include "fonts/juce_SimpleShapedText.cpp"
-#include "fonts/juce_JustifiedText.cpp"
-#include "fonts/juce_ShapedText.cpp"
+#include "detail/juce_SimpleShapedText.cpp"
+#include "detail/juce_JustifiedText.cpp"
+#include "detail/juce_ShapedText.cpp"
 #include "fonts/juce_GlyphArrangement.cpp"
 #include "fonts/juce_TextLayout.cpp"
 #include "effects/juce_DropShadowEffect.cpp"
