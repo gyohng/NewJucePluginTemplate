@@ -983,6 +983,10 @@ private:
         if (nsURL == nullptr)
             return;
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnan-infinity-disabled"
+#endif
         const auto timeOutSeconds = [this]
         {
             if (timeOutMs > 0)
@@ -990,6 +994,9 @@ private:
 
             return timeOutMs < 0 ? std::numeric_limits<double>::infinity() : 60.0;
         }();
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
         NSUniquePtr<NSMutableURLRequest> req { [[NSMutableURLRequest requestWithURL: nsURL.get()
                                                                         cachePolicy: NSURLRequestReloadIgnoringLocalCacheData
