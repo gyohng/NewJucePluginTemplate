@@ -66,12 +66,14 @@ ${JUCE_INCLUDES}
 #endif
 
 #if ! JUCE_DONT_DECLARE_PROJECTINFO
+extern unsigned g_JucePlugin_VersionCode;
+extern const char *g_JucePlugin_VersionString;
 namespace ProjectInfo
 {
     const char* const  projectName    = "${JUCE_EXECUTABLE_NAME}";
     const char* const  companyName    = "${JUCE_COMPANY_NAME}";
-    const char* const  versionString  = "${JUCE_PROJECT_VERSION}";
-    const int          versionNumber  =  ${JUCE_PROJECT_VERSION_HEX};
+    const char* const  versionString  = g_JucePlugin_VersionString;
+    const int          versionNumber  = (int)g_JucePlugin_VersionCode;
 }
 #endif
 )";
@@ -533,7 +535,7 @@ int printJUCEVersion (juce::ArgumentList&&)
 
 int main (int argc, char** argv)
 {
-    juce::ScopedJuceInitialiser_GUI libraryInitialiser;
+    //juce::ScopedJuceInitialiser_GUI libraryInitialiser;
 
     return juce::ConsoleApplication::invokeCatchingFailures ([argc, argv]
     {
