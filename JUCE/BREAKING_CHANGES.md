@@ -1,5 +1,57 @@
 # JUCE breaking changes
 
+# Version 8.0.7
+
+## Change
+
+The default Visual Studio project settings for "Debug Information Format" and
+"Force Generation of Debug Symbols" have changed in the Projucer. By default
+debug symbols are generated using the /Z7 flag.
+
+**Possible Issues**
+
+PDB file generation may change depending on the combination of "Debug
+Information Format" and "Force Generation of Debug Symbols" settings.
+
+**Workaround**
+
+Change the "Debug Information Format" and "Force Generation of Debug Symbols"
+settings for each Visual Studio configuration as required.
+
+**Rationale**
+
+The default behaviour of using "Program Database (/Zi)" is incompatible with
+some CI workflows and caching mechanisms. Enabling "Force Generation of Debug
+Symbols" by default also ensures /Z7 behaves more like /Zi by always generating
+a PDB file.
+
+
+## Change
+
+The signatures of virtual functions ImagePixelData::applyGaussianBlurEffect()
+and ImagePixelData::applySingleChannelBoxBlurEffect() have changed.
+ImageEffects::applyGaussianBlurEffect() and
+ImageEffects::applySingleChannelBoxBlurEffect() have been removed.
+
+**Possible Issues**
+
+User code overriding or calling these functions will fail to compile.
+
+**Workaround**
+
+The blur functions now operate within a specified area of the image. Update
+overriding implementations accordingly. Instead of using the ImageEffects
+static functions, call the corresponding ImagePixelData member functions
+directly.
+
+**Rationale**
+
+The blur functions had a 'temporary storage' parameter which was not
+particularly useful in practice, so this has been removed. Moving the
+functionality of the ImageEffects static members directly into corresponding
+member functions of ImagePixelData simplifies the public API.
+
+
 # Version 8.0.5
 
 ## Change
