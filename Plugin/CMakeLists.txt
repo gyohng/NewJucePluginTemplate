@@ -22,7 +22,7 @@ if (APPLE)
 endif()
 
 if (NOT USE_XCODE)
-    if ("$ENV{CXLION_IDE}")
+    if ("$ENV{CLION_IDE}")
         # do nothing
     elseif (BUILD_MACOS11)
         set(CMAKE_OSX_SYSROOT "$ENV{HOME}/MacOSX-SDKs/MacOSX11.3.sdk" CACHE STRING "" FORCE)

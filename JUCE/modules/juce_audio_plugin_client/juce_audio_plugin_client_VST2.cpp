@@ -1816,7 +1816,7 @@ private:
 
         const auto uid = VST3ClientExtensions::convertVST2PluginId (JucePlugin_VSTUniqueID, JucePlugin_Name, VST3ClientExtensions::InterfaceType::component);
         const auto uidString = String ((const char *) uid.data(), uid.size());
-        MemoryBlock uidValue;
+        juce::MemoryBlock uidValue;
         uidValue.loadFromHexString (uidString);
         uidValue.copyTo (args.ptr, 0, uidValue.getSize());
         return 1;

@@ -146,8 +146,25 @@ inline var nsDictionaryToVar (const NSDictionary* dictionary)
 template <typename RectangleType>
 CGRect makeNSRect (const RectangleType& r) noexcept = delete;
 
+struct CGRectCustom : public CGRect
+{
+    CGRectCustom() noexcept = default;
+    CGRectCustom (const CGRect& r) noexcept : CGRect (r) {}
+    CGRectCustom (CGRect&& r) noexcept : CGRect (r) {}
+    CGRectCustom (const CGRectCustom& r) noexcept : CGRect (r) {}
+#ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wclass-conversion"
+#endif
+    operator NSRect() const noexcept { return NSRectFromCGRect(*this); }
+    void operator= (const NSRect& r) noexcept { CGRect::operator= (NSRectToCGRect(r)); }
+#ifdef __clang__
+    #pragma clang diagnostic pop
+#endif
+};
+
 template <typename RectangleType>
-CGRect makeCGRect (const RectangleType& r) noexcept
+CGRectCustom makeCGRect (const RectangleType& r) noexcept
 {
     return CGRectMake (static_cast<CGFloat> (r.getX()),
                        static_cast<CGFloat> (r.getY()),

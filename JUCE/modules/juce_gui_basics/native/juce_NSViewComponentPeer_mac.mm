@@ -411,7 +411,7 @@ public:
                      display: false];
         }
 
-        if (! CGSizeEqualToSize (NSSizeToCGSize(oldViewSize), NSSizeToCGSize(r.size)))
+        if (! CGSizeEqualToSize (NSSizeToCGSize(oldViewSize), r.size))
             [view setNeedsDisplay: true];
     }
 
