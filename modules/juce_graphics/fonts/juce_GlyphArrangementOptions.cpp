@@ -35,26 +35,16 @@
 namespace juce
 {
 
-class Direct2DHwndContext : public Direct2DGraphicsContext
+auto GlyphArrangementOptions::tie() const noexcept
 {
-public:
-    explicit Direct2DHwndContext (HWND windowHandle);
-    ~Direct2DHwndContext() override;
+    return std::tie (lineSpacing, lineHeightMultiple);
+}
 
-    void handleShowWindow();
-
-    void addDeferredRepaint (Rectangle<int> deferredRepaint);
-
-    Image createSnapshot() const override;
-
-private:
-    struct HwndPimpl;
-    std::unique_ptr<HwndPimpl> pimpl;
-
-    Pimpl* getPimpl() const noexcept override;
-    void clearTargetBuffer() override;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Direct2DHwndContext)
-};
+bool GlyphArrangementOptions::operator== (const GlyphArrangementOptions& other) const { return tie() == other.tie(); }
+bool GlyphArrangementOptions::operator!= (const GlyphArrangementOptions& other) const { return tie() != other.tie(); }
+bool GlyphArrangementOptions::operator<  (const GlyphArrangementOptions& other) const { return tie() <  other.tie(); }
+bool GlyphArrangementOptions::operator<= (const GlyphArrangementOptions& other) const { return tie() <= other.tie(); }
+bool GlyphArrangementOptions::operator>  (const GlyphArrangementOptions& other) const { return tie() >  other.tie(); }
+bool GlyphArrangementOptions::operator>= (const GlyphArrangementOptions& other) const { return tie() >= other.tie(); }
 
 } // namespace juce

@@ -1147,7 +1147,7 @@ public:
 
     /** Generates a snapshot of part of this component.
 
-        This will return a new Image, the size of the rectangle specified,
+        This will return a new Image of type imageType, the size of the rectangle specified,
         containing a snapshot of the specified area of the component and all
         its children.
 
@@ -1162,7 +1162,8 @@ public:
     */
     Image createComponentSnapshot (Rectangle<int> areaToGrab,
                                    bool clipImageToComponentBounds = true,
-                                   float scaleFactor = 1.0f);
+                                   float scaleFactor = 1.0f,
+                                   const ImageType& imageType = NativeImageType{});
 
     /** Draws this component and all its subcomponents onto the specified graphics
         context.
@@ -2414,6 +2415,9 @@ public:
         /** If the component is valid, this deletes it and sets this pointer to null. */
         void deleteAndZero()                                  { delete std::exchange (weakRef, nullptr); }
 
+        bool operator== (SafePointer other) const noexcept    { return weakRef == other.weakRef; }
+        bool operator!= (SafePointer other) const noexcept    { return ! operator== (other); }
+
         bool operator== (ComponentType* component) const noexcept   { return weakRef == component; }
         bool operator!= (ComponentType* component) const noexcept   { return weakRef != component; }
 
@@ -2499,6 +2503,9 @@ public:
         @see setCachedComponentImage
     */
     CachedComponentImage* getCachedComponentImage() const noexcept      { return cachedImage.get(); }
+
+    /** Invalidates cached images, both in the CachedComponentImage (if any) and the image effect state. */
+    void invalidateCachedImageResources();
 
     /** Sets a flag to indicate whether mouse drag events on this Component should be ignored when it is inside a
         Viewport with drag-to-scroll functionality enabled. This is useful for Components such as sliders that

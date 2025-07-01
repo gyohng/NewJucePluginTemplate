@@ -205,7 +205,7 @@ void GlyphArrangement::addCurtailedLineOfText (const Font& font, const String& t
     using namespace detail;
 
     auto options = ShapedText::Options{}.withMaxNumLines (1)
-                                        .withMaxWidth (maxWidthPixels)
+                                        .withWordWrapWidth (maxWidthPixels)
                                         .withFont (font)
                                         .withBaselineAtZero()
                                         .withTrailingWhitespacesShouldFit (false);
@@ -225,10 +225,10 @@ void GlyphArrangement::addJustifiedText (const Font& font, const String& text,
 {
     using namespace detail;
 
-    ShapedText st { text, ShapedText::Options{}.withMaxWidth (maxLineWidth)
+    ShapedText st { text, ShapedText::Options{}.withWordWrapWidth (maxLineWidth)
                                                .withJustification (horizontalLayout)
                                                .withFont (font)
-                                               .withLeading (1.0f + leading / font.getHeight())
+                                               .withAdditiveLineSpacing (leading)
                                                .withBaselineAtZero()
                                                .withTrailingWhitespacesShouldFit (false) };
 
@@ -242,7 +242,7 @@ static auto createFittedText (const Font& f,
                               Justification layout,
                               int maximumLines,
                               float minimumRelativeHorizontalScale,
-                              detail::ShapedText::Options baseOptions = {})
+                              detail::ShapedText::Options baseOptions)
 {
     using namespace detail;
 
@@ -259,7 +259,7 @@ static auto createFittedText (const Font& f,
     {
         ShapedText st { text,
                         baseOptions
-                            .withMaxWidth (width)
+                            .withWordWrapWidth (width)
                             .withHeight (height)
                             .withJustification (layout)
                             .withFont (f)
@@ -275,7 +275,7 @@ static auto createFittedText (const Font& f,
     // First attempt: try to squash the entire text on a single line
     {
         ShapedText st { trimmed, baseOptions.withFont (f)
-                                            .withMaxWidth (width)
+                                            .withWordWrapWidth (width)
                                             .withHeight (height)
                                             .withMaxNumLines (1)
                                             .withJustification (layout)
@@ -294,7 +294,7 @@ static auto createFittedText (const Font& f,
             ShapedText squashed { trimmed,
                                   baseOptions
                                       .withFont (f.withHorizontalScale (f.getHorizontalScale() * requiredRelativeScale))
-                                      .withMaxWidth (width)
+                                      .withWordWrapWidth (width)
                                       .withHeight (height)
                                       .withJustification (layout)
                                       .withTrailingWhitespacesShouldFit (false)};
@@ -310,7 +310,7 @@ static auto createFittedText (const Font& f,
         ShapedText squashed { trimmed,
                               baseOptions
                                   .withFont (f.withHorizontalScale (minimumHorizontalScale))
-                                  .withMaxWidth (width)
+                                  .withWordWrapWidth (width)
                                   .withHeight (height)
                                   .withJustification (layout)
                                   .withMaxNumLines (1)
@@ -336,7 +336,10 @@ static auto createFittedText (const Font& f,
     while (numLines < maximumLines)
     {
         ++numLines;
-        auto newFontHeight = height / (float) numLines;
+
+        const auto a = baseOptions.getAdditiveLineSpacing();
+        auto newFontHeight = ((height + a) / (float) numLines - a)
+                             / baseOptions.getLeading();
 
         if (newFontHeight < font.getHeight())
             font.setHeight (jmax (8.0f, newFontHeight));
@@ -344,7 +347,7 @@ static auto createFittedText (const Font& f,
         ShapedText squashed { trimmed,
                               baseOptions
                                   .withFont (font)
-                                  .withMaxWidth (width)
+                                  .withWordWrapWidth (width)
                                   .withHeight (height)
                                   .withMaxNumLines (numLines)
                                   .withJustification (layout)
@@ -373,7 +376,7 @@ static auto createFittedText (const Font& f,
         return ShapedText { trimmed,
                             baseOptions
                                 .withFont (font.withHorizontalScale (horizontalScale))
-                                .withMaxWidth (width)
+                                .withWordWrapWidth (width)
                                 .withHeight (height)
                                 .withMaxNumLines (numLines)
                                 .withJustification (layout)
@@ -451,6 +454,13 @@ static auto createFittedText (const Font& f,
     return candidate.shapedText;
 }
 
+static detail::ShapedText::Options withGlyphArrangementOptions (const detail::ShapedText::Options& opts,
+                                                                const GlyphArrangementOptions& gaOpts)
+{
+    return opts.withAdditiveLineSpacing (gaOpts.getLineSpacing())
+               .withLeading (gaOpts.getLineHeightMultiple());
+}
+
 void GlyphArrangement::addFittedText (const Font& f,
                                       const String& text,
                                       float x,
@@ -459,9 +469,19 @@ void GlyphArrangement::addFittedText (const Font& f,
                                       float height,
                                       Justification layout,
                                       int maximumLines,
-                                      float minimumHorizontalScale)
+                                      float minimumHorizontalScale,
+                                      GlyphArrangementOptions options)
 {
-    const auto st = createFittedText (f, text, width, height, layout, maximumLines, minimumHorizontalScale);
+    using namespace detail;
+
+    const auto st = createFittedText (f,
+                                      text,
+                                      width,
+                                      height,
+                                      layout,
+                                      maximumLines,
+                                      minimumHorizontalScale,
+                                      withGlyphArrangementOptions (ShapedText::Options{}, options));
 
     // ShapedText has the feature for visually truncating the last line, and createFittedText() uses
     // it. Hence if it's only the last line that requires a larger width, ShapedText will take care
@@ -481,7 +501,8 @@ void GlyphArrangement::addFittedText (const Font& f,
                                                     layout,
                                                     maximumLines,
                                                     minimumHorizontalScale,
-                                                    detail::ShapedText::Options{}.withAllowBreakingInsideWord());
+                                                    withGlyphArrangementOptions (ShapedText::Options{}.withAllowBreakingInsideWord(),
+                                                                                 options));
 
     addGlyphsFromShapedText (*this, stWithWordBreaks, x, y);
 }
