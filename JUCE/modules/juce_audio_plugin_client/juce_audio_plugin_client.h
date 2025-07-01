@@ -44,7 +44,7 @@
 
   ID:                 juce_audio_plugin_client
   vendor:             juce
-  version:            8.0.7
+  version:            8.0.8
   name:               JUCE audio plugin wrapper classes
   description:        Classes for building VST, VST3, AU, AUv3, LV2 and AAX plugins.
   website:            http://www.juce.com/juce
@@ -68,8 +68,12 @@
 
     Enable this if you want your VST3 plug-in to load and save VST2 compatible
     state. This allows hosts to replace VST2 plug-ins with VST3 plug-ins. If
-    you change this option then your VST3 plug-in will be incompatible with
-    previous versions.
+    you change this option then your VST3 plug-in will, by default, be incompatible
+    with previous versions.
+
+    If you've already released a VST2 and VST3 with this flag set to 0, you can still enable
+    migration from VST2 to VST3 on newer hosts. See VST3ClientExtensions::getCompatibleClasses()
+    and VST3ClientExtensions::getCompatibleParameterIds() for more details.
 */
 #ifndef JUCE_VST3_CAN_REPLACE_VST2
  #define JUCE_VST3_CAN_REPLACE_VST2 1

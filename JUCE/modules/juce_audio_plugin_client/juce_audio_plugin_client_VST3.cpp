@@ -38,6 +38,32 @@
 //==============================================================================
 #if JucePlugin_Build_VST3
 
+JUCE_BEGIN_NO_SANITIZE ("vptr")
+
+#if JUCE_PLUGINHOST_VST3
+ #if JUCE_MAC
+  #include <CoreFoundation/CoreFoundation.h>
+ #endif
+ #undef JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY
+ #define JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY 1
+#endif
+
+#include <juce_audio_processors/format_types/juce_VST3Headers.h>
+
+#undef JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY
+#define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
+
+#include <juce_audio_plugin_client/detail/juce_CheckSettingMacros.h>
+#include <juce_audio_plugin_client/detail/juce_IncludeSystemHeaders.h>
+#include <juce_audio_plugin_client/detail/juce_PluginUtilities.h>
+#include <juce_audio_plugin_client/detail/juce_LinuxMessageThread.h>
+#include <juce_audio_plugin_client/detail/juce_VSTWindowUtilities.h>
+#include <juce_gui_basics/native/juce_WindowsHooks_windows.h>
+
+#include <juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp>
+#include <juce_audio_processors/utilities/juce_FlagCache.h>
+#include <juce_audio_processors/format_types/juce_VST3Common.h>
+
 #if JUCE_VST3_CAN_REPLACE_VST2 && ! JUCE_FORCE_USE_LEGACY_PARAM_IDS && ! JUCE_IGNORE_VST3_MISMATCHED_PARAMETER_ID_WARNING
 
  // If you encounter this error there may be an issue migrating parameter
@@ -69,32 +95,6 @@
 
  #error You may have a conflict with parameter automation between VST2 and VST3 versions of your plugin. See the comment above for more details.
 #endif
-
-JUCE_BEGIN_NO_SANITIZE ("vptr")
-
-#if JUCE_PLUGINHOST_VST3
- #if JUCE_MAC
-  #include <CoreFoundation/CoreFoundation.h>
- #endif
- #undef JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY
- #define JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY 1
-#endif
-
-#include <juce_audio_processors/format_types/juce_VST3Headers.h>
-
-#undef JUCE_VST3HEADERS_INCLUDE_HEADERS_ONLY
-#define JUCE_GUI_BASICS_INCLUDE_XHEADERS 1
-
-#include <juce_audio_plugin_client/detail/juce_CheckSettingMacros.h>
-#include <juce_audio_plugin_client/detail/juce_IncludeSystemHeaders.h>
-#include <juce_audio_plugin_client/detail/juce_PluginUtilities.h>
-#include <juce_audio_plugin_client/detail/juce_LinuxMessageThread.h>
-#include <juce_audio_plugin_client/detail/juce_VSTWindowUtilities.h>
-#include <juce_gui_basics/native/juce_WindowsHooks_windows.h>
-
-#include <juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp>
-#include <juce_audio_processors/utilities/juce_FlagCache.h>
-#include <juce_audio_processors/format_types/juce_VST3Common.h>
 
 #ifndef JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS
  #if JucePlugin_WantsMidiInput
@@ -643,37 +643,59 @@ public:
         compatibleParameterIdMap = {};
         compatibleParameterIdMap[currentPluginId] = paramMap;
 
-        if (const auto* ext = audioProcessor->getVST3ClientExtensions())
+        auto* ext = audioProcessor->getVST3ClientExtensions();
+
+        // If there are no extensions, we assume that no adjustments should be made to the mapping.
+        if (ext == nullptr)
+            return;
+
+        for (const auto& compatibleClass : getAllCompatibleClasses (*audioProcessor))
         {
-            for (auto& compatibleClass : ext->getCompatibleClasses())
+            auto& parameterIdMap = compatibleParameterIdMap[compatibleClass];
+            for (auto [oldParamId, newParamId] : ext->getCompatibleParameterIds (compatibleClass))
             {
-                auto& parameterIdMap = compatibleParameterIdMap[compatibleClass];
+                auto* parameter = getParameter (newParamId);
+                parameterIdMap[oldParamId] = parameter;
 
-                for (auto [oldParamId, newParamId] : ext->getCompatibleParameterIds (compatibleClass))
-                {
-                    auto* parameter = getParameter (newParamId);
-                    parameterIdMap[oldParamId] = parameter;
+                // This means a parameter ID returned by getCompatibleParameterIds()
+                // does not match any parameters declared in the plugin. All IDs must
+                // match an existing parameter, or return an empty string to indicate
+                // there is no parameter to map to.
+                jassert (parameter != nullptr || newParamId.isEmpty());
 
-                    // This means a parameter ID returned by getCompatibleParameterIds()
-                    // does not match any parameters declared in the plugin. All IDs must
-                    // match an existing parameter, or return an empty string to indicate
-                    // there is no parameter to map to.
-                    jassert (parameter != nullptr || newParamId.isEmpty());
-
-                    // This means getCompatibleParameterIds() returned a parameter mapping
-                    // that will hide a parameter in the current plugin! If this is due to
-                    // an ID collision between plugin versions, you may be able to determine
-                    // the mapping to report based on setStateInformation(). If you've
-                    // already done this you can safely ignore this warning. If there is no
-                    // way to determine the difference between the two plugin versions in
-                    // setStateInformation() the best course of action is to remove the
-                    // problematic parameter from the mapping.
-                    jassert (compatibleClass != currentPluginId
-                             || getParamForVSTParamID (oldParamId) == nullptr
-                             || parameter == getParamForVSTParamID (oldParamId));
-                }
+                // This means getCompatibleParameterIds() returned a parameter mapping
+                // that will hide a parameter in the current plugin! If this is due to
+                // an ID collision between plugin versions, you may be able to determine
+                // the mapping to report based on setStateInformation(). If you've
+                // already done this you can safely ignore this warning. If there is no
+                // way to determine the difference between the two plugin versions in
+                // setStateInformation() the best course of action is to remove the
+                // problematic parameter from the mapping.
+                jassert (compatibleClass != currentPluginId
+                         || getParamForVSTParamID (oldParamId) == nullptr
+                         || parameter == getParamForVSTParamID (oldParamId));
             }
         }
+    }
+
+    /*  Includes all compatible classes declared in the client extensions, along with
+        our own ID in the case that JUCE_VST3_CAN_REPLACE_VST2 is set.
+    */
+    static std::vector<VST3ClientExtensions::InterfaceId> getAllCompatibleClasses (AudioProcessor& processor)
+    {
+        auto result = std::invoke ([&]
+        {
+            if (auto* ext = processor.getVST3ClientExtensions())
+                return ext->getCompatibleClasses();
+
+            return std::vector<VST3ClientExtensions::InterfaceId>{};
+        });
+
+       #if JUCE_VST3_CAN_REPLACE_VST2
+        result.push_back (getInterfaceId (VST3InterfaceType::component));
+       #endif
+
+        return result;
     }
 
     //==============================================================================
@@ -1140,6 +1162,12 @@ public:
                                              Vst::ParamID oldParamID,
                                              Vst::ParamID& newParamID) override
     {
+        if (audioProcessor == nullptr)
+        {
+            jassertfalse;
+            return kResultFalse;
+        }
+
         const auto parameterMap = audioProcessor->getParameterMap (toVST3InterfaceId (pluginToReplaceUID));
         const auto iter = parameterMap.find (oldParamID);
 
@@ -1154,8 +1182,18 @@ public:
         }
 
         const auto* parameter = iter->second;
-        newParamID = parameter != nullptr ? audioProcessor->getVSTParamIDForIndex (parameter->getParameterIndex())
-                                          : 0xffffffff;
+
+        if (parameter == nullptr)
+        {
+            // There's a null entry in the map of compatible parameters.
+            // This implies a problem with the implementation of getCompatibleParameterIds - one of
+            // the IDs in the returned map doesn't refer to any parameter in the current plugin.
+            jassertfalse;
+            return kResultFalse;
+        }
+
+        // We found a compatible parameter in the map.
+        newParamID = audioProcessor->getVSTParamIDForIndex (parameter->getParameterIndex());
         return kResultTrue;
     }
 
@@ -1215,27 +1253,35 @@ public:
         // As an IEditController member, the host should only call this from the message thread.
         assertHostMessageThread();
 
-        if (auto* pluginInstance = getPluginInstance())
+        auto restartFlags = toUnderlyingType (Vst::kParamValuesChanged);
+
+        if (audioProcessor != nullptr)
         {
+            auto* pluginInstance = getPluginInstance();
+
             for (auto vstParamId : audioProcessor->getParamIDs())
             {
-                auto paramValue = [&]
+                auto paramValue = std::invoke ([&]
                 {
-                    if (vstParamId == audioProcessor->getProgramParamID())
+                    if (vstParamId == audioProcessor->getProgramParamID() && pluginInstance != nullptr)
                         return EditController::plainParamToNormalized (audioProcessor->getProgramParamID(),
                                                                        pluginInstance->getCurrentProgram());
 
                     return (double) audioProcessor->getParamForVSTParamID (vstParamId)->getValue();
-                }();
+                });
 
                 setParamNormalized (vstParamId, paramValue);
             }
+
+            if (! JuceAudioProcessor::getAllCompatibleClasses (*pluginInstance).empty())
+            {
+                restartFlags |= Vst::kParamIDMappingChanged;
+                audioProcessor->updateParameterMapping();
+            }
         }
 
-        audioProcessor->updateParameterMapping();
-
         if (auto* handler = getComponentHandler())
-            handler->restartComponent (Vst::kParamValuesChanged | Vst::kParamIDMappingChanged);
+            handler->restartComponent (restartFlags);
 
         return kResultOk;
     }
@@ -2939,14 +2985,7 @@ public:
     //==============================================================================
     bool shouldTryToLoadVst2State()
     {
-       #if JUCE_VST3_CAN_REPLACE_VST2
-        return true;
-       #else
-        if (auto extensions = pluginInstance->getVST3ClientExtensions())
-            return ! extensions->getCompatibleClasses().empty();
-
-        return false;
-       #endif
+        return ! JuceAudioProcessor::getAllCompatibleClasses (*pluginInstance).empty();
     }
 
     bool shouldWriteStateWithVst2Compatibility()
@@ -4112,29 +4151,30 @@ public:
         const ScopedJuceInitialiser_GUI libraryInitialiser;
 
         auto filter = createPluginFilterOfType (AudioProcessor::WrapperType::wrapperType_VST3);
-        auto* extensions = filter->getVST3ClientExtensions();
 
-        const auto compatibilityObjects = [&]
+        const auto compatibilityObjects = std::invoke ([&]
         {
-            if (extensions == nullptr || extensions->getCompatibleClasses().empty())
+            const auto compatibleClasses = JuceAudioProcessor::getAllCompatibleClasses (*filter);
+
+            if (compatibleClasses.empty())
                 return Array<var>();
 
             DynamicObject::Ptr object { new DynamicObject };
 
             // New iid is the ID of our Audio Effect class
             object->setProperty ("New", String (VST3::UID (JuceVST3Component::iid).toString()));
-            object->setProperty ("Old", [&]
+            object->setProperty ("Old", std::invoke ([&]
             {
                 Array<var> oldArray;
 
-                for (const auto& uid : extensions->getCompatibleClasses())
+                for (const auto& uid : compatibleClasses)
                     oldArray.add (String::toHexString (uid.data(), (int) uid.size(), 0));
 
                 return oldArray;
-            }());
+            }));
 
             return Array<var> { object.get() };
-        }();
+        });
 
         MemoryOutputStream memory;
         JSON::writeToStream (memory, var { compatibilityObjects });

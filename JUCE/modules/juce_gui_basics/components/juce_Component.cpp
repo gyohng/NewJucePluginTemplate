@@ -214,8 +214,22 @@ public:
         auto scale = g.getInternalContext().getPhysicalPixelScaleFactor();
         auto scaledBounds = c.getLocalBounds() * scale;
 
-        if (effectImage.getBounds() != scaledBounds)
-            effectImage = Image { c.isOpaque() ? Image::RGB : Image::ARGB, scaledBounds.getWidth(), scaledBounds.getHeight(), false };
+        const auto preferredType = g.getInternalContext().getPreferredImageTypeForTemporaryImages();
+        const auto pixelData = effectImage.getPixelData();
+        const auto shouldCreateImage = pixelData == nullptr
+                                       || pixelData->width != scaledBounds.getWidth()
+                                       || pixelData->height != scaledBounds.getHeight()
+                                       || pixelData->createType()->getTypeID() != preferredType->getTypeID();
+
+        if (shouldCreateImage)
+        {
+            effectImage = Image { c.isOpaque() ? Image::RGB : Image::ARGB,
+                                  scaledBounds.getWidth(),
+                                  scaledBounds.getHeight(),
+                                  false,
+                                  *preferredType };
+            effectImage.setBackupEnabled (false);
+        }
 
         if (! c.isOpaque())
             effectImage.clear (effectImage.getBounds());
@@ -231,6 +245,11 @@ public:
 
         g.addTransform (AffineTransform::scale (1.0f / scale));
         effect->applyEffect (effectImage, g, scale, ignoreAlphaLevel ? 1.0f : c.getAlpha());
+    }
+
+    void releaseResources()
+    {
+        effectImage = {};
     }
 
 private:
@@ -597,6 +616,15 @@ void Component::setBufferedToImage (bool shouldBeBuffered)
     {
         cachedImage.reset();
     }
+}
+
+void Component::invalidateCachedImageResources()
+{
+    if (cachedImage != nullptr)
+        cachedImage->releaseResources();
+
+    if (effectState != nullptr)
+        effectState->releaseResources();
 }
 
 //==============================================================================
@@ -1811,7 +1839,9 @@ bool Component::isPaintingUnclipped() const noexcept
 
 //==============================================================================
 Image Component::createComponentSnapshot (Rectangle<int> areaToGrab,
-                                          bool clipImageToComponentBounds, float scaleFactor)
+                                          bool clipImageToComponentBounds,
+                                          float scaleFactor,
+                                          const ImageType& imageType)
 {
     auto r = areaToGrab;
 
@@ -1824,7 +1854,7 @@ Image Component::createComponentSnapshot (Rectangle<int> areaToGrab,
     auto w = roundToInt (scaleFactor * (float) r.getWidth());
     auto h = roundToInt (scaleFactor * (float) r.getHeight());
 
-    Image image (flags.opaqueFlag ? Image::RGB : Image::ARGB, w, h, true);
+    Image image (flags.opaqueFlag ? Image::RGB : Image::ARGB, w, h, true, imageType);
 
     Graphics g (image);
 
