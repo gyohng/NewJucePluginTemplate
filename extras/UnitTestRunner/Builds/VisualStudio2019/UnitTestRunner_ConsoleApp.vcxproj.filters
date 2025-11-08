@@ -305,18 +305,6 @@
     <Filter Include="JUCE Modules\juce_audio_processors\format_types\VST3_SDK\pluginterfaces">
       <UniqueIdentifier>{DAF30656-5915-0E45-C4E4-54439617D525}</UniqueIdentifier>
     </Filter>
-    <Filter Include="JUCE Modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\samples\vst-utilities\moduleinfotool\source">
-      <UniqueIdentifier>{600076D4-829D-CE7A-272C-832A4BBC40AB}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="JUCE Modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\samples\vst-utilities\moduleinfotool">
-      <UniqueIdentifier>{C02D05C7-CD20-9901-2F02-95A9BD7FA797}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="JUCE Modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\samples\vst-utilities">
-      <UniqueIdentifier>{47771136-6D29-90C7-2C6E-1728E7D1C485}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="JUCE Modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\samples">
-      <UniqueIdentifier>{3E938566-9812-78C0-9E81-75858F44C51F}</UniqueIdentifier>
-    </Filter>
     <Filter Include="JUCE Modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\source\common">
       <UniqueIdentifier>{9266EA90-6A0A-5DDB-9CB7-966BEF03BA5C}</UniqueIdentifier>
     </Filter>
@@ -1537,9 +1525,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK\pluginterfaces\base\ustring.cpp">
       <Filter>JUCE Modules\juce_audio_processors\format_types\VST3_SDK\pluginterfaces\base</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\samples\vst-utilities\moduleinfotool\source\main.cpp">
-      <Filter>JUCE Modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\samples\vst-utilities\moduleinfotool\source</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\source\common\commonstringconvert.cpp">
       <Filter>JUCE Modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\source\common</Filter>
     </ClCompile>
@@ -1612,6 +1597,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_AudioUnitPluginFormat.mm">
       <Filter>JUCE Modules\juce_audio_processors\format_types</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_AudioUnitPluginFormat_test.cpp">
+      <Filter>JUCE Modules\juce_audio_processors\format_types</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_LADSPAPluginFormat.cpp">
       <Filter>JUCE Modules\juce_audio_processors\format_types</Filter>
     </ClCompile>
@@ -1646,6 +1634,12 @@
       <Filter>JUCE Modules\juce_audio_processors\processors</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorGraph.cpp">
+      <Filter>JUCE Modules\juce_audio_processors\processors</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorListener.cpp">
+      <Filter>JUCE Modules\juce_audio_processors\processors</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorParameter.cpp">
       <Filter>JUCE Modules\juce_audio_processors\processors</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorParameterGroup.cpp">
@@ -2701,6 +2695,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_Font.cpp">
       <Filter>JUCE Modules\juce_graphics\fonts</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontFeatures.cpp">
+      <Filter>JUCE Modules\juce_graphics\fonts</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontOptions.cpp">
       <Filter>JUCE Modules\juce_graphics\fonts</Filter>
     </ClCompile>
@@ -2740,10 +2737,16 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\geometry\juce_Rectangle_test.cpp">
       <Filter>JUCE Modules\juce_graphics\geometry</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jaricom.c">
+      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcapimin.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcapistd.c">
+      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcarith.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jccoefct.c">
@@ -2776,9 +2779,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcparam.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcphuff.c">
-      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcprepct.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
@@ -2792,6 +2792,12 @@
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdapistd.c">
+      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdarith.c">
+      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdatadst.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdatasrc.c">
@@ -2824,9 +2830,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdmerge.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdphuff.c">
-      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdpostct.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
@@ -2857,9 +2860,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jidctint.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jidctred.c">
-      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jmemmgr.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
@@ -2873,9 +2873,6 @@
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jutils.c">
-      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\transupp.c">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\pnglib\png.c">
@@ -4686,6 +4683,9 @@
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioFormatWriter.h">
       <Filter>JUCE Modules\juce_audio_formats\format</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioFormatWriterOptions.h">
+      <Filter>JUCE Modules\juce_audio_formats\format</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioSubsectionReader.h">
       <Filter>JUCE Modules\juce_audio_formats\format</Filter>
     </ClInclude>
@@ -5196,6 +5196,9 @@
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VST3PluginFormat.h">
       <Filter>JUCE Modules\juce_audio_processors\format_types</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VST3Utilities.h">
+      <Filter>JUCE Modules\juce_audio_processors\format_types</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VSTCommon.h">
       <Filter>JUCE Modules\juce_audio_processors\format_types</Filter>
     </ClInclude>
@@ -5305,6 +5308,9 @@
       <Filter>JUCE Modules\juce_audio_processors\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\utilities\juce_VST3ClientExtensions.h">
+      <Filter>JUCE Modules\juce_audio_processors\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_audio_processors\utilities\juce_VST3Interface.h">
       <Filter>JUCE Modules\juce_audio_processors\utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\juce_audio_processors.h">
@@ -5563,6 +5569,9 @@
       <Filter>JUCE Modules\juce_core\misc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_OptionsHelpers.h">
+      <Filter>JUCE Modules\juce_core\misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_OrderedContainerHelpers.h">
       <Filter>JUCE Modules\juce_core\misc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_Result.h">
@@ -7005,6 +7014,9 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_Font.h">
       <Filter>JUCE Modules\juce_graphics\fonts</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontFeatures.h">
+      <Filter>JUCE Modules\juce_graphics\fonts</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontOptions.h">
       <Filter>JUCE Modules\juce_graphics\fonts</Filter>
     </ClInclude>
@@ -7062,16 +7074,13 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\cderror.h">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jchuff.h">
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\cdjpeg.h">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jconfig.h">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdct.h">
-      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdhuff.h">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jerror.h">
@@ -7093,9 +7102,6 @@
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jversion.h">
-      <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\transupp.h">
       <Filter>JUCE Modules\juce_graphics\image_formats\jpglib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\pnglib\png.h">

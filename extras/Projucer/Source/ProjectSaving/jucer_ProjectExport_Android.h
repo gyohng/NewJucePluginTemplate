@@ -1424,15 +1424,15 @@ private:
     {
         const auto icons = getIcons();
 
-        if (icons.big != nullptr && icons.small != nullptr)
+        if (icons.getBig() != nullptr && icons.getSmall() != nullptr)
         {
-            auto step = jmax (icons.big->getWidth(), icons.big->getHeight()) / 8;
+            auto step = jmax (icons.getBig()->getWidth(), icons.getBig()->getHeight()) / 8;
             writeIcon (folder.getChildFile ("drawable-xhdpi/icon.png"), build_tools::getBestIconForSize (icons, step * 8, false));
             writeIcon (folder.getChildFile ("drawable-hdpi/icon.png"),  build_tools::getBestIconForSize (icons, step * 6, false));
             writeIcon (folder.getChildFile ("drawable-mdpi/icon.png"),  build_tools::getBestIconForSize (icons, step * 4, false));
             writeIcon (folder.getChildFile ("drawable-ldpi/icon.png"),  build_tools::getBestIconForSize (icons, step * 3, false));
         }
-        else if (auto* icon = (icons.big != nullptr ? icons.big.get() : icons.small.get()))
+        else if (auto* icon = (icons.getBig() != nullptr ? icons.getBig() : icons.getSmall()))
         {
             writeIcon (folder.getChildFile ("drawable-mdpi/icon.png"), build_tools::rescaleImageForIcon (*icon, icon->getWidth()));
         }
@@ -1827,9 +1827,9 @@ private:
 
         if (! app->hasAttribute ("android:icon"))
         {
-            std::unique_ptr<Drawable> bigIcon (getBigIcon()), smallIcon (getSmallIcon());
+            const auto icons = getIcons();
 
-            if (bigIcon != nullptr || smallIcon != nullptr)
+            if (icons.getBig() != nullptr || icons.getSmall() != nullptr)
                 app->setAttribute ("android:icon", "@drawable/icon");
         }
 
@@ -1846,15 +1846,14 @@ private:
         setAttributeIfNotPresent (*act, "android:name", getActivityClassString());
 
         if (! act->hasAttribute ("android:configChanges"))
-            act->setAttribute ("android:configChanges", "keyboard|keyboardHidden|orientation|screenSize|navigation");
+            act->setAttribute ("android:configChanges", "keyboard|keyboardHidden|orientation|screenSize|navigation|smallestScreenSize|screenLayout|uiMode");
 
-        if (androidScreenOrientation.get() == "landscape")
+        if (androidScreenOrientation.get() != "unspecified")
         {
-            setAttributeIfNotPresent (*act, "android:screenOrientation", "userLandscape");
-        }
-        else
-        {
-            setAttributeIfNotPresent (*act, "android:screenOrientation", androidScreenOrientation.get());
+            setAttributeIfNotPresent (*act,
+                                      "android:screenOrientation",
+                                      androidScreenOrientation.get() == "landscape" ? "userLandscape"
+                                                                                    : androidScreenOrientation.get());
         }
 
         setAttributeIfNotPresent (*act, "android:launchMode", "singleTask");
