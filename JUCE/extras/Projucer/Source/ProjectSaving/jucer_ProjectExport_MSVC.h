@@ -77,6 +77,8 @@ public:
 
     MSVCScriptBuilder& deleteFile (const StringOrBuilder& path)
     {
+        jassert (path.value.isQuotedString());
+
         script << "del /s /q " << path.value;
         script << newLine;
         return *this;
@@ -84,6 +86,8 @@ public:
 
     MSVCScriptBuilder& mkdir (const StringOrBuilder& path)
     {
+        jassert (path.value.isQuotedString());
+
         script << "mkdir " << path.value;
         script << newLine;
         return *this;
@@ -175,7 +179,8 @@ public:
 
     MSVCScriptBuilder& append (const StringOrBuilder& string)
     {
-        script << string.value << newLine;
+        if (string.isNotEmpty())
+            script << string.value << newLine;
         return *this;
     }
 
@@ -476,8 +481,9 @@ public:
               characterSetValue              (config, Ids::characterSet,               getUndoManager()),
               architectureTypeValue          (config, Ids::winArchitecture,            getUndoManager(), Array<var> { getArchitectureValueString (Architecture::win64) }, ","),
               fastMathValue                  (config, Ids::fastMath,                   getUndoManager()),
-              debugInformationFormatValue    (config, Ids::debugInformationFormat,     getUndoManager(), "OldStyle"),
+              debugInformationFormatValue    (config, Ids::debugInformationFormat,     getUndoManager(), "ProgramDatabase"),
               pluginBinaryCopyStepValue      (config, Ids::enablePluginBinaryCopyStep, getUndoManager(), false),
+              intrinsicFunctionsEnabledValue (config, Ids::intrinsicFunctions,         getUndoManager(), false),
               vstBinaryLocation              (config, Ids::vstBinaryLocation,          getUndoManager()),
               vst3BinaryLocation             (config, Ids::vst3BinaryLocation,         getUndoManager()),
               aaxBinaryLocation              (config, Ids::aaxBinaryLocation,          getUndoManager()),
@@ -577,6 +583,7 @@ public:
         bool shouldUseMultiProcessorCompilation() const   { return multiProcessorCompilationValue.get(); }
         bool isFastMathEnabled() const                    { return fastMathValue.get(); }
         bool isPluginBinaryCopyStepEnabled() const        { return pluginBinaryCopyStepValue.get(); }
+        bool isIntrinsicFunctionsEnabled() const          { return intrinsicFunctionsEnabledValue.get(); }
 
         static bool shouldBuildTarget (build_tools::ProjectType::Target::Type targetType, Architecture arch)
         {
@@ -648,6 +655,9 @@ public:
                                                     { "Disabled (/Od)", "Minimise size (/O1)", "Maximise speed (/O2)", "Full optimisation (/Ox)" },
                                                     { optimisationOff,  optimiseMinSize,       optimiseMaxSpeed,       optimiseFull }),
                        "The optimisation level for this configuration");
+
+            props.add (new ChoicePropertyComponent (intrinsicFunctionsEnabledValue, "Intrinsic Functions"),
+                       "Replaces some function calls with intrinsic or otherwise special forms of the function that help your application run faster.");
 
             props.add (new TextPropertyComponent (intermediatesPathValue, "Intermediates Path", 2048, false),
                        "An optional path to a folder to use for the intermediate build files. Note that Visual Studio allows "
@@ -749,7 +759,7 @@ public:
         ValueTreePropertyWithDefault warningLevelValue, warningsAreErrorsValue, prebuildCommandValue, postbuildCommandValue, generateDebugSymbolsValue,
                                      enableIncrementalLinkingValue, useRuntimeLibDLLValue, multiProcessorCompilationValue,
                                      intermediatesPathValue, characterSetValue, architectureTypeValue, fastMathValue, debugInformationFormatValue,
-                                     pluginBinaryCopyStepValue;
+                                     pluginBinaryCopyStepValue, intrinsicFunctionsEnabledValue;
 
         struct LocationProperties
         {
@@ -798,7 +808,8 @@ public:
                 std::pair { Ids::vstBinaryLocation,  &t.vstBinaryLocation },
                 std::pair { Ids::vst3BinaryLocation, &t.vst3BinaryLocation },
                 std::pair { Ids::aaxBinaryLocation,  &t.aaxBinaryLocation },
-                std::pair { Ids::lv2BinaryLocation,  &t.lv2BinaryLocation }
+                std::pair { Ids::lv2BinaryLocation,  &t.lv2BinaryLocation },
+                std::pair { Ids::unityPluginBinaryLocation, &t.unityPluginBinaryLocation }
             };
 
             const auto iter = std::find_if (properties.begin(),
@@ -1087,7 +1098,7 @@ public:
 
                         const auto debugInfoFormat = isDebug || config.shouldGenerateDebugSymbols()
                                                    ? config.getDebugInformationFormatString()
-                                                   : "OldStyle";
+                                                   : "None";
 
                         cl->createNewChildElement ("DebugInformationFormat")->addTextElement (debugInfoFormat);
 
@@ -1117,6 +1128,9 @@ public:
 
                         auto cppStandard = owner.project.getCppStandardString();
                         cl->createNewChildElement ("LanguageStandard")->addTextElement ("stdcpp" + cppStandard);
+
+                        if (config.isIntrinsicFunctionsEnabled())
+                            cl->createNewChildElement ("IntrinsicFunctions")->addTextElement ("true");
                     }
 
                     {
@@ -1714,6 +1728,17 @@ public:
             return aaxSdk.getChildFile ("Utilities").getChildFile ("PlugIn.ico");
         }
 
+        static bool shouldPerformCopyStepForPlugin (Target::Type pluginType,
+                                                    const MSVCBuildConfiguration& config,
+                                                    Architecture arch)
+        {
+            if (! config.isPluginBinaryCopyStepEnabled())
+                return false;
+
+            const auto binaryLocationId = getPluginTypeInfo (pluginType).second;
+            return binaryLocationId.isValid() && config.getBinaryPath (binaryLocationId, arch).isNotEmpty();
+        }
+
         String getExtraPostBuildSteps (const MSVCBuildConfiguration& config, Architecture arch) const
         {
             using Builder = MSVCScriptBuilder;
@@ -1733,7 +1758,7 @@ public:
                                     + " "
                                     + (directory + "\\" + segments[0] + "\\").quoted();
 
-                return config.isPluginBinaryCopyStepEnabled() ? copyStep : "";
+                return shouldPerformCopyStepForPlugin (type, config, arch) ? copyStep : "";
             };
 
             if (type == AAXPlugIn)
@@ -1769,7 +1794,7 @@ public:
 
                 auto pkgScript = String ("copy /Y ") + scriptPath.toWindowsStyle().quoted() + " \"$(OutDir)\"";
 
-                if (config.isPluginBinaryCopyStepEnabled())
+                if (shouldPerformCopyStepForPlugin (type, config, arch))
                 {
                     auto copyLocation = config.getBinaryPath (Ids::unityPluginBinaryLocation, arch);
 
@@ -1804,7 +1829,9 @@ public:
                                     + ".lv2\"\r\n";
 
                 builder.runAndCheck (writer,
-                                     config.isPluginBinaryCopyStepEnabled() ? copyStep : Builder{}.info ("Sucessfully generated LV2 manifest").build(),
+                                     shouldPerformCopyStepForPlugin (type, config, arch)
+                                        ? copyStep
+                                        : Builder{}.info ("Successfully generated LV2 manifest").build(),
                                      Builder{}.error ("Failed to generate LV2 manifest.")
                                               .exit (-1));
 
@@ -1834,8 +1861,7 @@ public:
                                                     + writerTarget->getBinaryNameWithSuffix (config);
 
                     {
-                        // moduleinfotool doesn't handle Windows-style path separators properly when computing the bundle name
-                        const auto normalisedBundlePath = getOwner().getOutDirFile (config, segments[0]).replace ("\\", "/");
+                        const auto normalisedBundlePath = getOwner().getOutDirFile (config, segments[0]);
                         const auto contentsDir = normalisedBundlePath + "\\Contents";
                         const auto resourceDir = contentsDir + "\\Resources";
                         const auto manifestPath = (resourceDir + "\\moduleinfo.json");
@@ -1845,10 +1871,8 @@ public:
                         const auto manifestInvocationString = StringArray
                         {
                             helperExecutablePath.quoted(),
-                            "-create",
-                            "-version", getOwner().project.getVersionString().quoted(),
-                            "-path",    normalisedBundlePath.quoted(),
-                            "-output",  manifestPath.quoted()
+                            ">",
+                            manifestPath.quoted()
                         }.joinIntoString (" ");
 
                         const auto crossCompilationPairs =
@@ -1917,7 +1941,7 @@ public:
                     .build();
             }
 
-            if (type == VSTPlugIn && config.isPluginBinaryCopyStepEnabled())
+            if (type == VSTPlugIn && shouldPerformCopyStepForPlugin (type, config, arch))
             {
                 const String copyCommand = "copy /Y \"$(OutDir)$(TargetFileName)\" \""
                                          + config.getBinaryPath (Ids::vstBinaryLocation, arch)
@@ -1930,6 +1954,114 @@ public:
             }
 
             return {};
+        }
+
+        static std::pair<String, Identifier> getPluginTypeInfo (Target::Type targetType)
+        {
+            if (targetType == AAXPlugIn)    return { "AAX",          Ids::aaxBinaryLocation };
+            if (targetType == VSTPlugIn)    return { "VST (Legacy)", Ids::vstBinaryLocation };
+            if (targetType == VST3PlugIn)   return { "VST3",         Ids::vst3BinaryLocation };
+            if (targetType == UnityPlugIn)  return { "Unity",        Ids::unityPluginBinaryLocation };
+            if (targetType == LV2PlugIn)    return { "LV2",          Ids::lv2BinaryLocation };
+
+            return {};
+        }
+
+        static String generatePluginCopyStepPathValidatorScript (Target::Type targetType,
+                                                                 const MSVCBuildConfiguration& config,
+                                                                 Architecture arch)
+        {
+            MSVCScriptBuilder builder;
+
+            if (config.isPluginBinaryCopyStepEnabled())
+            {
+                const auto [projectTypeString, binaryLocationId] = getPluginTypeInfo (targetType);
+
+                if (projectTypeString.isNotEmpty())
+                {
+                    const auto binaryPath = config.getBinaryPath (binaryLocationId, arch);
+
+                    if (binaryPath.isEmpty())
+                    {
+                        String warningMessage =
+                            "Plugin Configuration Warning: Plugin copy step is enabled but no target "
+                            "path is specified in the Projucer.";
+
+                        warningMessage << " This can be configured via the \""
+                                       << getArchitectureValueString (arch) << " "
+                                       << projectTypeString << " "
+                                       << "Binary Location\" option in the relevant Exporter configuration panel.";
+
+                        builder.warning (warningMessage.quoted());
+                    }
+                    else
+                    {
+                        constexpr auto errorMessage =
+                            "Plugin Copy Step Failure: Either the install path does not exist or you "
+                            "do not have permission to write to the target directory. Ensure you "
+                            "have the necessary permissions to write to the directory, or choose "
+                            "a different install location (e.g., a folder in your user directory).";
+
+                        MemoryOutputStream script;
+
+                        const auto validProjectName = build_tools::makeValidIdentifier (config.project.getProjectNameString(),
+                                                                                        false,
+                                                                                        true,
+                                                                                        false,
+                                                                                        false);
+                        const auto validPluginName = build_tools::makeValidIdentifier (projectTypeString,
+                                                                                       false,
+                                                                                       true,
+                                                                                       false,
+                                                                                       false);
+                        script << "set TOUCH_NAME=\".touch_\""
+                               << validProjectName << "_"
+                               << validPluginName << "_"
+                               << "\"%RANDOM%\"" << newLine;
+
+                        String tempPath = binaryPath;
+                        tempPath << "\\%TOUCH_NAME%";
+
+                        script << "(" << newLine;
+                        script << "echo \".\" > " << tempPath.quoted() << newLine;
+                        script << ") > nul 2>&1" << newLine;
+
+                        builder.append (script.toString());
+                        builder.ifelse ("exist " + tempPath.quoted(),
+                                        MSVCScriptBuilder{}.deleteFile (tempPath.quoted()),
+                                        MSVCScriptBuilder{}.error (String { errorMessage }.quoted())
+                                                           .exit (1));
+                    }
+                }
+            }
+
+            return builder.build();
+        }
+
+        static String generateToolchainValidatorScript (Architecture arch)
+        {
+            MSVCScriptBuilder builder;
+
+            if (arch == Architecture::win64)
+            {
+                const auto x86ToolchainErrorMessage =
+                    "echo : Warning: Toolchain configuration issue!"
+                    " You are using a 32-bit toolchain to compile a 64-bit target on a 64-bit system."
+                    " This may cause problems with the build system."
+                    " To resolve this, use the x64 version of MSBuild. You can invoke it directly at:"
+                    " \"<VisualStudioPathHere>/MSBuild/Current/Bin/amd64/MSBuild.exe\""
+                    " Or, use the \"x64 Native Tools Command Prompt\" script.";
+
+                builder.ifAllConditionsTrue (
+                {
+                    "\"$(PROCESSOR_ARCHITECTURE)\" == " + getVisualStudioArchitectureId (Architecture::win32).quoted(),
+
+                    // This only exists if the process is x86 but the host is x64.
+                    "defined PROCESSOR_ARCHITEW6432"
+                }, MSVCScriptBuilder{}.append (x86ToolchainErrorMessage));
+            }
+
+            return builder.build();
         }
 
         String getExtraPreBuildSteps (const MSVCBuildConfiguration& config, Architecture arch) const
@@ -1953,24 +2085,8 @@ public:
 
             MSVCScriptBuilder builder;
 
-            if (arch == Architecture::win64)
-            {
-                const auto x86ToolchainErrorMessage =
-                    "echo : Warning: Toolchain configuration issue!"
-                    " You are using a 32-bit toolchain to compile a 64-bit target on a 64-bit system."
-                    " This may cause problems with the build system."
-                    " To resolve this, use the x64 version of MSBuild. You can invoke it directly at:"
-                    " \"<VisualStudioPathHere>/MSBuild/Current/Bin/amd64/MSBuild.exe\""
-                    " Or, use the \"x64 Native Tools Command Prompt\" script.";
-
-                builder.ifAllConditionsTrue (
-                {
-                    "\"$(PROCESSOR_ARCHITECTURE)\" == " + getVisualStudioArchitectureId (Architecture::win32).quoted(),
-
-                    // This only exists if the process is x86 but the host is x64.
-                    "defined PROCESSOR_ARCHITEW6432"
-                }, MSVCScriptBuilder{}.append (x86ToolchainErrorMessage));
-            }
+            builder.append (generatePluginCopyStepPathValidatorScript (type, config, arch));
+            builder.append (generateToolchainValidatorScript (arch));
 
             if (type == LV2PlugIn)
             {
@@ -2004,8 +2120,14 @@ public:
                 return builder.build();
             }
 
+            if (type == UnityPlugIn)
+                return builder.build();
+
             if (type == AAXPlugIn)
-                return createBundleStructure (getAaxBundleStructure (config, arch));
+                return builder.build() + "\r\n" + createBundleStructure (getAaxBundleStructure (config, arch));
+
+            if (type == VSTPlugIn)
+                return builder.build();
 
             if (type == VST3PlugIn)
                 return builder.build() + "\r\n" + createBundleStructure (getVst3BundleStructure (config, arch));

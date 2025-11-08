@@ -66,9 +66,9 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sratom;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\serd;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lv2;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK;..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK;..\..\JuceLibraryCode;..\..\..\..\modules;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;DEBUG;_DEBUG;JUCE_PROJUCER_VERSION=0x80008;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;DEBUG;_DEBUG;JUCE_PROJUCER_VERSION=0x8000a;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -83,7 +83,7 @@
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sratom;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\serd;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lv2;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK;..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK;..\..\JuceLibraryCode;..\..\..\..\modules;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;DEBUG;_DEBUG;JUCE_PROJUCER_VERSION=0x80008;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;DEBUG;_DEBUG;JUCE_PROJUCER_VERSION=0x8000a;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
       <OutputFile>$(OutDir)\AudioPluginHost.exe</OutputFile>
@@ -110,9 +110,9 @@
     </Midl>
     <ClCompile>
       <Optimization>Full</Optimization>
-      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sratom;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\serd;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lv2;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK;..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK;..\..\JuceLibraryCode;..\..\..\..\modules;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;NDEBUG;JUCE_PROJUCER_VERSION=0x80008;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;NDEBUG;JUCE_PROJUCER_VERSION=0x8000a;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -127,7 +127,7 @@
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lilv;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sratom;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord\src;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\sord;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\serd;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK\lv2;..\..\..\..\modules\juce_audio_processors\format_types\LV2_SDK;..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK;..\..\JuceLibraryCode;..\..\..\..\modules;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;NDEBUG;JUCE_PROJUCER_VERSION=0x80008;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;NDEBUG;JUCE_PROJUCER_VERSION=0x8000a;JUCE_MODULE_AVAILABLE_juce_audio_basics=1;JUCE_MODULE_AVAILABLE_juce_audio_devices=1;JUCE_MODULE_AVAILABLE_juce_audio_formats=1;JUCE_MODULE_AVAILABLE_juce_audio_processors=1;JUCE_MODULE_AVAILABLE_juce_audio_utils=1;JUCE_MODULE_AVAILABLE_juce_core=1;JUCE_MODULE_AVAILABLE_juce_cryptography=1;JUCE_MODULE_AVAILABLE_juce_data_structures=1;JUCE_MODULE_AVAILABLE_juce_dsp=1;JUCE_MODULE_AVAILABLE_juce_events=1;JUCE_MODULE_AVAILABLE_juce_graphics=1;JUCE_MODULE_AVAILABLE_juce_gui_basics=1;JUCE_MODULE_AVAILABLE_juce_gui_extra=1;JUCE_MODULE_AVAILABLE_juce_opengl=1;JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1;JUCE_WASAPI=1;JUCE_DIRECTSOUND=1;JUCE_ALSA=1;JUCE_USE_FLAC=0;JUCE_USE_OGGVORBIS=1;JUCE_PLUGINHOST_VST3=1;JUCE_PLUGINHOST_AU=1;JUCE_PLUGINHOST_LADSPA=1;JUCE_PLUGINHOST_LV2=1;JUCE_USE_CDREADER=0;JUCE_USE_CDBURNER=0;JUCE_WEB_BROWSER=0;JUCE_STANDALONE_APPLICATION=1;JUCER_VS2022_78A503E=1;JUCE_APP_VERSION=1.0.0;JUCE_APP_VERSION_HEX=0x10000;JucePlugin_Build_VST=0;JucePlugin_Build_VST3=0;JucePlugin_Build_AU=0;JucePlugin_Build_AUv3=0;JucePlugin_Build_AAX=0;JucePlugin_Build_Standalone=0;JucePlugin_Build_Unity=0;JucePlugin_Build_LV2=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
       <OutputFile>$(OutDir)\AudioPluginHost.exe</OutputFile>
@@ -890,9 +890,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK\pluginterfaces\base\ustring.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\samples\vst-utilities\moduleinfotool\source\main.cpp">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\VST3_SDK\public.sdk\source\common\commonstringconvert.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -959,6 +956,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_ARAHosting.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_AudioUnitPluginFormat_test.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_LADSPAPluginFormat.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -993,6 +993,12 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorGraph.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorListener.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorParameter.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_audio_processors\processors\juce_AudioProcessorParameterGroup.cpp">
@@ -1988,6 +1994,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_Font.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontFeatures.cpp">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontOptions.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -2027,10 +2036,16 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\geometry\juce_Rectangle_test.cpp">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jaricom.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcapimin.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcapistd.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcarith.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jccoefct.c">
@@ -2063,9 +2078,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcparam.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcphuff.c">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jcprepct.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -2079,6 +2091,12 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdapistd.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdarith.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdatadst.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdatasrc.c">
@@ -2111,9 +2129,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdmerge.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdphuff.c">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdpostct.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -2144,9 +2159,6 @@
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jidctint.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jidctred.c">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jmemmgr.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -2160,9 +2172,6 @@
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jutils.c">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\transupp.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_graphics\image_formats\pnglib\png.c">
@@ -3255,6 +3264,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioFormatReader.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioFormatReaderSource.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioFormatWriter.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioFormatWriterOptions.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_AudioSubsectionReader.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_BufferingAudioFormatReader.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_formats\format\juce_MemoryMappedAudioFormatReader.h"/>
@@ -3425,6 +3435,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VST3Common.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VST3Headers.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VST3PluginFormat.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VST3Utilities.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VSTCommon.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VSTMidiEventList.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\format_types\juce_VSTPluginFormat.h"/>
@@ -3462,6 +3473,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\utilities\juce_RangedAudioParameter.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\utilities\juce_VST2ClientExtensions.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\utilities\juce_VST3ClientExtensions.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_audio_processors\utilities\juce_VST3Interface.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_processors\juce_audio_processors.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_utils\audio_cd\juce_AudioCDBurner.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_audio_utils\audio_cd\juce_AudioCDReader.h"/>
@@ -3548,6 +3560,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_EnumHelpers.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_Functional.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_OptionsHelpers.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_OrderedContainerHelpers.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_Result.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_RuntimePermissions.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_core\misc\juce_ScopeGuard.h"/>
@@ -4028,6 +4041,7 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\harfbuzz\hb.hh"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_AttributedString.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_Font.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontFeatures.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_FontOptions.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_FunctionPointerDestructor.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\fonts\juce_GlyphArrangement.h"/>
@@ -4047,10 +4061,9 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\geometry\juce_Rectangle.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\geometry\juce_RectangleList.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\cderror.h"/>
-    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jchuff.h"/>
+    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\cdjpeg.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jconfig.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdct.h"/>
-    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jdhuff.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jerror.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jinclude.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jmemsys.h"/>
@@ -4058,7 +4071,6 @@
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jpegint.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jpeglib.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\jversion.h"/>
-    <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\jpglib\transupp.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\pnglib\png.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\pnglib\pngconf.h"/>
     <ClInclude Include="..\..\..\..\modules\juce_graphics\image_formats\pnglib\pngdebug.h"/>
