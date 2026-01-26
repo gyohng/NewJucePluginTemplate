@@ -161,8 +161,7 @@ JUCE_END_IGNORE_WARNINGS_MSVC
 
 //==============================================================================
 #ifndef JUCE_API
- /** This macro is added to all JUCE public class declarations. */
- #define JUCE_API
+ #define JUCE_API   /**< This macro is added to all JUCE public class declarations. */
 #endif
 
 #if JUCE_MSVC && JUCE_DLL_BUILD
