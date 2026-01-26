@@ -32,6 +32,10 @@
   ==============================================================================
 */
 
+#ifndef MAC_OS_VERSION_11_0
+#include "juce_CoreMidi_polyfill.h"
+#endif
+
 namespace juce
 {
 
