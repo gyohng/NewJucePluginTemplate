@@ -279,7 +279,7 @@ private:
     static CGBitmapInfo getCGImageFlags (const Image::PixelFormat& format)
     {
         if (format != Image::ARGB)
-            return kCGImageByteOrderDefault;
+            return kCGBitmapByteOrderDefault;
 
         return (uint32_t) kCGImageAlphaPremultipliedFirst
              | (uint32_t) kCGBitmapByteOrder32Host;
