@@ -67,9 +67,8 @@ namespace CoreMidiHelpers
      #define JUCE_HAS_OLD_COREMIDI_API 0
      constexpr auto implementationStrategy = ImplementationStrategy::onlyNew;
     #else
-     #define JUCE_HAS_NEW_COREMIDI_API 0
      #define JUCE_HAS_OLD_COREMIDI_API 1
-     constexpr auto implementationStrategy = ImplementationStrategy::onlyOld;
+     constexpr auto implementationStrategy = ImplementationStrategy::both;
     #endif
 
     struct SenderBase
@@ -83,7 +82,6 @@ namespace CoreMidiHelpers
     template <ImplementationStrategy>
     struct Sender;
 
-   #if JUCE_HAS_NEW_COREMIDI_API
     template <>
     struct API_AVAILABLE (macos (11.0), ios (14.0)) Sender<ImplementationStrategy::onlyNew> final : public SenderBase
     {
@@ -168,7 +166,6 @@ namespace CoreMidiHelpers
             send();
         }
     };
-   #endif
 
    #if JUCE_HAS_OLD_COREMIDI_API
     template <>
@@ -257,7 +254,7 @@ namespace CoreMidiHelpers
     };
    #endif
 
-   #if JUCE_HAS_NEW_COREMIDI_API && JUCE_HAS_OLD_COREMIDI_API
+   #if JUCE_HAS_OLD_COREMIDI_API
     template <>
     struct Sender<ImplementationStrategy::both>
     {
@@ -574,8 +571,6 @@ namespace CoreMidiHelpers
     {
         static const auto globalMidiClient = [&]
         {
-            // Since OSX 10.6, the MIDIClientCreate function will only work
-            // correctly when called from the message thread!
             JUCE_ASSERT_MESSAGE_THREAD
 
             enableSimulatorMidiSession();
@@ -626,7 +621,6 @@ namespace CoreMidiHelpers
     template <ImplementationStrategy>
     struct Receiver;
 
-   #if JUCE_HAS_NEW_COREMIDI_API
     template <>
     struct Receiver<ImplementationStrategy::onlyNew>
     {
@@ -658,7 +652,6 @@ namespace CoreMidiHelpers
     private:
         std::unique_ptr<ump::U32InputHandler> u32InputHandler;
     };
-   #endif
 
    #if JUCE_HAS_OLD_COREMIDI_API
     template <>
@@ -690,7 +683,7 @@ namespace CoreMidiHelpers
     };
    #endif
 
-   #if JUCE_HAS_NEW_COREMIDI_API && JUCE_HAS_OLD_COREMIDI_API
+   #if JUCE_HAS_OLD_COREMIDI_API
     template <>
     struct Receiver<ImplementationStrategy::both>
     {
@@ -801,7 +794,6 @@ namespace CoreMidiHelpers
     template <ImplementationStrategy>
     struct CreatorFunctions;
 
-   #if JUCE_HAS_NEW_COREMIDI_API
     template <>
     struct API_AVAILABLE (macos (11.0), ios (14.0)) CreatorFunctions<ImplementationStrategy::onlyNew>
     {
@@ -865,7 +857,6 @@ namespace CoreMidiHelpers
             static_cast<MidiPortAndCallback*> (readProcRefCon)->handlePackets (list);
         }
     };
-   #endif
 
    #if JUCE_HAS_OLD_COREMIDI_API
     template <>
@@ -910,7 +901,7 @@ namespace CoreMidiHelpers
     };
    #endif
 
-   #if JUCE_HAS_NEW_COREMIDI_API && JUCE_HAS_OLD_COREMIDI_API
+   #if JUCE_HAS_OLD_COREMIDI_API
     template <>
     struct CreatorFunctions<ImplementationStrategy::both>
     {
