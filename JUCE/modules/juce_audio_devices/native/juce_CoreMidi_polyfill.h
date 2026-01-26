@@ -36,12 +36,12 @@ struct MIDIEventList {
 typedef struct MIDIEventList MIDIEventList;
 
 // MIDIReceiveBlock type for new API callbacks
-typedef void (^MIDIReceiveBlock)(const MIDIEventList *evtlist, void * __nullable srcConnRefCon);
+typedef void (^MIDIReceiveBlock)(const MIDIEventList * _Nonnull evtlist, void * __nullable srcConnRefCon);
 
 // =============================================================================
 // Inline helper: advance to next packet in an event list
 // =============================================================================
-CF_INLINE MIDIEventPacket *MIDIEventPacketNext(const MIDIEventPacket *pkt)
+CF_INLINE MIDIEventPacket * _Nonnull MIDIEventPacketNext(const MIDIEventPacket * _Nonnull pkt)
 {
     // Clamp wordCount to valid range to prevent buffer overrun
     uint32_t wc = pkt->wordCount;
@@ -91,7 +91,7 @@ static inline int juce_polyfill_getMidi1DataLength(uint8_t status)
 // Internal helper: Convert UMP word to MIDI 1.0 bytes
 // Returns number of bytes written (0-3), or 0 if not a convertible message
 // =============================================================================
-static inline int juce_polyfill_umpToBytes(uint32_t word, uint8_t *bytes)
+static inline int juce_polyfill_umpToBytes(uint32_t word, uint8_t * _Nonnull bytes)
 {
     // UMP Message Type is in bits 28-31
     uint8_t mt = (word >> 28) & 0x0F;
@@ -136,7 +136,7 @@ static inline int juce_polyfill_umpToBytes(uint32_t word, uint8_t *bytes)
 // =============================================================================
 // MIDIEventListInit - Initialize an event list for building
 // =============================================================================
-static inline MIDIEventPacket *MIDIEventListInit(MIDIEventList *evtlist, MIDIProtocolID protocol)
+static inline MIDIEventPacket * _Nonnull MIDIEventListInit(MIDIEventList * _Nonnull evtlist, MIDIProtocolID protocol)
 {
     evtlist->protocol = protocol;
     evtlist->numPackets = 0;
@@ -149,13 +149,13 @@ static inline MIDIEventPacket *MIDIEventListInit(MIDIEventList *evtlist, MIDIPro
 // MIDIEventListAdd - Add an event to the list
 // Note: Uses UInt32* to match Apple's CoreMIDI API signature
 // =============================================================================
-static inline MIDIEventPacket *MIDIEventListAdd(
-    MIDIEventList *evtlist,
+static inline MIDIEventPacket * _Nullable MIDIEventListAdd(
+    MIDIEventList * _Nonnull evtlist,
     ByteCount listSize,
-    MIDIEventPacket *curPacket,
+    MIDIEventPacket * _Nonnull curPacket,
     MIDITimeStamp time,
     ByteCount wordCount,
-    const UInt32 *words)
+    const UInt32 * _Nonnull words)
 {
     if (evtlist == NULL || curPacket == NULL || words == NULL || wordCount == 0 || wordCount > 64)
         return NULL;
@@ -215,7 +215,7 @@ static inline MIDIEventPacket *MIDIEventListAdd(
 static inline OSStatus juce_polyfill_sendEventListAsPacketList(
     MIDIPortRef port,
     MIDIEndpointRef dest,
-    const MIDIEventList *evtlist,
+    const MIDIEventList * _Nullable evtlist,
     Boolean isReceived)  // true = MIDIReceived, false = MIDISend
 {
     if (evtlist == NULL)
@@ -362,7 +362,7 @@ static inline OSStatus juce_polyfill_sendEventListAsPacketList(
 static inline OSStatus MIDISendEventList(
     MIDIPortRef port,
     MIDIEndpointRef dest,
-    const MIDIEventList *evtlist)
+    const MIDIEventList * _Nonnull evtlist)
 {
     return juce_polyfill_sendEventListAsPacketList(port, dest, evtlist, false);
 }
@@ -372,7 +372,7 @@ static inline OSStatus MIDISendEventList(
 // =============================================================================
 static inline OSStatus MIDIReceivedEventList(
     MIDIEndpointRef src,
-    const MIDIEventList *evtlist)
+    const MIDIEventList * _Nonnull evtlist)
 {
     return juce_polyfill_sendEventListAsPacketList(0, src, evtlist, true);
 }
@@ -381,15 +381,15 @@ static inline OSStatus MIDIReceivedEventList(
 // Internal: Context for bridging new block-based API to old callback API
 // =============================================================================
 typedef struct {
-    MIDIReceiveBlock receiveBlock;
+    MIDIReceiveBlock _Nonnull receiveBlock;
     MIDIProtocolID protocol;
 } juce_polyfill_ReceiveContext;
 
 // Internal read proc that converts MIDIPacketList to MIDIEventList
 static void juce_polyfill_readProc(
-    const MIDIPacketList *pktlist,
-    void *readProcRefCon,
-    void *srcConnRefCon)
+    const MIDIPacketList * _Nonnull pktlist,
+    void * _Nullable readProcRefCon,
+    void * _Nullable srcConnRefCon)
 {
     juce_polyfill_ReceiveContext *ctx = (juce_polyfill_ReceiveContext *)readProcRefCon;
     if (!ctx || !ctx->receiveBlock || !pktlist) return;
@@ -533,10 +533,10 @@ static void juce_polyfill_readProc(
 // =============================================================================
 static inline OSStatus MIDIInputPortCreateWithProtocol(
     MIDIClientRef client,
-    CFStringRef portName,
+    CFStringRef _Nonnull portName,
     MIDIProtocolID protocol,
-    MIDIPortRef *outPort,
-    MIDIReceiveBlock receiveBlock)
+    MIDIPortRef * _Nonnull outPort,
+    MIDIReceiveBlock _Nonnull receiveBlock)
 {
     // Allocate context (leaked intentionally - lives for app lifetime)
     juce_polyfill_ReceiveContext *ctx = (juce_polyfill_ReceiveContext *)malloc(sizeof(juce_polyfill_ReceiveContext));
@@ -563,10 +563,10 @@ static inline OSStatus MIDIInputPortCreateWithProtocol(
 // =============================================================================
 static inline OSStatus MIDIDestinationCreateWithProtocol(
     MIDIClientRef client,
-    CFStringRef name,
+    CFStringRef _Nonnull name,
     MIDIProtocolID protocol,
-    MIDIEndpointRef *outDest,
-    MIDIReceiveBlock readBlock)
+    MIDIEndpointRef * _Nonnull outDest,
+    MIDIReceiveBlock _Nonnull readBlock)
 {
     // Allocate context (leaked intentionally - lives for app lifetime)
     juce_polyfill_ReceiveContext *ctx = (juce_polyfill_ReceiveContext *)malloc(sizeof(juce_polyfill_ReceiveContext));
@@ -593,9 +593,9 @@ static inline OSStatus MIDIDestinationCreateWithProtocol(
 // =============================================================================
 static inline OSStatus MIDISourceCreateWithProtocol(
     MIDIClientRef client,
-    CFStringRef name,
+    CFStringRef _Nonnull name,
     MIDIProtocolID protocol,
-    MIDIEndpointRef *outSrc)
+    MIDIEndpointRef * _Nonnull outSrc)
 {
     (void)protocol; // Ignored on 10.13, always MIDI 1.0
     return MIDISourceCreate(client, name, outSrc);
