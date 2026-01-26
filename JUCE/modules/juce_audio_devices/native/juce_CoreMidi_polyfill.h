@@ -143,6 +143,7 @@ static inline MIDIEventPacket *MIDIEventListInit(MIDIEventList *evtlist, MIDIPro
 
 // =============================================================================
 // MIDIEventListAdd - Add an event to the list
+// Note: Uses UInt32* to match Apple's CoreMIDI API signature
 // =============================================================================
 static inline MIDIEventPacket *MIDIEventListAdd(
     MIDIEventList *evtlist,
@@ -150,7 +151,7 @@ static inline MIDIEventPacket *MIDIEventListAdd(
     MIDIEventPacket *curPacket,
     MIDITimeStamp time,
     ByteCount wordCount,
-    const uint32_t *words)
+    const UInt32 *words)
 {
     (void)listSize; // We trust the caller provides adequate space
     
@@ -171,7 +172,7 @@ static inline MIDIEventPacket *MIDIEventListAdd(
         }
     }
     
-    // Copy words
+    // Copy words (UInt32 and uint32_t are compatible)
     for (ByteCount i = 0; i < wordCount; i++) {
         if (curPacket->wordCount >= 64) return NULL;  // Safety check
         curPacket->words[curPacket->wordCount++] = words[i];
@@ -346,13 +347,13 @@ static void juce_polyfill_readProc(
                 continue;
             }
             
-            uint32_t umpWord = 0;
+            UInt32 umpWord = 0;
             int msgLen = 0;
             
             if (status >= 0xF8) {
                 // System Real-Time (1 byte) - no data bytes
                 // UMP Format: mt=1, group=0, status, 0, 0
-                umpWord = ((uint32_t)0x1 << 28) | ((uint32_t)status << 16);
+                umpWord = ((UInt32)0x1 << 28) | ((UInt32)status << 16);
                 msgLen = 1;
             }
             else if (status == 0xF0) {
@@ -381,9 +382,9 @@ static void juce_polyfill_readProc(
                     continue;  // Incomplete message, skip
                 }
                 
-                umpWord = ((uint32_t)0x1 << 28) | ((uint32_t)status << 16);
-                if (dataBytes >= 1) umpWord |= ((uint32_t)(data[pos + 1] & 0x7F) << 8);
-                if (dataBytes >= 2) umpWord |= (uint32_t)(data[pos + 2] & 0x7F);
+                umpWord = ((UInt32)0x1 << 28) | ((UInt32)status << 16);
+                if (dataBytes >= 1) umpWord |= ((UInt32)(data[pos + 1] & 0x7F) << 8);
+                if (dataBytes >= 2) umpWord |= (UInt32)(data[pos + 2] & 0x7F);
                 msgLen = 1 + dataBytes;
             }
             else {
@@ -401,9 +402,9 @@ static void juce_polyfill_readProc(
                 }
                 
                 // UMP Format for MIDI 1.0 CV: mt=2, group=0, status, data1, data2
-                umpWord = ((uint32_t)0x2 << 28) | ((uint32_t)status << 16);
-                if (dataBytes >= 1) umpWord |= ((uint32_t)(data[pos + 1] & 0x7F) << 8);
-                if (dataBytes >= 2) umpWord |= (uint32_t)(data[pos + 2] & 0x7F);
+                umpWord = ((UInt32)0x2 << 28) | ((UInt32)status << 16);
+                if (dataBytes >= 1) umpWord |= ((UInt32)(data[pos + 1] & 0x7F) << 8);
+                if (dataBytes >= 2) umpWord |= (UInt32)(data[pos + 2] & 0x7F);
                 msgLen = 1 + dataBytes;
             }
             
