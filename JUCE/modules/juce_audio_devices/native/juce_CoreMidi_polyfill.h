@@ -297,8 +297,15 @@ static inline OSStatus juce_polyfill_sendEventListAsPacketList(
                         midiBytes[1] = index;      // Note number
                         midiBytes[2] = pressure7;  // Pressure
                         numBytes = 3;
+                    } else if (statusNibble == 0xB) {
+                        // MIDI 2.0 Control Change: CC number in index, 32-bit value in word2
+                        uint32_t ccValue32 = word2;
+                        uint8_t ccValue7 = (ccValue32 >> 25) & 0x7F;
+                        midiBytes[1] = index;     // CC number
+                        midiBytes[2] = ccValue7;  // CC value
+                        numBytes = 3;
                     } else {
-                        // Note On/Off, CC
+                        // Note On/Off (0x8, 0x9): note in index, 16-bit velocity in word2 upper bits
                         midiBytes[1] = index;
                         midiBytes[2] = data7 > 0 ? data7 : (data16 > 0 ? 1 : 0);
                         numBytes = 3;
