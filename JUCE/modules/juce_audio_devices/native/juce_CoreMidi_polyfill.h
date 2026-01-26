@@ -2,6 +2,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreMIDI/CoreMIDI.h>
 #include <cstdint>
+#include <cstddef>
 #include <Block.h>
 
 // =============================================================================
@@ -178,8 +179,10 @@ static inline MIDIEventPacket *MIDIEventListAdd(
         // Check if we'd overflow the packet's word capacity
         if (curPacket->wordCount + wordCount > 64) {
             // Calculate next packet position based on actual word usage
-            // MIDIEventPacketNext computes: &pkt->words[pkt->wordCount]
-            const uint8_t *nextPacketStart = (const uint8_t *)&curPacket->words[curPacket->wordCount];
+            // Clamp wordCount to prevent buffer overrun on corrupted data
+            uint32_t curWC = curPacket->wordCount;
+            if (curWC > 64) curWC = 64;
+            const uint8_t *nextPacketStart = (const uint8_t *)&curPacket->words[curWC];
             
             // Verify next packet header + minimal data fits in buffer
             if (nextPacketStart + sizeof(MIDIEventPacket) > listEnd)
@@ -279,8 +282,23 @@ static inline OSStatus juce_polyfill_sendEventListAsPacketList(
                         uint8_t pressure7 = (pressure32 >> 25) & 0x7F;
                         midiBytes[1] = pressure7;
                         numBytes = 2;
+                    } else if (statusNibble == 0xE) {
+                        // MIDI 2.0 Pitch Bend: 32-bit value in word2
+                        // Convert to 14-bit (7-bit LSB + 7-bit MSB)
+                        uint32_t bend32 = word2;
+                        uint16_t bend14 = (bend32 >> 18) & 0x3FFF;  // Top 14 bits of 32-bit
+                        midiBytes[1] = bend14 & 0x7F;         // LSB
+                        midiBytes[2] = (bend14 >> 7) & 0x7F;  // MSB
+                        numBytes = 3;
+                    } else if (statusNibble == 0xA) {
+                        // MIDI 2.0 Poly Aftertouch: note in index, 32-bit pressure in word2
+                        uint32_t pressure32 = word2;
+                        uint8_t pressure7 = (pressure32 >> 25) & 0x7F;
+                        midiBytes[1] = index;      // Note number
+                        midiBytes[2] = pressure7;  // Pressure
+                        numBytes = 3;
                     } else {
-                        // Note On/Off, Poly AT, CC, Pitch Bend
+                        // Note On/Off, CC
                         midiBytes[1] = index;
                         midiBytes[2] = data7 > 0 ? data7 : (data16 > 0 ? 1 : 0);
                         numBytes = 3;
@@ -486,8 +504,10 @@ static void juce_polyfill_readProc(
         }
         
         // MIDIPacketNext: advance by header size + data length
-        // pkt->length is at offset 8, data starts at offset 10 on 64-bit
-        const uint8_t *nextPkt = (const uint8_t *)pkt + offsetof(MIDIPacket, data) + pkt->length;
+        // Use the original pkt->length (not sanitized len) but cap it for safety
+        uint16_t pktLen = pkt->length;
+        if (pktLen > 256) pktLen = 256;
+        const uint8_t *nextPkt = (const uint8_t *)pkt + offsetof(MIDIPacket, data) + pktLen;
         
         // Bounds check before next iteration
         if (nextPkt >= pktlistEnd || nextPkt < (const uint8_t *)pkt) {
