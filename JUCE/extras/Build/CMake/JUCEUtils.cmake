@@ -1074,7 +1074,7 @@ function(_juce_add_vst3_manifest_helper_target shared_code_target)
 
     set(source "${module_path}/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.${extension}")
 
-    add_executable(${vst3_helper_target} "${source}")
+    add_executable(${vst3_helper_target} "${source}" "${module_path}/juce_audio_plugin_client/juce_audio_plugin_client_version.cpp")
     add_executable(juce::${vst3_helper_target} ALIAS ${vst3_helper_target})
 
     target_include_directories(${vst3_helper_target} PRIVATE "${vst3_dir}" "${module_path}")

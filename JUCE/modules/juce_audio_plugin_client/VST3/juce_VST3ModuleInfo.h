@@ -33,6 +33,7 @@
 */
 
 #pragma once
+#include "../detail/juce_PluginVersion.h"
 
 #ifndef DOXYGEN
 
