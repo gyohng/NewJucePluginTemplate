@@ -638,7 +638,7 @@ public:
             [menu release];
         }
 
-        // use a dummy modal component so that apps can tell that something is currently modal.
+        // use a dummy modal component so that apps can tell that something is currently modal
         dummyModalComponent.enterModalState (false);
     }
 
