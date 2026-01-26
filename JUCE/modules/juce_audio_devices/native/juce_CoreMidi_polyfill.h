@@ -153,28 +153,46 @@ static inline MIDIEventPacket *MIDIEventListAdd(
     ByteCount wordCount,
     const UInt32 *words)
 {
-    (void)listSize; // We trust the caller provides adequate space
-    
-    if (curPacket == NULL || words == NULL || wordCount == 0 || wordCount > 64)
+    if (evtlist == NULL || curPacket == NULL || words == NULL || wordCount == 0 || wordCount > 64)
         return NULL;
     
-    // If current packet is empty, use it; otherwise advance
+    // Calculate safe bounds for the event list
+    const uint8_t *listStart = (const uint8_t *)evtlist;
+    const uint8_t *listEnd = listStart + listSize;
+    const uint8_t *packetStart = (const uint8_t *)curPacket;
+    
+    // Verify curPacket is within bounds
+    if (packetStart < listStart || packetStart >= listEnd)
+        return NULL;
+    
+    // If current packet is empty, use it; otherwise we may need to advance
     if (curPacket->wordCount == 0) {
         curPacket->timeStamp = time;
     } else {
         // Check if we'd overflow the packet's word capacity
         if (curPacket->wordCount + wordCount > 64) {
-            // Advance to next packet position
-            curPacket = MIDIEventPacketNext(curPacket);
+            // Calculate next packet position
+            MIDIEventPacket *nextPacket = MIDIEventPacketNext(curPacket);
+            const uint8_t *nextPacketEnd = (const uint8_t *)nextPacket + sizeof(MIDIEventPacket);
+            
+            // Verify next packet fits in buffer
+            if (nextPacketEnd > listEnd)
+                return NULL;  // No room for another packet
+            
+            curPacket = nextPacket;
             curPacket->timeStamp = time;
             curPacket->wordCount = 0;
             evtlist->numPackets++;
         }
     }
     
+    // Verify we have room for the words we want to add
+    ByteCount wordsNeeded = curPacket->wordCount + wordCount;
+    if (wordsNeeded > 64)
+        return NULL;
+    
     // Copy words (UInt32 and uint32_t are compatible)
     for (ByteCount i = 0; i < wordCount; i++) {
-        if (curPacket->wordCount >= 64) return NULL;  // Safety check
         curPacket->words[curPacket->wordCount++] = words[i];
     }
     
@@ -194,17 +212,28 @@ static inline OSStatus juce_polyfill_sendEventListAsPacketList(
     const MIDIEventList *evtlist,
     Boolean isReceived)  // true = MIDIReceived, false = MIDISend
 {
-    // Allocate a packet list on stack (max 65536 bytes per spec)
+    if (evtlist == NULL)
+        return paramErr;
+    
+    // Allocate a packet list on stack (max 65536 bytes per spec, we use 4096)
     uint8_t pktListStorage[4096];
     MIDIPacketList *pktList = (MIDIPacketList *)pktListStorage;
     MIDIPacket *pkt = MIDIPacketListInit(pktList);
     
     const MIDIEventPacket *evtPkt = evtlist->packet;
     
-    for (uint32_t i = 0; i < evtlist->numPackets; ++i) {
+    // Sanity check: limit iterations to prevent runaway loops on corrupted data
+    uint32_t maxPackets = evtlist->numPackets;
+    if (maxPackets > 1000) maxPackets = 1000;  // Reasonable upper bound
+    
+    for (uint32_t i = 0; i < maxPackets; ++i) {
+        // Sanity check wordCount
+        uint32_t wordCount = evtPkt->wordCount;
+        if (wordCount > 64) wordCount = 64;
+        
         // Convert each word in the event packet to MIDI 1.0 bytes
         uint32_t wordIdx = 0;
-        while (wordIdx < evtPkt->wordCount) {
+        while (wordIdx < wordCount) {
             uint32_t word = evtPkt->words[wordIdx];
             uint8_t mt = (word >> 28) & 0x0F;
             
@@ -216,7 +245,7 @@ static inline OSStatus juce_polyfill_sendEventListAsPacketList(
                 // Format: [mt:4][group:4][status:4][channel:4][index:8][attrType:8]
                 //         [data/velocity:16][attrData:16]
                 // Convert to MIDI 1.0 equivalent
-                if (wordIdx + 1 < evtPkt->wordCount) {
+                if (wordIdx + 1 < wordCount) {
                     uint32_t word2 = evtPkt->words[wordIdx + 1];
                     
                     // Correct parsing for MIDI 2.0 CV
@@ -323,19 +352,27 @@ static void juce_polyfill_readProc(
     void *srcConnRefCon)
 {
     juce_polyfill_ReceiveContext *ctx = (juce_polyfill_ReceiveContext *)readProcRefCon;
-    if (!ctx || !ctx->receiveBlock) return;
+    if (!ctx || !ctx->receiveBlock || !pktlist) return;
     
     // Convert packet list to event list
-    // Allocate on stack
+    // Allocate on stack - enough for reasonable MIDI traffic
     uint8_t evtListStorage[4096];
     MIDIEventList *evtList = (MIDIEventList *)evtListStorage;
     MIDIEventPacket *evtPkt = MIDIEventListInit(evtList, ctx->protocol);
     
     const MIDIPacket *pkt = pktlist->packet;
     
-    for (uint32_t i = 0; i < pktlist->numPackets; ++i) {
+    // Sanity check: limit iterations to prevent runaway loops
+    uint32_t maxPackets = pktlist->numPackets;
+    if (maxPackets > 1000) maxPackets = 1000;
+    
+    for (uint32_t i = 0; i < maxPackets; ++i) {
         const uint8_t *data = pkt->data;
         uint16_t len = pkt->length;
+        
+        // Sanity check packet length (MIDIPacket data is max 256 bytes)
+        if (len > 256) len = 256;
+        
         uint16_t pos = 0;
         
         while (pos < len) {
@@ -376,10 +413,9 @@ static void juce_polyfill_readProc(
                     continue;  // Skip undefined
                 }
                 
-                // Check we have enough data
-                if (pos + dataBytes >= len) {
-                    pos++;
-                    continue;  // Incomplete message, skip
+                // Check we have enough data (pos + 1 + dataBytes must be <= len)
+                if (pos + 1 + dataBytes > len) {
+                    break;  // Incomplete message, exit packet
                 }
                 
                 umpWord = ((UInt32)0x1 << 28) | ((UInt32)status << 16);
@@ -395,10 +431,9 @@ static void juce_polyfill_readProc(
                     continue;
                 }
                 
-                // Check we have enough data
-                if (pos + dataBytes >= len) {
-                    pos++;
-                    continue;  // Incomplete message, skip
+                // Check we have enough data (pos + 1 + dataBytes must be <= len)
+                if (pos + 1 + dataBytes > len) {
+                    break;  // Incomplete message, exit packet
                 }
                 
                 // UMP Format for MIDI 1.0 CV: mt=2, group=0, status, data1, data2
@@ -411,6 +446,8 @@ static void juce_polyfill_readProc(
             if (msgLen > 0 && evtPkt != NULL) {
                 evtPkt = MIDIEventListAdd(evtList, sizeof(evtListStorage), evtPkt,
                                          pkt->timeStamp, 1, &umpWord);
+                // If MIDIEventListAdd returns NULL, we've run out of buffer space
+                // Just stop adding more events
             }
             
             pos += (uint16_t)msgLen;
@@ -436,10 +473,18 @@ static inline OSStatus MIDIInputPortCreateWithProtocol(
 {
     // Allocate context (leaked intentionally - lives for app lifetime)
     juce_polyfill_ReceiveContext *ctx = (juce_polyfill_ReceiveContext *)malloc(sizeof(juce_polyfill_ReceiveContext));
+    if (ctx == NULL)
+        return memFullErr;
+    
     ctx->receiveBlock = Block_copy(receiveBlock);
     ctx->protocol = protocol;
     
-    return MIDIInputPortCreate(client, portName, juce_polyfill_readProc, ctx, outPort);
+    OSStatus result = MIDIInputPortCreate(client, portName, juce_polyfill_readProc, ctx, outPort);
+    if (result != noErr) {
+        Block_release(ctx->receiveBlock);
+        free(ctx);
+    }
+    return result;
 }
 
 // =============================================================================
@@ -454,10 +499,18 @@ static inline OSStatus MIDIDestinationCreateWithProtocol(
 {
     // Allocate context (leaked intentionally - lives for app lifetime)
     juce_polyfill_ReceiveContext *ctx = (juce_polyfill_ReceiveContext *)malloc(sizeof(juce_polyfill_ReceiveContext));
+    if (ctx == NULL)
+        return memFullErr;
+    
     ctx->receiveBlock = Block_copy(readBlock);
     ctx->protocol = protocol;
     
-    return MIDIDestinationCreate(client, name, juce_polyfill_readProc, ctx, outDest);
+    OSStatus result = MIDIDestinationCreate(client, name, juce_polyfill_readProc, ctx, outDest);
+    if (result != noErr) {
+        Block_release(ctx->receiveBlock);
+        free(ctx);
+    }
+    return result;
 }
 
 // =============================================================================
