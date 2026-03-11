@@ -217,7 +217,9 @@ public:
     //==============================================================================
 #ifdef __clang__
 #pragma clang diagnostic push
+#if __clang_major__ >= 18
 #pragma clang diagnostic ignored "-Wnan-infinity-disabled"
+#endif
 #endif
     /** Parses a character string to read a floating-point number.
         Note that this will advance the pointer that is passed in, leaving it at
