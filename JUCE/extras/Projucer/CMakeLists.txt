@@ -80,6 +80,8 @@ target_compile_definitions(Projucer PRIVATE
     # deploy to older versions of macOS.
     JUCE_SILENCE_XCODE_15_LINKER_WARNING=1)
 
+target_link_libraries(Projucer PRIVATE juce::juce_audio_plugin_client_utils)
+
 juce_add_binary_data(ProjucerData SOURCES
     Source/BinaryData/Icons/background_logo.svg
     Source/BinaryData/Icons/export_android.svg
