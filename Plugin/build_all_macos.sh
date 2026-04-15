@@ -25,8 +25,10 @@ MYDIR="$( cd "$MYDIR" ; pwd -P )"
 cd "$MYDIR"
 
 # this file should contain PACE_ACCOUNT and PACE_PASSWORD setting
+HAS_PACE_ACCOUNT=0
 if [ -f .paceaccount ]; then
     . ./.paceaccount
+    HAS_PACE_ACCOUNT=1
 fi
 
 NOTFOUND_PACKAGES=""
@@ -107,7 +109,7 @@ spliceAll() {
 
     if [ -d "build/macos10/${CMAKE_PROJECT_NAME}_artefacts/Release/AAX" ]; then
         splice AAX "$1.aaxplugin"
-        if [ -f /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool ]; then
+        if [ "$HAS_PACE_ACCOUNT" = "1" ] && [ -f /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool ]; then
             mv "build/output/$1.aaxplugin" "build/output/$1.unsigned.aaxplugin"
             /Applications/PACEAntiPiracy/Eden/Fusion/Current/bin/wraptool \
                 sign --verbose --strip on \

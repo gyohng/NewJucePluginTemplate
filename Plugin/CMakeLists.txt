@@ -146,6 +146,17 @@ target_compile_definitions(${TargetName} PUBLIC
     JUCE_SILENCE_XCODE_15_LINKER_WARNING=1
 )
 
+if (APPLE AND NOT USE_XCODE)
+    # Disable libc++ availability annotations so std::filesystem types
+    # can compile with older SDKs + deployment target < 10.15
+    foreach(ttype "" _AU _AUv3 _Standalone _VST _VST3 ${_optAAX})
+        target_compile_definitions(${TargetName}${ttype} PRIVATE _LIBCPP_DISABLE_AVAILABILITY)
+    endforeach()
+    if (TARGET ${TargetName}_vst3_helper)
+        target_compile_definitions(${TargetName}_vst3_helper PRIVATE _LIBCPP_DISABLE_AVAILABILITY)
+    endif()
+endif()
+
 juce_generate_juce_header(${TargetName})
 
 juce_add_binary_data("${TargetName}_resources" SOURCES
