@@ -819,7 +819,6 @@ function(_juce_configure_bundle source_target dest_target)
         GENERATED TRUE)
     add_custom_command(TARGET ${dest_target} POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy "${this_output_pkginfo}" "${output_folder}"
-        #DEPENDS "${this_output_pkginfo}"
         VERBATIM)
 
     _juce_add_xcode_entitlements(${source_target} ${dest_target})
@@ -1122,44 +1121,36 @@ function(_juce_add_vst3_manifest_helper_target shared_code_target out_target out
         list(APPEND PASSTHROUGH_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
     endif()
 
+    if(CMAKE_CXX_COMPILER)
+        list(APPEND PASSTHROUGH_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
+    endif()
+
+    if(CMAKE_RC_COMPILER)
+        list(APPEND PASSTHROUGH_ARGS "-DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}")
+    endif()
+
     get_target_property(module_path juce::juce_audio_processors INTERFACE_JUCE_MODULE_PATH)
     set(extension "cpp")
     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         set(extension "mm")
     endif()
 
-    set(source "${module_path}/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.${extension}")
+    add_custom_target(${helper_target}
+        COMMAND "${CMAKE_COMMAND}"
+            "-G${CMAKE_GENERATOR}"
+            "-S${JUCE_CMAKE_UTILS_DIR}/juce_vst3_helper"
+            "-B${build_dir}"
+            "-Dhelper_name=${helper_name}"
+            "-Dsource_file=$<TARGET_PROPERTY:juce_audio_plugin_client,INTERFACE_JUCE_MODULE_PATH>/juce_audio_plugin_client/VST3/juce_VST3ManifestHelper.${extension}"
+            "-Dmodule_path=${module_path}"
+            "-Dshared_defs_file=${shared_defs_file}"
+            "-Dshared_incs_file=${shared_incs_file}"
+            ${PASSTHROUGH_ARGS}
 
-    add_executable(${helper_target} "${source}" "${module_path}/juce_audio_plugin_client/juce_audio_plugin_client_version.cpp")
-    add_executable(juce::${helper_target} ALIAS ${helper_target})
+        COMMAND "${CMAKE_COMMAND}" --build "${build_dir}"
 
-    target_include_directories(${helper_target} PRIVATE "${vst3_dir}" "${module_path}")
-
-    target_compile_definitions(${helper_target} PRIVATE
-        $<TARGET_GENEX_EVAL:${shared_code_target},$<TARGET_PROPERTY:${shared_code_target},COMPILE_DEFINITIONS>>)
-
-    target_include_directories(${helper_target} PRIVATE
-        $<TARGET_GENEX_EVAL:${shared_code_target},$<TARGET_PROPERTY:${shared_code_target},INCLUDE_DIRECTORIES>>)
-
-    target_compile_features(${helper_target} PRIVATE cxx_std_17)
-
-    target_link_libraries(${helper_target} PRIVATE juce_recommended_config_flags)
-
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
-        target_link_libraries(${helper_target} PRIVATE stdc++fs)
-    endif()
-
-    if(CMAKE_CXX_COMPILER)
-        target_compile_definitions(${helper_target} PRIVATE "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
-    endif()
-
-    if(CMAKE_RC_COMPILER)
-        target_compile_definitions(${helper_target} PRIVATE "-DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER}") 
-    endif()
-
-    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        target_link_libraries(${helper_target} PRIVATE "-framework CoreFoundation")
-    endif()
+        COMMENT "Building VST3 manifest helper for ${shared_code_target}"
+        VERBATIM)
 
     set(${out_executable_path} "${build_dir}/${helper_name}${CMAKE_EXECUTABLE_SUFFIX}" PARENT_SCOPE)
     set(${out_target} ${helper_target} PARENT_SCOPE)

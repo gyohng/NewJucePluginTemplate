@@ -34,13 +34,13 @@ cmake_minimum_required(VERSION 3.22)
 
 project(juce_vst3_manifest_helper)
 
-add_executable(${helper_name} ${source_file})
+add_executable(${helper_name} "${source_file}" "${module_path}/juce_audio_plugin_client/juce_audio_plugin_client_version.cpp")
 
 file(READ "${shared_defs_file}" shared_defs)
 file(READ "${shared_incs_file}" shared_incs)
 
 target_compile_definitions(${helper_name} PRIVATE ${shared_defs})
-target_include_directories(${helper_name} PRIVATE ${shared_incs})
+target_include_directories(${helper_name} PRIVATE ${shared_incs} "${module_path}")
 
 target_compile_features(${helper_name} PRIVATE cxx_std_17)
 
@@ -55,4 +55,10 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(${helper_name} PRIVATE "-framework Foundation")
+endif()
+
+if (APPLE AND NOT USE_XCODE)
+    # Disable libc++ availability annotations so std::filesystem types
+    # can compile with older SDKs + deployment target < 10.15
+    target_compile_definitions(${helper_name} PRIVATE _LIBCPP_DISABLE_AVAILABILITY)
 endif()
