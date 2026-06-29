@@ -32,7 +32,7 @@
 
 cmake_minimum_required(VERSION 3.22)
 
-project(juce_vst3_manifest_helper)
+project(juce_vst3_manifest_helper LANGUAGES CXX)
 
 add_executable(${helper_name} "${source_file}" "${module_path}/juce_audio_plugin_client/juce_audio_plugin_client_version.cpp")
 
