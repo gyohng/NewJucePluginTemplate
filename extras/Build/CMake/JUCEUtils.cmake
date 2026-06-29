@@ -261,12 +261,15 @@ endfunction()
 function(_juce_link_optional_libraries target)
     if((CMAKE_SYSTEM_NAME STREQUAL "Linux") OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD"))
         get_target_property(needs_curl ${target} JUCE_NEEDS_CURL)
+        get_target_property(needs_browser ${target} JUCE_NEEDS_WEB_BROWSER)
+
+        target_compile_definitions(${target} PRIVATE
+            JUCE_USE_CURL=$<BOOL:${needs_curl}>
+            JUCE_WEB_BROWSER=$<BOOL:${needs_browser}>)
 
         if(needs_curl)
             target_link_libraries(${target} PRIVATE juce::pkgconfig_JUCE_CURL_LINUX_DEPS)
         endif()
-
-        get_target_property(needs_browser ${target} JUCE_NEEDS_WEB_BROWSER)
 
         if(needs_browser)
             target_link_libraries(${target} PRIVATE juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS)
@@ -279,6 +282,9 @@ function(_juce_link_optional_libraries target)
         endif()
     elseif(APPLE)
         get_target_property(needs_storekit ${target} JUCE_NEEDS_STORE_KIT)
+
+        target_compile_definitions(${target} PRIVATE
+            JUCE_IN_APP_PURCHASES=$<BOOL:${needs_storekit}>)
 
         if(needs_storekit)
             _juce_link_frameworks("${target}" PRIVATE StoreKit)
@@ -1083,7 +1089,7 @@ function(_juce_add_vst3_manifest_helper_target shared_code_target out_target out
     endif()
 
     get_target_property(juce_library_code "${shared_code_target}" JUCE_GENERATED_SOURCES_DIRECTORY)
-    set(build_dir "${juce_library_code}/vst3_helper")
+    set(build_dir "${CMAKE_BINARY_DIR}/vst3_helpers/${shared_code_target}")
     set(helper_name "vst3_helper")
 
     set(shared_defs_file "${build_dir}/shared_defs_$<CONFIG>.txt")
@@ -1093,10 +1099,6 @@ function(_juce_add_vst3_manifest_helper_target shared_code_target out_target out
     file(GENERATE OUTPUT "${shared_incs_file}" CONTENT "$<TARGET_PROPERTY:${shared_code_target},INCLUDE_DIRECTORIES>")
 
     set(PASSTHROUGH_ARGS "")
-
-    if(CMAKE_C_COMPILER)
-        list(APPEND PASSTHROUGH_ARGS "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
-    endif()
 
     if(CMAKE_CXX_COMPILER)
         list(APPEND PASSTHROUGH_ARGS "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
