@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -45,14 +45,6 @@ DrawableButton::~DrawableButton()
 }
 
 //==============================================================================
-static std::unique_ptr<Drawable> copyDrawableIfNotNull (const Drawable* const d)
-{
-    if (d != nullptr)
-        return d->createCopy();
-
-    return {};
-}
-
 void DrawableButton::setImages (const Drawable* normal,
                                 const Drawable* over,
                                 const Drawable* down,
@@ -64,14 +56,14 @@ void DrawableButton::setImages (const Drawable* normal,
 {
     jassert (normal != nullptr); // you really need to give it at least a normal image
 
-    normalImage     = copyDrawableIfNotNull (normal);
-    overImage       = copyDrawableIfNotNull (over);
-    downImage       = copyDrawableIfNotNull (down);
-    disabledImage   = copyDrawableIfNotNull (disabled);
-    normalImageOn   = copyDrawableIfNotNull (normalOn);
-    overImageOn     = copyDrawableIfNotNull (overOn);
-    downImageOn     = copyDrawableIfNotNull (downOn);
-    disabledImageOn = copyDrawableIfNotNull (disabledOn);
+    normalImage     = OwningDrawableComponent::createFromCopy (normal);
+    overImage       = OwningDrawableComponent::createFromCopy (over);
+    downImage       = OwningDrawableComponent::createFromCopy (down);
+    disabledImage   = OwningDrawableComponent::createFromCopy (disabled);
+    normalImageOn   = OwningDrawableComponent::createFromCopy (normalOn);
+    overImageOn     = OwningDrawableComponent::createFromCopy (overOn);
+    downImageOn     = OwningDrawableComponent::createFromCopy (downOn);
+    disabledImageOn = OwningDrawableComponent::createFromCopy (disabledOn);
 
     currentImage = nullptr;
 
@@ -151,7 +143,7 @@ void DrawableButton::buttonStateChanged()
 {
     repaint();
 
-    Drawable* imageToDraw = nullptr;
+    DrawableComponent* imageToDraw = nullptr;
     float opacity = 1.0f;
 
     if (isEnabled())
@@ -214,7 +206,7 @@ void DrawableButton::paintButton (Graphics& g,
 }
 
 //==============================================================================
-Drawable* DrawableButton::getCurrentImage() const noexcept
+DrawableComponent* DrawableButton::getCurrentImage() const noexcept
 {
     if (isDown())  return getDownImage();
     if (isOver())  return getOverImage();
@@ -222,13 +214,13 @@ Drawable* DrawableButton::getCurrentImage() const noexcept
     return getNormalImage();
 }
 
-Drawable* DrawableButton::getNormalImage() const noexcept
+DrawableComponent* DrawableButton::getNormalImage() const noexcept
 {
     return (getToggleState() && normalImageOn != nullptr) ? normalImageOn.get()
                                                           : normalImage.get();
 }
 
-Drawable* DrawableButton::getOverImage() const noexcept
+DrawableComponent* DrawableButton::getOverImage() const noexcept
 {
     if (getToggleState())
     {
@@ -239,7 +231,7 @@ Drawable* DrawableButton::getOverImage() const noexcept
     return overImage != nullptr ? overImage.get() : normalImage.get();
 }
 
-Drawable* DrawableButton::getDownImage() const noexcept
+DrawableComponent* DrawableButton::getDownImage() const noexcept
 {
     if (auto* d = getToggleState() ? downImageOn.get() : downImage.get())
         return d;

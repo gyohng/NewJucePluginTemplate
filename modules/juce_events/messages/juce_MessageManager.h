@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -94,7 +94,7 @@ public:
 
     /** Returns true if the stopDispatchLoop() method has been called.
     */
-    bool hasStopMessageBeenSent() const noexcept        { return quitMessagePosted.get() != 0; }
+    bool hasStopMessageBeenSent() const noexcept        { return quitMessagePosted; }
 
    #if JUCE_MODAL_LOOPS_PERMITTED
     /** Synchronously dispatches messages until a given time has elapsed.
@@ -407,9 +407,9 @@ private:
     friend class MessageManagerLock;
 
     std::unique_ptr<ActionBroadcaster> broadcaster;
-    Atomic<int> quitMessagePosted { 0 }, quitMessageReceived { 0 };
+    std::atomic<bool> quitMessagePosted { false }, quitMessageReceived { false };
     Thread::ThreadID messageThreadId;
-    Atomic<Thread::ThreadID> threadWithLock;
+    std::atomic<Thread::ThreadID> threadWithLock;
     mutable std::mutex messageThreadIdMutex;
 
     template <typename Function>

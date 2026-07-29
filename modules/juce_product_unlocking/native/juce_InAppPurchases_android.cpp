@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -938,7 +938,7 @@ private:
     }
 
     //==============================================================================
-    static InAppPurchases::Purchase buildPurchase (LocalRef<jobject> purchase)
+    static Purchase buildPurchase (LocalRef<jobject> purchase)
     {
         if (purchase == nullptr)
             return {};
@@ -951,7 +951,7 @@ private:
         return { juceString (LocalRef<jstring> { (jstring) env->CallObjectMethod (purchase, AndroidPurchase.getOrderId) }),
                  javaListOfStringToJuceStringArray (LocalRef<jobject> { env->CallObjectMethod (purchase, AndroidPurchase.getProducts) }),
                  juceString (LocalRef<jstring> { (jstring) env->CallObjectMethod (purchase, AndroidPurchase.getPackageName) }),
-                 Time (env->CallLongMethod (purchase, AndroidPurchase.getPurchaseTime)).toString (true, true, true, true),
+                 Time (env->CallLongMethod (purchase, AndroidPurchase.getPurchaseTime)),
                  juceString (LocalRef<jstring> { (jstring) env->CallObjectMethod (purchase, AndroidPurchase.getPurchaseToken) }) };
     }
 

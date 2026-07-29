@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -340,7 +340,7 @@ private:
 };
 
 //==============================================================================
-struct MenuWindow final : public Component
+struct MenuWindow final : public Component, private AsyncUpdater
 {
     MenuWindow (const PopupMenu& menu,
                 MenuWindow* parentWindow,
@@ -384,9 +384,21 @@ struct MenuWindow final : public Component
             if (shouldDisableAccessibility)
                 setAccessible (false);
 
+            const auto windowsMultiTouchFlag = std::invoke ([&]
+            {
+                if (auto* topComponent = options.getTopLevelTargetComponent())
+                    if (auto* topPeer = topComponent->getPeer())
+                        return topPeer->canWindowsUseMultiTouch();
+
+                return false;
+            });
+
             addToDesktop (ComponentPeer::windowIsTemporary
                           | ComponentPeer::windowIgnoresKeyPresses
                           | lf.getMenuWindowFlags());
+
+            if (auto* peer = getPeer())
+                peer->setWindowsCanUseMultiTouch (windowsMultiTouchFlag);
         }
 
         // Using a global mouse listener means that we get notifications about all mouse events.
@@ -631,17 +643,28 @@ struct MenuWindow final : public Component
 
     void visibilityChanged() override
     {
+        // If the component that spawns the MenuWindow is in a modal state, grabbing the focus will
+        // fail, because the ModalComponentManager cannot establish a parent-child relationship
+        // between the PopupMenu and the MenuWindow.
+        //
+        // Our workaround is to wait until after the MenuWindow itself has been put into the modal
+        // state, and only then run the code grabbing the focus.
+        triggerAsyncUpdate();
+    }
+
+    void handleAsyncUpdate() override
+    {
         if (! isShowing())
             return;
 
-        auto* accessibleFocus = [this]
+        auto* accessibleFocus = std::invoke ([this]
         {
-          if (currentChild != nullptr)
-              if (auto* childHandler = currentChild->getAccessibilityHandler())
-                  return childHandler;
+            if (currentChild != nullptr)
+                if (auto* childHandler = currentChild->getAccessibilityHandler())
+                    return childHandler;
 
             return getAccessibilityHandler();
-        }();
+        });
 
         if (accessibleFocus != nullptr)
             accessibleFocus->grabFocus();

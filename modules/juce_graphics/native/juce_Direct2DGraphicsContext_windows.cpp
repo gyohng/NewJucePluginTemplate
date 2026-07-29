@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -688,6 +688,25 @@ void Direct2DGraphicsContext::setOpacity (float newOpacity)
         currentState->updateCurrentBrush();
 }
 
+static D2D1_COMPOSITE_MODE getD2DCompositeMode (BlendMode mode)
+{
+    switch (mode)
+    {
+        case BlendMode::sourceOver:     return D2D1_COMPOSITE_MODE_SOURCE_OVER;
+        case BlendMode::source:         return D2D1_COMPOSITE_MODE_SOURCE_COPY;
+        case BlendMode::destinationIn:  return D2D1_COMPOSITE_MODE_DESTINATION_IN;
+        case BlendMode::destinationOut: return D2D1_COMPOSITE_MODE_DESTINATION_OUT;
+    }
+
+    jassertfalse;
+    return D2D1_COMPOSITE_MODE_SOURCE_OVER;
+}
+
+void Direct2DGraphicsContext::setImageBlendMode (BlendMode newMode)
+{
+    currentState->imageBlendMode = getD2DCompositeMode (newMode);
+}
+
 void Direct2DGraphicsContext::setInterpolationQuality (Graphics::ResamplingQuality quality)
 {
     switch (quality)
@@ -911,6 +930,8 @@ void Direct2DGraphicsContext::drawImage (const Image& imageIn, const AffineTrans
         }
 
         const auto imageTransform = currentState->currentTransform.getTransformWith (transform);
+        const auto blendMode = currentState->imageBlendMode;
+        const auto opacity = currentState->fillType.getOpacity();
 
         auto drawTiles = [&] (auto&& getRect)
         {
@@ -930,37 +951,72 @@ void Direct2DGraphicsContext::drawImage (const Image& imageIn, const AffineTrans
                 const auto [srcConverted, dstConverted] = std::tuple (D2DUtilities::toRECT_F (src),
                                                                       D2DUtilities::toRECT_F (dst));
 
-                if (page.bitmap->GetPixelFormat().format == DXGI_FORMAT_A8_UNORM)
-                {
-                    const auto lastColour = currentState->colourBrush->GetColor();
-                    const auto lastMode = deviceContext->GetAntialiasMode();
+                const auto lastMode = deviceContext->GetAntialiasMode();
 
-                    currentState->colourBrush->SetColor (D2D1::ColorF (1.0f, 1.0f, 1.0f, currentState->fillType.getOpacity()));
+                if (pagesAndArea.pages.size() > 1)
                     deviceContext->SetAntialiasMode (D2D1_ANTIALIAS_MODE_ALIASED);
-                    deviceContext->FillOpacityMask (page.bitmap,
-                                                    currentState->colourBrush,
-                                                    dstConverted,
-                                                    srcConverted);
 
-                    deviceContext->SetAntialiasMode (lastMode);
-                    currentState->colourBrush->SetColor (lastColour);
+                if (blendMode == D2D1_COMPOSITE_MODE_SOURCE_OVER)
+                {
+                    if (page.bitmap->GetPixelFormat().format == DXGI_FORMAT_A8_UNORM)
+                    {
+                        const auto lastColour = currentState->colourBrush->GetColor();
+
+                        currentState->colourBrush->SetColor (D2D1::ColorF (1.0f,
+                                                                           1.0f,
+                                                                           1.0f,
+                                                                           opacity));
+
+                        deviceContext->SetAntialiasMode (D2D1_ANTIALIAS_MODE_ALIASED);
+                        deviceContext->FillOpacityMask (page.bitmap,
+                                                        currentState->colourBrush,
+                                                        dstConverted,
+                                                        srcConverted);
+
+                        currentState->colourBrush->SetColor (lastColour);
+                    }
+                    else
+                    {
+                        deviceContext->DrawBitmap (page.bitmap,
+                                                   dstConverted,
+                                                   opacity,
+                                                   currentState->interpolationMode,
+                                                   srcConverted,
+                                                   {});
+                    }
                 }
                 else
                 {
-                    const auto lastMode = deviceContext->GetAntialiasMode();
+                    if (approximatelyEqual (opacity, 1.0f))
+                    {
+                        deviceContext->DrawImage (page.bitmap,
+                                                  nullptr,
+                                                  &srcConverted,
+                                                  currentState->interpolationMode,
+                                                  blendMode);
+                    }
+                    else
+                    {
+                        ComSmartPtr<ID2D1Effect> effect;
+                        if (const auto hr = deviceContext->CreateEffect (CLSID_D2D1Opacity, effect.resetAndGetPointerAddress());
+                            FAILED (hr) || effect == nullptr)
+                        {
+                            jassertfalse;
+                            return;
+                        }
 
-                    if (pagesAndArea.pages.size() > 1)
-                        deviceContext->SetAntialiasMode (D2D1_ANTIALIAS_MODE_ALIASED);
+                        effect->SetInput (0, page.bitmap);
+                        effect->SetValue (D2D1_OPACITY_PROP_OPACITY, opacity);
 
-                    deviceContext->DrawBitmap (page.bitmap,
-                                               dstConverted,
-                                               currentState->fillType.getOpacity(),
-                                               currentState->interpolationMode,
-                                               srcConverted,
-                                               {});
-
-                    deviceContext->SetAntialiasMode (lastMode);
+                        deviceContext->DrawImage (effect.get(),
+                                                  nullptr,
+                                                  &srcConverted,
+                                                  currentState->interpolationMode,
+                                                  blendMode);
+                    }
                 }
+
+                deviceContext->SetAntialiasMode (lastMode);
             }
         };
 
@@ -969,7 +1025,9 @@ void Direct2DGraphicsContext::drawImage (const Image& imageIn, const AffineTrans
                                                  && 0.0f < imageTransform.mat00
                                                  && 0.0f < imageTransform.mat11);
 
-        if (canDrawWithoutTransform)
+        // DrawImage used by the advanced blend modes cannot transform between source and
+        // destination rectangles internally.
+        if (canDrawWithoutTransform && blendMode == D2D1_COMPOSITE_MODE_SOURCE_OVER)
         {
             drawTiles ([&] (auto intersection)
             {
@@ -1111,13 +1169,13 @@ void Direct2DGraphicsContext::drawGlyphs (Span<const uint16_t> glyphNumbers,
         return;
 
     const auto typeface = font.getTypefacePtr();
-    const auto fontFace = [&]() -> ComSmartPtr<IDWriteFontFace>
+    const auto fontFace = std::invoke ([&]() -> ComSmartPtr<IDWriteFontFace>
     {
-        if (auto* x = dynamic_cast<WindowsDirectWriteTypeface*> (typeface.get()))
+        if (auto* x = typeface->getNativeDetails()->getWindowsDirectWriteTypeface())
             return x->getIDWriteFontFace();
 
         return {};
-    }();
+    });
 
     if (fontFace == nullptr)
         return;
@@ -1179,12 +1237,57 @@ void Direct2DGraphicsContext::drawGlyphs (Span<const uint16_t> glyphNumbers,
     directWriteGlyphRun.isSideways = FALSE;
     directWriteGlyphRun.bidiLevel = 0;
 
+    const auto factory = getPimpl()->getDirectWriteFactory4();
+    const auto oldParams = font.getDirect2DHinting() ? nullptr : getPimpl()->getDefaultTextRenderingParams();
+    const auto newParams = std::invoke ([&]() -> ComSmartPtr<IDWriteRenderingParams>
+    {
+        if (oldParams == nullptr)
+        {
+            return {};
+        }
+
+        if (factory == nullptr)
+        {
+            return {};
+        }
+
+        ComSmartPtr<IDWriteRenderingParams> customParams;
+
+        // Use outline mode (not bitmaps) to preserve the look of older JUCE versions
+        // for fonts like MS PGothic
+        constexpr auto renderMode = DWRITE_RENDERING_MODE_OUTLINE;
+
+        if (FAILED (factory->CreateCustomRenderingParams (oldParams->GetGamma(),
+                                                          oldParams->GetEnhancedContrast(),
+                                                          oldParams->GetClearTypeLevel(),
+                                                          oldParams->GetPixelGeometry(),
+                                                          renderMode,
+                                                          customParams.resetAndGetPointerAddress()))
+            || customParams == nullptr)
+        {
+            return {};
+        }
+
+        return customParams;
+    });
+
+    if (newParams != nullptr)
+    {
+        deviceContext->SetTextRenderingParams (newParams);
+    }
+
+    const ScopeGuard applyOldParams { [&]
+    {
+        if (newParams != nullptr && oldParams != nullptr)
+        {
+            deviceContext->SetTextRenderingParams (oldParams);
+        }
+    } };
+
     const auto tryDrawColourGlyphs = [&]
     {
         // There's a helpful colour glyph rendering sample at
         // https://github.com/microsoft/Windows-universal-samples/blob/main/Samples/DWriteColorGlyph/cpp/CustomTextRenderer.cpp
-        const auto factory = getPimpl()->getDirectWriteFactory4();
-
         if (factory == nullptr)
             return false;
 

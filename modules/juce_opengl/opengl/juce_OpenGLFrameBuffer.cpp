@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -34,6 +34,32 @@
 
 namespace juce
 {
+
+static bool tryAllocTexture (int w, int h, GLenum type)
+{
+    JUCE_CHECK_OPENGL_ERROR
+
+    for (const auto& [testWidth, testHeight] : { std::tuple (w, h),
+                                                 std::tuple (nextPowerOfTwo (w), nextPowerOfTwo (h)) })
+    {
+        glTexImage2D (GL_TEXTURE_2D,
+                      0,
+                      type == GL_ALPHA ? GL_ALPHA : GL_RGBA,
+                      testWidth,
+                      testHeight,
+                      0,
+                      type,
+                      GL_UNSIGNED_BYTE,
+                      nullptr);
+
+        const GLenum error = glGetError();
+
+        if (error == GL_NO_ERROR)
+            return true;
+    }
+
+    return false;
+}
 
 /*
     Used on Android to detect when the GL context and associated resources (textures, framebuffers,
@@ -124,7 +150,7 @@ public:
         const ScopeGuard unbinder { [transientState] { transientState->unbind(); }};
 
        #if ! JUCE_ANDROID
-        if (! associatedContext->isCoreProfile())
+        if (associatedContext->getProfile() == OpenGLProfile::compatibility)
             glEnable (GL_TEXTURE_2D);
 
         clearGLError();
@@ -357,7 +383,10 @@ private:
                 glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 JUCE_CHECK_OPENGL_ERROR
 
-                glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+                [[maybe_unused]] const auto created = tryAllocTexture (width, height, GL_RGBA);
+                // Failed to create texture
+                jassert (created);
+
                 JUCE_CHECK_OPENGL_ERROR
             }
 
@@ -369,11 +398,9 @@ private:
                 gl::glBindRenderbuffer (GL_RENDERBUFFER, depthOrStencilBuffer);
                 jassert (gl::glIsRenderbuffer (depthOrStencilBuffer));
 
-               #if JUCE_OPENGL_ES
-                constexpr auto depthComponentConstant = (GLenum) GL_DEPTH_COMPONENT16;
-               #else
-                constexpr auto depthComponentConstant = (GLenum) GL_DEPTH_COMPONENT;
-               #endif
+                const auto depthComponentConstant = OpenGLHelpers::isOpenGLES()
+                                                  ? (GLenum) GL_DEPTH_COMPONENT16
+                                                  : (GLenum) GL_DEPTH_COMPONENT;
 
                 gl::glRenderbufferStorage (GL_RENDERBUFFER,
                                            (wantsDepthBuffer && wantsStencilBuffer) ? (GLenum) GL_DEPTH24_STENCIL8
