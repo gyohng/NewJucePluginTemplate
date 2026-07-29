@@ -31,9 +31,6 @@
 #include "hb.hh"
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _deserialize_text_unicode_trans_keys[] = {
 	0u, 0u, 43u, 102u, 48u, 102u, 48u, 124u, 48u, 57u, 62u, 124u, 48u, 124u, 60u, 117u, 
 	85u, 117u, 85u, 117u, 0
@@ -134,9 +131,6 @@ static const int deserialize_text_unicode_error = 0;
 static const int deserialize_text_unicode_en_main = 7;
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
 static hb_bool_t
@@ -153,16 +147,10 @@ _hb_buffer_deserialize_text_unicode (hb_buffer_t *buffer,
   hb_glyph_info_t info = {0};
   const hb_glyph_position_t pos = {0};
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = deserialize_text_unicode_start;
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -187,42 +175,16 @@ _resume:
 		goto _again;
 
 	switch ( _deserialize_text_unicode_trans_actions[_trans] ) {
-<<<<<<< HEAD
-	case 1:
-=======
 	case 4:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	hb_memset (&info, 0, sizeof (info));
 }
 	break;
-<<<<<<< HEAD
-	case 2:
-=======
 	case 1:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	tok = p;
 }
 	break;
-<<<<<<< HEAD
-	case 4:
-	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
-	break;
-	case 3:
-	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	if (buffer->have_positions)
-	  buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 5:
-	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-=======
 	case 2:
 	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
 	break;
@@ -230,7 +192,6 @@ _resume:
 	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
 	break;
 	case 6:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -243,9 +204,6 @@ _resume:
 	hb_memset (&info, 0, sizeof (info));
 }
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -257,9 +215,7 @@ _again:
 	if ( p == eof )
 	{
 	switch ( _deserialize_text_unicode_eof_actions[cs] ) {
-<<<<<<< HEAD
-	case 3:
-	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
+	case 5:
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -269,32 +225,12 @@ _again:
 	*end_ptr = p;
 }
 	break;
-	case 5:
-	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-=======
-	case 5:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	if (buffer->have_positions)
-	  buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 	}
 
 	_out: {}
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
   *end_ptr = p;

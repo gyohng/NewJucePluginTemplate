@@ -47,9 +47,6 @@ enum khmer_syllable_type_t {
 };
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 #define khmer_syllable_machine_ex_C 1u
 #define khmer_syllable_machine_ex_DOTTEDCIRCLE 11u
 #define khmer_syllable_machine_ex_H 4u
@@ -67,9 +64,6 @@ enum khmer_syllable_type_t {
 #define khmer_syllable_machine_ex_ZWNJ 5u
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _khmer_syllable_machine_trans_keys[] = {
 	5u, 26u, 5u, 26u, 1u, 15u, 5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 
 	5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 5u, 26u, 1u, 15u, 5u, 26u, 5u, 26u, 
@@ -295,9 +289,6 @@ find_syllables_khmer (hb_buffer_t *buffer)
   int cs;
   hb_glyph_info_t *info = buffer->info;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = khmer_syllable_machine_start;
 	ts = 0;
@@ -312,9 +303,6 @@ find_syllables_khmer (hb_buffer_t *buffer)
 
   unsigned int syllable_serial = 1;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -327,9 +315,6 @@ _resume:
 	case 7:
 	{ts = p;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	_keys = _khmer_syllable_machine_trans_keys + (cs<<1);
@@ -387,9 +372,6 @@ _eof_trans:
 	{te = p+1;}
 	{act = 3;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -397,9 +379,6 @@ _again:
 	case 6:
 	{ts = 0;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	if ( ++p != pe )

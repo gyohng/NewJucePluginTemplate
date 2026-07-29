@@ -30,9 +30,6 @@
 #include "hb.hh"
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _double_parser_trans_keys[] = {
 	0u, 0u, 43u, 57u, 46u, 57u, 48u, 57u, 43u, 57u, 48u, 57u, 48u, 101u, 48u, 57u, 
 	46u, 101u, 0
@@ -135,16 +132,10 @@ strtod_rl (const char *p, const char **end_ptr /* IN/OUT */)
 
   int cs;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = double_parser_start;
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -197,9 +188,6 @@ _resume:
 	  exp_overflow = true;
 }
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:

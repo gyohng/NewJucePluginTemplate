@@ -49,9 +49,6 @@ enum myanmar_syllable_type_t {
 };
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 #define myanmar_syllable_machine_ex_A 9u
 #define myanmar_syllable_machine_ex_As 32u
 #define myanmar_syllable_machine_ex_C 1u
@@ -79,9 +76,6 @@ enum myanmar_syllable_type_t {
 #define myanmar_syllable_machine_ex_ZWNJ 5u
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _myanmar_syllable_machine_trans_keys[] = {
 	1u, 57u, 3u, 57u, 5u, 57u, 5u, 57u, 3u, 57u, 5u, 57u, 3u, 57u, 3u, 57u, 
 	3u, 57u, 3u, 57u, 3u, 57u, 5u, 57u, 1u, 15u, 3u, 57u, 3u, 57u, 3u, 57u, 
@@ -532,9 +526,6 @@ static const int myanmar_syllable_machine_en_main = 0;
 
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
 #define found_syllable(syllable_type) \
@@ -553,9 +544,6 @@ find_syllables_myanmar (hb_buffer_t *buffer)
   int cs;
   hb_glyph_info_t *info = buffer->info;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = myanmar_syllable_machine_start;
 	ts = 0;
@@ -563,9 +551,6 @@ find_syllables_myanmar (hb_buffer_t *buffer)
 	act = 0;
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
   p = 0;
@@ -573,9 +558,6 @@ find_syllables_myanmar (hb_buffer_t *buffer)
 
   unsigned int syllable_serial = 1;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -588,9 +570,6 @@ _resume:
 	case 2:
 	{ts = p;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	_keys = _myanmar_syllable_machine_trans_keys + (cs<<1);
@@ -608,29 +587,6 @@ _eof_trans:
 		goto _again;
 
 	switch ( _myanmar_syllable_machine_trans_actions[_trans] ) {
-<<<<<<< HEAD
-	case 6:
-	{te = p+1;{ found_syllable (myanmar_consonant_syllable); }}
-	break;
-	case 4:
-	{te = p+1;{ found_syllable (myanmar_non_myanmar_cluster); }}
-	break;
-	case 8:
-	{te = p+1;{ found_syllable (myanmar_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
-	break;
-	case 3:
-	{te = p+1;{ found_syllable (myanmar_non_myanmar_cluster); }}
-	break;
-	case 5:
-	{te = p;p--;{ found_syllable (myanmar_consonant_syllable); }}
-	break;
-	case 7:
-	{te = p;p--;{ found_syllable (myanmar_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
-	break;
-	case 9:
-	{te = p;p--;{ found_syllable (myanmar_non_myanmar_cluster); }}
-	break;
-=======
 	case 8:
 	{te = p+1;{ found_syllable (myanmar_consonant_syllable); }}
 	break;
@@ -671,7 +627,6 @@ _eof_trans:
 	{te = p+1;}
 	{act = 3;}
 	break;
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -679,9 +634,6 @@ _again:
 	case 1:
 	{ts = 0;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	if ( ++p != pe )
@@ -697,9 +649,6 @@ _again:
 
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 }
 

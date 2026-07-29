@@ -52,9 +52,6 @@ enum use_syllable_type_t {
 };
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 #define use_syllable_machine_ex_B 1u
 #define use_syllable_machine_ex_CGJ 6u
 #define use_syllable_machine_ex_CMAbv 31u
@@ -101,9 +98,6 @@ enum use_syllable_type_t {
 #define use_syllable_machine_ex_ZWNJ 14u
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _use_syllable_machine_trans_keys[] = {
 	49u, 51u, 0u, 56u, 11u, 56u, 11u, 56u, 1u, 53u, 14u, 48u, 14u, 47u, 14u, 47u, 
 	14u, 47u, 14u, 46u, 14u, 46u, 14u, 14u, 14u, 48u, 14u, 48u, 14u, 48u, 1u, 14u, 
@@ -832,9 +826,6 @@ static const int use_syllable_machine_en_main = 1;
 
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
 #define found_syllable(syllable_type) \
@@ -933,9 +924,6 @@ find_syllables_use (hb_buffer_t *buffer)
   unsigned int act HB_UNUSED;
   int cs;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = use_syllable_machine_start;
 	ts = 0;
@@ -943,16 +931,10 @@ find_syllables_use (hb_buffer_t *buffer)
 	act = 0;
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
   unsigned int syllable_serial = 1;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -965,9 +947,6 @@ _resume:
 	case 3:
 	{ts = p;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	_keys = _use_syllable_machine_trans_keys + (cs<<1);
@@ -985,63 +964,6 @@ _eof_trans:
 		goto _again;
 
 	switch ( _use_syllable_machine_trans_actions[_trans] ) {
-<<<<<<< HEAD
-	case 6:
-	{te = p+1;}
-	break;
-	case 14:
-	{te = p+1;{ found_syllable (use_virama_terminated_cluster); }}
-	break;
-	case 12:
-	{te = p+1;{ found_syllable (use_sakot_terminated_cluster); }}
-	break;
-	case 10:
-	{te = p+1;{ found_syllable (use_standard_cluster); }}
-	break;
-	case 18:
-	{te = p+1;{ found_syllable (use_number_joiner_terminated_cluster); }}
-	break;
-	case 16:
-	{te = p+1;{ found_syllable (use_numeral_cluster); }}
-	break;
-	case 8:
-	{te = p+1;{ found_syllable (use_symbol_cluster); }}
-	break;
-	case 22:
-	{te = p+1;{ found_syllable (use_hieroglyph_cluster); }}
-	break;
-	case 5:
-	{te = p+1;{ found_syllable (use_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
-	break;
-	case 4:
-	{te = p+1;{ found_syllable (use_non_cluster); }}
-	break;
-	case 13:
-	{te = p;p--;{ found_syllable (use_virama_terminated_cluster); }}
-	break;
-	case 11:
-	{te = p;p--;{ found_syllable (use_sakot_terminated_cluster); }}
-	break;
-	case 9:
-	{te = p;p--;{ found_syllable (use_standard_cluster); }}
-	break;
-	case 17:
-	{te = p;p--;{ found_syllable (use_number_joiner_terminated_cluster); }}
-	break;
-	case 15:
-	{te = p;p--;{ found_syllable (use_numeral_cluster); }}
-	break;
-	case 7:
-	{te = p;p--;{ found_syllable (use_symbol_cluster); }}
-	break;
-	case 21:
-	{te = p;p--;{ found_syllable (use_hieroglyph_cluster); }}
-	break;
-	case 19:
-	{te = p;p--;{ found_syllable (use_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
-	break;
-	case 20:
-=======
 	case 7:
 	{te = p+1;}
 	break;
@@ -1097,14 +1019,11 @@ _eof_trans:
 	{te = p;p--;{ found_syllable (use_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 23:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{te = p;p--;{ found_syllable (use_non_cluster); }}
 	break;
 	case 1:
 	{{p = ((te))-1;}{ found_syllable (use_symbol_cluster); }}
 	break;
-<<<<<<< HEAD
-=======
 	case 22:
 	{	switch( act ) {
 	case 8:
@@ -1124,7 +1043,6 @@ _eof_trans:
 	{te = p+1;}
 	{act = 9;}
 	break;
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -1132,9 +1050,6 @@ _again:
 	case 2:
 	{ts = 0;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	if ( ++p != pe )
@@ -1150,9 +1065,6 @@ _again:
 
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 }
 

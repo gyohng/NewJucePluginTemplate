@@ -31,9 +31,6 @@
 #include "hb.hh"
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _deserialize_json_trans_keys[] = {
 	0u, 0u, 9u, 34u, 97u, 121u, 120u, 121u, 34u, 34u, 9u, 58u, 9u, 57u, 48u, 57u, 
 	9u, 125u, 9u, 125u, 9u, 93u, 9u, 125u, 34u, 34u, 9u, 58u, 9u, 57u, 48u, 57u, 
@@ -578,9 +575,6 @@ static const int deserialize_json_error = 0;
 static const int deserialize_json_en_main = 61;
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
 static hb_bool_t
@@ -600,16 +594,10 @@ _hb_buffer_deserialize_json (hb_buffer_t *buffer,
   hb_glyph_info_t info = {0};
   hb_glyph_position_t pos = {0};
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = deserialize_json_start;
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -634,21 +622,13 @@ _resume:
 		goto _again;
 
 	switch ( _deserialize_json_trans_actions[_trans] ) {
-<<<<<<< HEAD
-	case 1:
-=======
 	case 15:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	hb_memset (&info, 0, sizeof (info));
 	hb_memset (&pos , 0, sizeof (pos ));
 }
 	break;
-<<<<<<< HEAD
-	case 5:
-=======
 	case 3:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -657,66 +637,11 @@ _resume:
 	*end_ptr = p;
 }
 	break;
-<<<<<<< HEAD
-	case 2:
-=======
 	case 1:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	tok = p;
 }
 	break;
-<<<<<<< HEAD
-	case 17:
-	{ if (unlikely (!buffer->ensure_glyphs ())) return false; }
-	break;
-	case 23:
-	{ if (unlikely (!buffer->ensure_unicode ())) return false; }
-	break;
-	case 18:
-	{
-	/* TODO Unescape \" and \\ if found. */
-	if (!hb_font_glyph_from_string (font,
-					tok+1, p - tok - 2, /* Skip "" */
-					&info.codepoint))
-	  return false;
-}
-	break;
-	case 20:
-	{ if (!parse_uint (tok, p, &info.codepoint)) return false; }
-	break;
-	case 8:
-	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-	break;
-	case 10:
-	{ if (!parse_int  (tok, p, &pos.x_offset )) return false; }
-	break;
-	case 12:
-	{ if (!parse_int  (tok, p, &pos.y_offset )) return false; }
-	break;
-	case 3:
-	{ if (!parse_int  (tok, p, &pos.x_advance)) return false; }
-	break;
-	case 6:
-	{ if (!parse_int  (tok, p, &pos.y_advance)) return false; }
-	break;
-	case 14:
-	{ if (!parse_uint (tok, p, &info.mask    )) return false; }
-	break;
-	case 16:
-	{
-	tok = p;
-}
-	{ if (unlikely (!buffer->ensure_glyphs ())) return false; }
-	break;
-	case 22:
-	{
-	tok = p;
-}
-	{ if (unlikely (!buffer->ensure_unicode ())) return false; }
-	break;
-	case 19:
-=======
 	case 10:
 	{ if (unlikely (!buffer->ensure_glyphs ())) return false; }
 	break;
@@ -724,7 +649,6 @@ _resume:
 	{ if (unlikely (!buffer->ensure_unicode ())) return false; }
 	break;
 	case 11:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	/* TODO Unescape \" and \\ if found. */
 	if (!hb_font_glyph_from_string (font,
@@ -732,86 +656,6 @@ _resume:
 					&info.codepoint))
 	  return false;
 }
-<<<<<<< HEAD
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 21:
-	{ if (!parse_uint (tok, p, &info.codepoint)) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 9:
-	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 11:
-	{ if (!parse_int  (tok, p, &pos.x_offset )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 13:
-	{ if (!parse_int  (tok, p, &pos.y_offset )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 4:
-	{ if (!parse_int  (tok, p, &pos.x_advance)) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 7:
-	{ if (!parse_int  (tok, p, &pos.y_advance)) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 15:
-	{ if (!parse_uint (tok, p, &info.mask    )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-=======
 	break;
 	case 12:
 	{ if (!parse_uint (tok, p, &info.codepoint)) return false; }
@@ -846,7 +690,6 @@ _resume:
 }
 	{ if (unlikely (!buffer->ensure_unicode ())) return false; }
 	break;
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -858,9 +701,6 @@ _again:
 	_out: {}
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
   *end_ptr = p;

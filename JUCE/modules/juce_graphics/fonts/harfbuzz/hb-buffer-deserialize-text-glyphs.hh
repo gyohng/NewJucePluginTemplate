@@ -31,9 +31,6 @@
 #include "hb.hh"
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _deserialize_text_glyphs_trans_keys[] = {
 	0u, 0u, 35u, 124u, 48u, 57u, 60u, 124u, 45u, 57u, 48u, 57u, 44u, 44u, 45u, 57u, 
 	48u, 57u, 44u, 44u, 45u, 57u, 48u, 57u, 44u, 44u, 45u, 57u, 48u, 57u, 62u, 62u, 
@@ -370,9 +367,6 @@ static const int deserialize_text_glyphs_error = 0;
 static const int deserialize_text_glyphs_en_main = 46;
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
 static hb_bool_t
@@ -392,16 +386,10 @@ _hb_buffer_deserialize_text_glyphs (hb_buffer_t *buffer,
   hb_glyph_info_t info = {0};
   hb_glyph_position_t pos = {0};
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = deserialize_text_glyphs_start;
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -426,20 +414,12 @@ _resume:
 		goto _again;
 
 	switch ( _deserialize_text_glyphs_trans_actions[_trans] ) {
-<<<<<<< HEAD
-	case 1:
-=======
 	case 2:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	tok = p;
 }
 	break;
-<<<<<<< HEAD
-	case 7:
-=======
 	case 1:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	/* TODO Unescape delimiters. */
 	if (!hb_font_glyph_from_string (font,
@@ -448,33 +428,6 @@ _resume:
 	  return false;
 }
 	break;
-<<<<<<< HEAD
-	case 14:
-	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-	break;
-	case 2:
-	{ if (!parse_int  (tok, p, &pos.x_offset )) return false; }
-	break;
-	case 16:
-	{ if (!parse_int  (tok, p, &pos.y_offset )) return false; }
-	break;
-	case 10:
-	{ if (!parse_int  (tok, p, &pos.x_advance)) return false; }
-	break;
-	case 12:
-	{ if (!parse_int  (tok, p, &pos.y_advance)) return false; }
-	break;
-	case 4:
-	{
-	hb_memset (&info, 0, sizeof (info));
-	hb_memset (&pos , 0, sizeof (pos ));
-}
-	{
-	tok = p;
-}
-	break;
-	case 6:
-=======
 	case 6:
 	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
 	break;
@@ -510,7 +463,6 @@ _resume:
 	{
 	tok = p;
 }
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	/* TODO Unescape delimiters. */
 	if (!hb_font_glyph_from_string (font,
@@ -518,11 +470,8 @@ _resume:
 					&info.codepoint))
 	  return false;
 }
-<<<<<<< HEAD
-=======
 	break;
 	case 12:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	buffer->add_info_and_pos (info, pos);
 	if (unlikely (!buffer->successful))
@@ -554,84 +503,12 @@ _resume:
 }
 	break;
 	case 13:
-<<<<<<< HEAD
-	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	buffer->add_info_and_pos (info, pos);
 	if (unlikely (!buffer->successful))
 	  return false;
 	*end_ptr = p;
 }
-<<<<<<< HEAD
-	break;
-	case 15:
-	{ if (!parse_int  (tok, p, &pos.y_offset )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 9:
-	{ if (!parse_int  (tok, p, &pos.x_advance)) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 11:
-	{ if (!parse_int  (tok, p, &pos.y_advance)) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 8:
-	{ if (!parse_uint (tok, p, &info.mask    )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 5:
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
-	{
-	hb_memset (&info, 0, sizeof (info));
-	hb_memset (&pos , 0, sizeof (pos ));
-}
-<<<<<<< HEAD
-	{
-	tok = p;
-}
-=======
-	{
-	tok = p;
-}
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
-	{
-	/* TODO Unescape delimiters. */
-	if (!hb_font_glyph_from_string (font,
-					tok, p - tok,
-					&info.codepoint))
-	  return false;
-}
-	break;
-<<<<<<< HEAD
-	case 3:
 	{
 	hb_memset (&info, 0, sizeof (info));
 	hb_memset (&pos , 0, sizeof (pos ));
@@ -646,16 +523,7 @@ _resume:
 					&info.codepoint))
 	  return false;
 }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
 	break;
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -667,58 +535,7 @@ _again:
 	if ( p == eof )
 	{
 	switch ( _deserialize_text_glyphs_eof_actions[cs] ) {
-<<<<<<< HEAD
-	case 6:
-	{
-	/* TODO Unescape delimiters. */
-	if (!hb_font_glyph_from_string (font,
-					tok, p - tok,
-					&info.codepoint))
-	  return false;
-}
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 13:
-	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 15:
-	{ if (!parse_int  (tok, p, &pos.y_offset )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 9:
-	{ if (!parse_int  (tok, p, &pos.x_advance)) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
 	case 11:
-	{ if (!parse_int  (tok, p, &pos.y_advance)) return false; }
-=======
-	case 11:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	buffer->add_info_and_pos (info, pos);
 	if (unlikely (!buffer->successful))
@@ -726,51 +543,12 @@ _again:
 	*end_ptr = p;
 }
 	break;
-<<<<<<< HEAD
-	case 8:
-	{ if (!parse_uint (tok, p, &info.mask    )) return false; }
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-	case 3:
-	{
-	hb_memset (&info, 0, sizeof (info));
-	hb_memset (&pos , 0, sizeof (pos ));
-}
-	{
-	tok = p;
-}
-	{
-	/* TODO Unescape delimiters. */
-	if (!hb_font_glyph_from_string (font,
-					tok, p - tok,
-					&info.codepoint))
-	  return false;
-}
-	{
-	buffer->add_info (info);
-	if (unlikely (!buffer->successful))
-	  return false;
-	buffer->pos[buffer->len - 1] = pos;
-	*end_ptr = p;
-}
-	break;
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 	}
 
 	_out: {}
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
   *end_ptr = p;

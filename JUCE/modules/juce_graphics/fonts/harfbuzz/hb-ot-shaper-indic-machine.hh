@@ -52,9 +52,6 @@ enum indic_syllable_type_t {
 };
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 #define indic_syllable_machine_ex_A 9u
 #define indic_syllable_machine_ex_C 1u
 #define indic_syllable_machine_ex_CM 16u
@@ -78,9 +75,6 @@ enum indic_syllable_type_t {
 #define indic_syllable_machine_ex_ZWNJ 5u
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _indic_syllable_machine_trans_keys[] = {
 	8u, 57u, 4u, 57u, 5u, 57u, 5u, 57u, 13u, 13u, 4u, 57u, 4u, 57u, 4u, 57u, 
 	8u, 57u, 5u, 57u, 5u, 57u, 13u, 13u, 4u, 57u, 4u, 57u, 4u, 57u, 4u, 57u, 
@@ -1109,9 +1103,6 @@ static const int indic_syllable_machine_en_main = 31;
 
 
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
 #define found_syllable(syllable_type) \
@@ -1130,9 +1121,6 @@ find_syllables_indic (hb_buffer_t *buffer)
   int cs;
   hb_glyph_info_t *info = buffer->info;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = indic_syllable_machine_start;
 	ts = 0;
@@ -1140,9 +1128,6 @@ find_syllables_indic (hb_buffer_t *buffer)
 	act = 0;
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
   p = 0;
@@ -1150,9 +1135,6 @@ find_syllables_indic (hb_buffer_t *buffer)
 
   unsigned int syllable_serial = 1;
   
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -1165,9 +1147,6 @@ _resume:
 	case 10:
 	{ts = p;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	_keys = _indic_syllable_machine_trans_keys + (cs<<1);
@@ -1189,41 +1168,6 @@ _eof_trans:
 	{te = p+1;}
 	break;
 	case 11:
-<<<<<<< HEAD
-	{te = p+1;{ found_syllable (indic_non_indic_cluster); }}
-	break;
-	case 13:
-	{te = p;p--;{ found_syllable (indic_consonant_syllable); }}
-	break;
-	case 14:
-	{te = p;p--;{ found_syllable (indic_vowel_syllable); }}
-	break;
-	case 17:
-	{te = p;p--;{ found_syllable (indic_standalone_cluster); }}
-	break;
-	case 19:
-	{te = p;p--;{ found_syllable (indic_symbol_cluster); }}
-	break;
-	case 15:
-	{te = p;p--;{ found_syllable (indic_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
-	break;
-	case 16:
-	{te = p;p--;{ found_syllable (indic_non_indic_cluster); }}
-	break;
-	case 1:
-	{{p = ((te))-1;}{ found_syllable (indic_consonant_syllable); }}
-	break;
-	case 3:
-	{{p = ((te))-1;}{ found_syllable (indic_vowel_syllable); }}
-	break;
-	case 7:
-	{{p = ((te))-1;}{ found_syllable (indic_standalone_cluster); }}
-	break;
-	case 8:
-	{{p = ((te))-1;}{ found_syllable (indic_symbol_cluster); }}
-	break;
-	case 4:
-=======
 	{te = p+1;{ found_syllable (indic_non_indic_cluster); }}
 	break;
 	case 14:
@@ -1257,7 +1201,6 @@ _eof_trans:
 	{{p = ((te))-1;}{ found_syllable (indic_symbol_cluster); }}
 	break;
 	case 4:
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{{p = ((te))-1;}{ found_syllable (indic_broken_cluster); buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_BROKEN_SYLLABLE; }}
 	break;
 	case 6:
@@ -1277,13 +1220,8 @@ _eof_trans:
 	}
 	}
 	break;
-<<<<<<< HEAD
-	case 18:
-	{te = p+1;}
-=======
 	case 19:
 	{te = p+1;}
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{act = 1;}
 	break;
 	case 13:
@@ -1292,21 +1230,12 @@ _eof_trans:
 	break;
 	case 5:
 	{te = p+1;}
-<<<<<<< HEAD
-	{act = 5;}
-=======
 	{act = 6;}
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	break;
 	case 12:
 	{te = p+1;}
-<<<<<<< HEAD
-	{act = 6;}
-	break;
-=======
 	{act = 7;}
 	break;
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -1314,9 +1243,6 @@ _again:
 	case 9:
 	{ts = 0;}
 	break;
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 	if ( ++p != pe )
@@ -1332,9 +1258,6 @@ _again:
 
 	}
 
-<<<<<<< HEAD
-=======
->>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 }
 
