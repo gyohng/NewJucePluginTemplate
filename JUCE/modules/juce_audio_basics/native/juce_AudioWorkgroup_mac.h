@@ -32,9 +32,16 @@
   ==============================================================================
 */
 
+#if JUCE_MAC && ! defined (MAC_OS_VERSION_11_0)
+ // Building with a pre-macOS-11 SDK: supply the workgroup types ourselves and
+ // resolve the functions at runtime, so workgroups still work on macOS 11+.
+ #include "juce_OsWorkgroup_polyfill.h"
+ #define JUCE_AUDIOWORKGROUP_POLYFILL           1
+#endif
+
 namespace juce
 {
-#if (defined (MAC_OS_VERSION_11_0) || defined (__IPHONE_14_0))
+#if (defined (MAC_OS_VERSION_11_0) || defined (__IPHONE_14_0) || defined (JUCE_AUDIOWORKGROUP_POLYFILL))
  #define JUCE_AUDIOWORKGROUP_TYPES_AVAILABLE    1
 #else
  #define JUCE_AUDIOWORKGROUP_TYPES_AVAILABLE    0

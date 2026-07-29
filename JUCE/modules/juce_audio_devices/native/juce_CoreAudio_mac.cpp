@@ -433,11 +433,13 @@ String propertyValueToString (const CFDictionaryRef& dict)
     return String::fromCFString (makeCFUniquePtr (CFCopyDescription (dict)).get());
 }
 
+#if JUCE_AUDIOWORKGROUP_TYPES_AVAILABLE
 template<>
 String propertyValueToString (const os_workgroup_t&)
 {
     return "Workgroup";
 }
+#endif
 
 template<>
 String propertyValueToString (const AudioValueRange& range)
@@ -457,7 +459,7 @@ String propertyValueToString (const AudioStreamBasicDescription& stream)
     return String {   "  AudioStreamBasicDescription: " }
          + String { "\n    mSampleRate: " }         + String { stream.mSampleRate }
          + String { "\n    mFormatID: " }           + getFourCharStringOrHex (stream.mFormatID)
-         + String { "\n    mFormatFlags: " }        + BigInteger { stream.mFormatFlags }.toString (2)
+         + String { "\n    mFormatFlags: " }        + BigInteger { (uint32) stream.mFormatFlags }.toString (2)
          + String { "\n    mBytesPerPacket: " }     + String { stream.mBytesPerPacket }
          + String { "\n    mFramesPerPacket: " }    + String { stream.mFramesPerPacket }
          + String { "\n    mBytesPerFrame: " }      + String { stream.mBytesPerFrame }
