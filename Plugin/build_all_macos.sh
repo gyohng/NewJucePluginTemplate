@@ -99,10 +99,28 @@ splice() {
         "build/output/$2"
 }
 
+# AUv3 requires the macOS 11 SDK (no i386 / Objective-C 2), so it is not part
+# of the macos10 build; take the whole bundle from the macos11 build instead.
+copyMacos11Only() {
+    cd "$MYDIR"
+
+    ditto "build/macos11/${CMAKE_PROJECT_NAME}_artefacts/Release/$1/$2" "build/output/$2"
+    OUTPUTBIN=`echo "build/output/$2/Contents/MacOS/"*`
+    strip -x -S "$OUTPUTBIN"
+
+    codesign -v -f -o runtime --timestamp --deep \
+        --preserve-metadata=entitlements \
+        --generate-entitlement-der \
+        --sign "$DEVELOPER_SIGNATURE" \
+        --digest-algorithm=sha1,sha256 \
+        --entitlements "build/macos11/${CMAKE_PROJECT_NAME}_artefacts/JuceLibraryCode/${CMAKE_PROJECT_NAME}_$1.entitlements" \
+        "build/output/$2"
+}
+
 spliceAll() {
 
     splice AU "$1.component"
-    splice AUv3 "$1.appex"
+    copyMacos11Only AUv3 "$1.appex"
     splice Standalone "$1.app"
     splice VST "$1.vst"
     splice VST3 "$1.vst3"

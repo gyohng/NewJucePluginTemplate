@@ -31,6 +31,7 @@ if (NOT USE_XCODE)
         set(CMAKE_OSX_SYSROOT "$ENV{HOME}/MacOSX-SDKs/MacOSX10.13.sdk" CACHE STRING "" FORCE)
         # you may want to remove i386 from the list eventually
         set(CMAKE_OSX_ARCHITECTURES "x86_64;i386" CACHE STRING "" FORCE)
+        set(LEGACY_MACOS_SDK 1)
     endif()
     
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "" FORCE)
@@ -78,6 +79,15 @@ if (HAS_AAX)
     set(_optAAX _AAX)
 endif()
 
+# AUv3 requires Objective-C 2 (unavailable on i386) and macOS 11 SDK APIs,
+# so it is built only in the macos11 pass and spliced into the output from there
+set(optAUv3 AUv3)
+set(_optAUv3 _AUv3)
+if (LEGACY_MACOS_SDK)
+    unset(optAUv3)
+    unset(_optAUv3)
+endif()
+
 string(TIMESTAMP thisyear "%Y")
 
 if (WIN32)
@@ -94,7 +104,7 @@ if (WIN_ARM64)
 endif()
 
 juce_add_plugin(${TargetName}
-    FORMATS ${optAAX} AU AUv3 VST3 VST Standalone
+    FORMATS ${optAAX} AU ${optAUv3} VST3 VST Standalone
 
     VERSION ${PROJECT_VERSION}
     # ICON_* arguments specify a path to an image file to use as an icon for the Standalone
@@ -149,7 +159,7 @@ target_compile_definitions(${TargetName} PUBLIC
 if (APPLE AND NOT USE_XCODE)
     # Disable libc++ availability annotations so std::filesystem types
     # can compile with older SDKs + deployment target < 10.15
-    foreach(ttype "" _AU _AUv3 _Standalone _VST _VST3 ${_optAAX})
+    foreach(ttype "" _AU ${_optAUv3} _Standalone _VST _VST3 ${_optAAX})
         target_compile_definitions(${TargetName}${ttype} PRIVATE _LIBCPP_DISABLE_AVAILABILITY)
     endforeach()
 endif()
@@ -200,7 +210,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_target_properties(${TargetName} PROPERTIES FOLDER "")
 
 if (APPLE)
-    foreach(ttype All AU AUv3 ${optAAX} Standalone VST VST3)
+    foreach(ttype All AU ${optAUv3} ${optAAX} Standalone VST VST3)
         set_target_properties(${TargetName}_${ttype} PROPERTIES FOLDER "Build Config")
     endforeach()
 elseif(WIN32)
@@ -274,7 +284,7 @@ if (APPLE)
     endif()
 
     # Optimisation flags
-    foreach(ttype "" _AU _AUv3 _Standalone _VST _VST3 ${_optAAX})
+    foreach(ttype "" _AU ${_optAUv3} _Standalone _VST _VST3 ${_optAAX})
         target_compile_options(${TargetName}${ttype} PUBLIC
             -O3 -ffast-math -ftree-vectorize
             -fpascal-strings
@@ -307,23 +317,25 @@ if (APPLE)
 
     set_target_properties(${TargetName}_Standalone PROPERTIES OSX_ARCHITECTURES "${auv3arch}")
 
-    # set 10.13 as the target for AUv3
-    set_target_properties(${TargetName}_AUv3 PROPERTIES OSX_ARCHITECTURES "${auv3arch}")
+    if (TARGET ${TargetName}_AUv3)
+        # set 10.13 as the target for AUv3
+        set_target_properties(${TargetName}_AUv3 PROPERTIES OSX_ARCHITECTURES "${auv3arch}")
 
-    if (NOT USE_XCODE)
-        set_target_properties(${TargetName}_AUv3 PROPERTIES OSX_DEPLOYMENT_TARGET "10.13")
+        if (NOT USE_XCODE)
+            set_target_properties(${TargetName}_AUv3 PROPERTIES OSX_DEPLOYMENT_TARGET "10.13")
 
-        set_source_files_properties(
-            "${CMAKE_CURRENT_LIST_DIR}/../JUCE/modules/juce_audio_plugin_client/juce_audio_plugin_client_AUv3.mm" PROPERTIES
-            COMPILE_FLAGS -mmacosx-version-min=10.13
-        )
+            set_source_files_properties(
+                "${CMAKE_CURRENT_LIST_DIR}/../JUCE/modules/juce_audio_plugin_client/juce_audio_plugin_client_AUv3.mm" PROPERTIES
+                COMPILE_FLAGS -mmacosx-version-min=10.13
+            )
 
-        # add required flags to compile appex
-        target_link_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.13)
-        target_compile_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.13)
+            # add required flags to compile appex
+            target_link_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.13)
+            target_compile_options(${TargetName}_AUv3 PUBLIC -mmacosx-version-min=10.13)
+        endif()
+
+        target_link_options(${TargetName}_AUv3 PUBLIC -fapplication-extension -e _NSExtensionMain)
     endif()
-
-    target_link_options(${TargetName}_AUv3 PUBLIC -fapplication-extension -e _NSExtensionMain)
 endif()
 
 if (COPY_PLUGINS)
