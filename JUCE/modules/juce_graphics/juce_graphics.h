@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -44,7 +44,7 @@
 
   ID:                 juce_graphics
   vendor:             juce
-  version:            8.0.14
+  version:            9.0.0
   name:               JUCE graphics classes
   description:        Classes for 2D vector graphics, image loading/saving, font handling, etc.
   website:            http://www.juce.com/juce
@@ -147,12 +147,22 @@ namespace juce
 #include "fonts/juce_GlyphArrangement.h"
 #include "fonts/juce_TextLayout.h"
 #include "contexts/juce_LowLevelGraphicsContext.h"
+#include "contexts/juce_ScopedBlendContext.h"
 #include "images/juce_ScaledImage.h"
 #include "contexts/juce_LowLevelGraphicsSoftwareRenderer.h"
 #include "effects/juce_ImageEffectFilter.h"
 #include "effects/juce_DropShadowEffect.h"
 #include "effects/juce_GlowEffect.h"
 #include "detail/juce_Unicode.h"
+#include "detail/juce_TwoPointConicalGradient.h"
+#include "drawables/juce_Drawable.h"
+#include "drawables/juce_StrokeOptions.h"
+#include "drawables/juce_DrawableShape.h"
+#include "drawables/juce_DrawableComposite.h"
+#include "drawables/juce_DrawableImage.h"
+#include "drawables/juce_DrawablePath.h"
+#include "drawables/juce_DrawableRectangle.h"
+#include "drawables/juce_DrawableText.h"
 
 #if JUCE_GRAPHICS_INCLUDE_RENDERING_HELPERS
  #include "native/juce_RenderingHelpers.h"

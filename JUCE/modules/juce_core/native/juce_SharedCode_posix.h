@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -309,9 +309,9 @@ static bool setFileModeFlags (const String& fullPath, mode_t flags, bool shouldS
     info.st_mode &= 0777;
 
     if (shouldSet)
-        info.st_mode |= flags;
+        info.st_mode |= (decltype (info.st_mode)) flags;
     else
-        info.st_mode &= ~flags;
+        info.st_mode &= (decltype (info.st_mode)) ~flags;
 
     return chmod (fullPath.toUTF8(), (mode_t) info.st_mode) == 0;
 }

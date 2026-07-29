@@ -31,135 +31,112 @@
 #include "hb.hh"
 
 
+<<<<<<< HEAD
+=======
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 static const unsigned char _deserialize_text_unicode_trans_keys[] = {
-	0u, 0u, 9u, 117u, 43u, 102u, 48u, 102u, 48u, 57u, 9u, 124u, 9u, 124u, 9u, 124u, 
-	9u, 124u, 0
+	0u, 0u, 43u, 102u, 48u, 102u, 48u, 124u, 48u, 57u, 62u, 124u, 48u, 124u, 60u, 117u, 
+	85u, 117u, 85u, 117u, 0
 };
 
 static const char _deserialize_text_unicode_key_spans[] = {
-	0, 109, 60, 55, 10, 116, 116, 116, 
-	116
+	0, 60, 55, 77, 10, 63, 77, 58, 
+	33, 33
 };
 
 static const short _deserialize_text_unicode_index_offsets[] = {
-	0, 0, 110, 171, 227, 238, 355, 472, 
-	589
+	0, 0, 61, 117, 195, 206, 270, 348, 
+	407, 441
 };
 
 static const char _deserialize_text_unicode_indicies[] = {
-	0, 0, 0, 0, 0, 1, 1, 
+	0, 1, 1, 1, 1, 2, 2, 
+	2, 2, 2, 2, 2, 2, 2, 2, 
+	1, 1, 1, 1, 1, 1, 1, 2, 
+	2, 2, 2, 2, 2, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	0, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 2, 
+	2, 2, 2, 2, 2, 1, 2, 2, 
+	2, 2, 2, 2, 2, 2, 2, 2, 
+	1, 1, 1, 1, 1, 1, 1, 2, 
+	2, 2, 2, 2, 2, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 2, 
+	2, 2, 2, 2, 2, 1, 3, 3, 
+	3, 3, 3, 3, 3, 3, 3, 3, 
+	1, 1, 1, 4, 5, 1, 1, 3, 
+	3, 3, 3, 3, 3, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 3, 
+	3, 3, 3, 3, 3, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 5, 1, 6, 7, 7, 7, 
+	7, 7, 7, 7, 7, 7, 1, 8, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 2, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 8, 1, 9, 
+	9, 9, 9, 9, 9, 9, 9, 9, 
+	9, 1, 1, 1, 1, 8, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 2, 1, 3, 
-	1, 1, 1, 1, 4, 4, 4, 4, 
-	4, 4, 4, 4, 4, 4, 1, 1, 
-	1, 1, 1, 1, 1, 4, 4, 4, 
-	4, 4, 4, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 4, 4, 4, 
-	4, 4, 4, 1, 4, 4, 4, 4, 
-	4, 4, 4, 4, 4, 4, 1, 1, 
-	1, 1, 1, 1, 1, 4, 4, 4, 
-	4, 4, 4, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 4, 4, 4, 
-	4, 4, 4, 1, 5, 6, 6, 6, 
-	6, 6, 6, 6, 6, 6, 1, 7, 
-	7, 7, 7, 7, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 7, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 8, 8, 
-	8, 8, 8, 8, 8, 8, 8, 8, 
-	1, 1, 1, 9, 1, 1, 1, 8, 
-	8, 8, 8, 8, 8, 1, 1, 1, 
+	1, 1, 1, 8, 1, 10, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 8, 
-	8, 8, 8, 8, 8, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 11, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 10, 1, 11, 11, 11, 11, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 11, 1, 
 	11, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 11, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	11, 1, 12, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 0, 
-	1, 12, 12, 12, 12, 12, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	12, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 13, 1, 12, 12, 
-	12, 12, 12, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 12, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 14, 14, 14, 
-	14, 14, 14, 14, 14, 14, 14, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 13, 1, 0
+	1, 1, 12, 1, 0
 };
 
 static const char _deserialize_text_unicode_trans_targs[] = {
-	1, 0, 2, 3, 5, 7, 8, 6, 
-	5, 4, 1, 6, 6, 1, 8
+	2, 0, 3, 3, 4, 9, 5, 6, 
+	9, 6, 8, 1, 1
 };
 
 static const char _deserialize_text_unicode_trans_actions[] = {
-	0, 0, 1, 0, 2, 2, 2, 3, 
-	0, 4, 3, 0, 5, 5, 0
+	0, 0, 1, 0, 2, 2, 1, 1, 
+	3, 0, 0, 4, 6
 };
 
 static const char _deserialize_text_unicode_eof_actions[] = {
-	0, 0, 0, 0, 0, 3, 0, 5, 
-	5
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 5
 };
 
-static const int deserialize_text_unicode_start = 1;
-static const int deserialize_text_unicode_first_final = 5;
+static const int deserialize_text_unicode_start = 7;
+static const int deserialize_text_unicode_first_final = 7;
 static const int deserialize_text_unicode_error = 0;
 
-static const int deserialize_text_unicode_en_main = 1;
+static const int deserialize_text_unicode_en_main = 7;
 
 
+<<<<<<< HEAD
+=======
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
 
 static hb_bool_t
@@ -169,35 +146,23 @@ _hb_buffer_deserialize_text_unicode (hb_buffer_t *buffer,
 				     const char **end_ptr,
 				     hb_font_t *font)
 {
-  const char *p = buf, *pe = buf + buf_len, *eof = pe, *orig_pe = pe;
-
-  while (p < pe && ISSPACE (*p))
-    p++;
-  if (p < pe && *p == (buffer->len ? '|' : '<'))
-    *end_ptr = ++p;
-
-  const char *end = strchr ((char *) p, '>');
-  if (end)
-    pe = eof = end;
-  else
-  {
-    end = strrchr ((char *) p, '|');
-    if (end)
-      pe = eof = end;
-    else
-      pe = eof = p;
-  }
-
+  const char *p = buf, *pe = buf + buf_len, *eof = pe;
 
   const char *tok = nullptr;
   int cs;
   hb_glyph_info_t info = {0};
   const hb_glyph_position_t pos = {0};
   
+<<<<<<< HEAD
+=======
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	cs = deserialize_text_unicode_start;
 	}
 
+<<<<<<< HEAD
+=======
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	int _slen;
 	int _trans;
@@ -222,16 +187,25 @@ _resume:
 		goto _again;
 
 	switch ( _deserialize_text_unicode_trans_actions[_trans] ) {
+<<<<<<< HEAD
 	case 1:
+=======
+	case 4:
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	hb_memset (&info, 0, sizeof (info));
 }
 	break;
+<<<<<<< HEAD
 	case 2:
+=======
+	case 1:
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	tok = p;
 }
 	break;
+<<<<<<< HEAD
 	case 4:
 	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
 	break;
@@ -248,6 +222,15 @@ _resume:
 	break;
 	case 5:
 	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
+=======
+	case 2:
+	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
+	break;
+	case 3:
+	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
+	break;
+	case 6:
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -256,7 +239,13 @@ _resume:
 	  buffer->pos[buffer->len - 1] = pos;
 	*end_ptr = p;
 }
+	{
+	hb_memset (&info, 0, sizeof (info));
+}
 	break;
+<<<<<<< HEAD
+=======
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 
 _again:
@@ -268,6 +257,7 @@ _again:
 	if ( p == eof )
 	{
 	switch ( _deserialize_text_unicode_eof_actions[cs] ) {
+<<<<<<< HEAD
 	case 3:
 	{if (!parse_hex (tok, p, &info.codepoint )) return false; }
 	{
@@ -281,6 +271,9 @@ _again:
 	break;
 	case 5:
 	{ if (!parse_uint (tok, p, &info.cluster )) return false; }
+=======
+	case 5:
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	{
 	buffer->add_info (info);
 	if (unlikely (!buffer->successful))
@@ -290,20 +283,19 @@ _again:
 	*end_ptr = p;
 }
 	break;
+<<<<<<< HEAD
+=======
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 	}
 	}
 
 	_out: {}
 	}
 
+<<<<<<< HEAD
+=======
+>>>>>>> d24bc1ecaf029e81749c18aef03bb1832b6ecce6
 
-
-  if (pe < orig_pe && *pe == '>')
-  {
-    pe++;
-    if (p == pe)
-      p++;
-  }
 
   *end_ptr = p;
 

@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -4298,8 +4298,9 @@ public:
                      "/usr/local/lib/lv2;"
                      "/usr/lib/lv2;" };
           #elif JUCE_WINDOWS
-            return { "%APPDATA%\\LV2;"
-                     "%COMMONPROGRAMFILES%\\LV2" };
+            const auto localAppData = File::getSpecialLocation (File::userApplicationDataDirectory).getFullPathName();
+            const auto programFiles = File::getSpecialLocation (File::windowsProgramFilesCommon).getFullPathName();
+            return { localAppData + "\\LV2;" + programFiles + "\\LV2" };
           #else
            #if JUCE_64BIT
             if (File ("/usr/lib64/lv2").exists() || File ("/usr/local/lib64/lv2").exists())

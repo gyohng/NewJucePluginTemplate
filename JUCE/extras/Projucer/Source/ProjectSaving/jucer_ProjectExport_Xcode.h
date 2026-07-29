@@ -16,7 +16,7 @@
    framework to you, and you must discontinue the installation or download
    process and cease use of the JUCE framework.
 
-   JUCE End User Licence Agreement: https://juce.com/legal/juce-8-licence/
+   JUCE End User Licence Agreement: https://juce.com/legal/juce-9-licence/
    JUCE Privacy Policy: https://juce.com/juce-privacy-policy
    JUCE Website Terms of Service: https://juce.com/juce-website-terms-of-service/
 
@@ -214,6 +214,7 @@ public:
           embeddedFrameworksValue                      (settings, Ids::embeddedFrameworks,                      getUndoManager()),
           postbuildCommandValue                        (settings, Ids::postbuildCommand,                        getUndoManager()),
           prebuildCommandValue                         (settings, Ids::prebuildCommand,                         getUndoManager()),
+          postSignCommandValue                         (settings, Ids::postSignCommand,                         getUndoManager()),
           duplicateAppExResourcesFolderValue           (settings, Ids::duplicateAppExResourcesFolder,           getUndoManager(), true),
           iosDeviceFamilyValue                         (settings, Ids::iosDeviceFamily,                         getUndoManager(), "1,2"),
           iPhoneScreenOrientationValue                 (settings, Ids::iPhoneScreenOrientation,                 getUndoManager(), getDefaultScreenOrientations(), ","),
@@ -310,6 +311,7 @@ public:
 
     String getPostBuildScript() const                       { return postbuildCommandValue.get(); }
     String getPreBuildScript() const                        { return prebuildCommandValue.get(); }
+    String getPostSignScript() const                        { return postSignCommandValue.get(); }
 
     bool shouldDuplicateAppExResourcesFolder() const        { return duplicateAppExResourcesFolderValue.get(); }
 
@@ -883,6 +885,9 @@ public:
 
         props.add (new TextPropertyComponent (postbuildCommandValue, "Post-Build Shell Script", 32768, true),
                    "Some shell-script that will be run after a build completes.");
+
+        props.add (new TextPropertyComponent (postSignCommandValue, "Post-Sign Shell Script", 32768, true),
+                   "Some shell-script that will be run after a build completes and the product has been signed.");
 
         props.add (new TextPropertyComponent (exporterBundleIdentifierValue, "Exporter Bundle Identifier", 256, false),
                    "Use this to override the project bundle identifier for this exporter. "
@@ -2652,7 +2657,7 @@ private:
     {
         const auto runPreBuildScript = [&]
         {
-            target.addShellScriptBuildPhase ("Pre-build script", getPreBuildScript());
+            target.addShellScriptBuildPhase ("Run Pre-Build Script", getPreBuildScript());
         };
 
         const auto copyBundleResources = [&]
@@ -2714,7 +2719,12 @@ private:
 
         const auto runPostBuildScript = [&]
         {
-            target.addShellScriptBuildPhase ("Run Post-build Script", getPostBuildScript());
+            target.addShellScriptBuildPhase ("Run Post-Build Script", getPostBuildScript());
+        };
+
+        const auto runPostSignScript = [&]
+        {
+            target.addShellScriptBuildPhase ("Run Post-Sign Script", getPostSignScript());
         };
 
         const auto embedAUv3AppExtension = [&]
@@ -2873,6 +2883,8 @@ private:
             {
                 signTarget();
             }
+
+            runPostSignScript();
 
             if (target.xcodeCopyToProductInstallPathAfterBuild)
                 installTarget();
@@ -4395,7 +4407,7 @@ private:
                                  subprojectsValue,
                                  validArchsValue,
                                  extraFrameworksValue, frameworkSearchPathsValue, extraCustomFrameworksValue, embeddedFrameworksValue,
-                                 postbuildCommandValue, prebuildCommandValue,
+                                 postbuildCommandValue, prebuildCommandValue, postSignCommandValue,
                                  duplicateAppExResourcesFolderValue, iosDeviceFamilyValue, iPhoneScreenOrientationValue,
                                  iPadScreenOrientationValue, iconComposerIconValue, customXcodeResourceFoldersValue, customXcassetsFolderValue,
                                  appSandboxValue, appSandboxInheritanceValue, appSandboxOptionsValue,
