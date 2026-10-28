@@ -44,7 +44,7 @@
 
   ID:                 juce_graphics
   vendor:             juce
-  version:            9.0.0
+  version:            9.0.4
   name:               JUCE graphics classes
   description:        Classes for 2D vector graphics, image loading/saving, font handling, etc.
   website:            http://www.juce.com/juce
@@ -87,12 +87,67 @@
  #define JUCE_DISABLE_COREGRAPHICS_FONT_SMOOTHING 0
 #endif
 
+/** Config: JUCE_INCLUDE_PNGLIB_CODE
+    This can be used to disable Juce's embedded 3rd-party pnglib code.
+    You might need to tweak this if you're linking to an external pnglib library in your app,
+    but for normal apps, this option should be left alone.
+
+    If you disable this, you might also want to set a value for JUCE_PNGLIB_INCLUDE_PATH, to
+    specify the path where your pnglib headers live.
+*/
 #ifndef JUCE_INCLUDE_PNGLIB_CODE
  #define JUCE_INCLUDE_PNGLIB_CODE 1
 #endif
 
+#ifndef JUCE_PNGLIB_INCLUDE_PATH
+ #define JUCE_PNGLIB_INCLUDE_PATH <png.h>
+#endif
+
+/** Config: JUCE_INCLUDE_JPEGLIB_CODE
+    This can be used to disable Juce's embedded 3rd-party jpeglib code.
+    You might need to tweak this if you're linking to an external jpeglib library in your app,
+    but for normal apps, this option should be left alone.
+
+    If you disable this, you might also want to set a value for JUCE_JPEGLIB_INCLUDE_PATH, to
+    specify the path where your jpeglib headers live.
+*/
 #ifndef JUCE_INCLUDE_JPEGLIB_CODE
  #define JUCE_INCLUDE_JPEGLIB_CODE 1
+#endif
+
+#ifndef JUCE_JPEGLIB_INCLUDE_PATH
+ #define JUCE_JPEGLIB_INCLUDE_PATH <jpeglib.h>
+#endif
+
+/** Config: JUCE_USE_WEBP
+    Enables the WebP image format class.
+    If your app doesn't need to read or write WebP images, you might want to disable this to
+    reduce the size of your binaries and build time.
+*/
+#ifndef JUCE_USE_WEBP
+ #define JUCE_USE_WEBP 1
+#endif
+
+/** Config: JUCE_INCLUDE_WEBPLIB_CODE
+    This can be used to disable Juce's embedded 3rd-party libwebp code.
+    You might need to tweak this if you're linking to an external libwebp library in your app,
+    but for normal apps, this option should be left alone.
+
+    If you disable this, you might also want to set values for JUCE_WEBPLIB_DECODE_INCLUDE_PATH
+    and JUCE_WEBPLIB_ENCODE_INCLUDE_PATH, to specify the paths where your libwebp headers live.
+
+    This config option only has an effect when JUCE_USE_WEBP is enabled.
+*/
+#ifndef JUCE_INCLUDE_WEBPLIB_CODE
+ #define JUCE_INCLUDE_WEBPLIB_CODE 1
+#endif
+
+#ifndef JUCE_WEBPLIB_DECODE_INCLUDE_PATH
+ #define JUCE_WEBPLIB_DECODE_INCLUDE_PATH <webp/decode.h>
+#endif
+
+#ifndef JUCE_WEBPLIB_ENCODE_INCLUDE_PATH
+ #define JUCE_WEBPLIB_ENCODE_INCLUDE_PATH <webp/encode.h>
 #endif
 
 #ifndef USE_COREGRAPHICS_RENDERING

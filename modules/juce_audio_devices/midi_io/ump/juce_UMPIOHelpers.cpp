@@ -40,6 +40,11 @@ struct EndpointAndStaticInfo
     Endpoint endpoint;
     StaticDeviceInfo info;
     EndpointId id;
+
+    auto tie() const { return std::tuple (endpoint, info, id); }
+
+    bool operator== (const EndpointAndStaticInfo& other) const { return tie() == other.tie(); }
+    bool operator!= (const EndpointAndStaticInfo& other) const { return tie() != other.tie(); }
 };
 
 class IOHelpers

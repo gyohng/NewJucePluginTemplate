@@ -1,6 +1,219 @@
 # JUCE breaking changes
 
+# Version 9.0.3
+
+## Change
+
+SystemStats::isOperatingSystem64Bit() now reports whether the operating system
+is 64-bit rather than whether the current process is, matching the
+documentation. It can return true from a 32-bit build running on a 64-bit Linux
+or Android system, or on Windows on ARM.
+
+**Possible Issues**
+
+Code that used this function to determine the architecture of the current
+process may now behave differently when built for iOS, for 32-bit Linux or
+Android targets, or for 32-bit Windows targets running on ARM64.
+
+**Workaround**
+
+Use the JUCE_64BIT and JUCE_32BIT macros to determine how the current process
+was built.
+
+**Rationale**
+
+The function is documented as describing the operating system, and the macOS
+implementation has always done so, but the iOS, Linux and Android
+implementations were out of step, and the Windows implementation did not detect
+64-bit Windows on ARM from a 32-bit process.
+
+
+# Version 9.0.2
+
+## Change
+
+ThreadPool::addJob no longer provides separate std::function overloads for
+void and ThreadPoolJob::JobStatus return types. It now accepts a single
+callable template parameter that must return exactly void or
+ThreadPoolJob::JobStatus.
+
+**Possible Issues**
+
+Code that previously passed a callable returning a type other than void or
+ThreadPoolJob::JobStatus (for example int or bool) will fail to compile. The
+return value was previously discarded via conversion to std::function<void()>.
+
+**Workaround**
+
+Change the callable so that it returns void, or returns a
+ThreadPoolJob::JobStatus to control whether the job should run again.
+
+**Rationale**
+
+The previous overloads were ambiguous for lambdas returning
+ThreadPoolJob::JobStatus, because std::function<void()> can be constructed from
+callables with non-void return types. Constraining the accepted return types
+removes that ambiguity and rejects accidental misuse at compile time.
+
+
+## Change
+
+The AudioDeviceSelectorComponent::getMidiInputSelectorListBox function has been
+removed.
+
+**Possible Issues**
+
+Code using the removed function will fail to compile.
+
+**Workaround**
+
+There is no workaround.
+
+**Rationale**
+
+Prior to this change the MidiInputSelectorListBox was not accessible when using
+screen reader software. Even if we reworked the component and kept the ListBox
+base class, it would've been a poor fit conceptually for the MidiInputSelector,
+and it would have made the interaction with screen readers unnecessarily
+complex. Hence the ListBox base class was removed, and it's no longer possible
+to return a ListBox pointer to the new MidiInputSelector object.
+
+
+# Version 9.0.1
+
+## Change
+
+OpenGLImageType::create() now honours a request for an Image::SingleChannel
+image. Previously the requested format was ignored, and the returned image was
+always an Image::ARGB image backed by an OpenGL framebuffer.
+
+**Possible Issues**
+
+OpenGLImageType::getFrameBufferFrom() returns nullptr for single channel
+images, where it previously returned a valid framebuffer. Such images also
+report Image::SingleChannel rather than Image::ARGB from Image::getFormat().
+
+**Workaround**
+
+Request an Image::ARGB image explicitly if a framebuffer-backed image is
+required.
+
+**Rationale**
+
+The format requested when creating an image was previously ignored, so an image
+could report a different format to the one that was asked for. This caused
+rendering issues in places where a real single channel image was needed, and
+OpenGLImageType was the only JUCE image type that did not produce a real single
+channel format.
+
+
+## Change
+
+OpenGLContext::setImageCacheSize() now interprets its argument as a number of
+bytes, as documentated. Previously the value was compared against a pixel count,
+so the effective cache was four times larger than requested. The default cache
+size has been raised from 8 MB to 32 MB so that the default behaviour is
+unchanged.
+
+**Possible Issues**
+
+Code calling setImageCacheSize() with an explicit value will end up with an
+image cache four times smaller than before.
+
+**Workaround**
+
+Multiply the previously-passed value by four.
+
+**Rationale**
+
+The documented contract was expressed in bytes, but the implementation applied
+the value as a number of pixels.
+
+
+## Change
+
+zlib, libjpeg, libpng, and libflac are now built in C language mode, instead
+of as C++.
+
+**Possible Issues**
+
+Symbols in these libraries are no longer wrapped in C++ namespaces. If JUCE is
+linked into a binary that separately includes/links zlib, libjpeg, libpng,
+and/or libflac, then the internal symbols in JUCE may conflict with the symbols
+from the external copy of the library. This will result in ODR violations, and
+potentially linker errors.
+
+**Workaround**
+
+If your project already includes external copies of these libraries, set the
+preprocessor definitions JUCE_INCLUDE_ZLIB_CODE, JUCE_INCLUDE_JPEGLIB_CODE,
+JUCE_INCLUDE_PNGLIB_CODE, and/or JUCE_INCLUDE_FLAC_CODE to 0 in order to
+disable the copies bundled in JUCE. You may also set the definitions
+JUCE_ZLIB_INCLUDE_PATH, JUCE_JPEGLIB_INCLUDE_PATH, JUCE_PNGLIB_INCLUDE_PATH,
+and/or JUCE_FLAC_INCLUDE_PATH to set custom include paths for the library
+headers.
+
+**Rationale**
+
+Building these libraries as C code means that the copies vendored by JUCE
+require fewer intrusive changes. Building them as C++ historically required
+internal changes due to (for example) C++'s stricter type-checking rules.
+Building as C should allow for quicker, smoother upgrades of vendored
+dependencies in the future. Another consideration is that the C language has
+different semantics to C++ in some respects, so building as C is more likely to
+produce a binary that has the behaviour intended by the authors.
+
+
+## Change
+
+The WebBrowserComponent native integrations package location changed from
+modules/juce_gui_extra/native/javascript to
+modules/juce_gui_extra/native/typescript/webview-interop.
+
+**Possible Issues**
+
+Applications linking directly to the original in-source package location will
+fail to load the library.
+
+**Workaround**
+
+The package location should be upgraded to reflect the new in-source location.
+Alternatively, projects using a package manager can use the
+@juce-framework/webview package from npm.
+
+Javascript projects relying on the original index.js file can directly import
+webview-interop/dist/index.js instead.
+
+**Rationale**
+
+The WebBrowserComponent native integrations package has been translated to
+TypeScript and prepared to be published as a public npm package. This provides
+type information for projects consuming this package, but it imposes new
+requirements on the directory structure.
+
+
 # Version 9.0.0
+
+## Change
+
+libxi-dev is now a required dependency for building JUCE on Linux, unless the
+JUCE_USE_XINPUT=0 preprocessor definition is set.
+
+**Possible Issues**
+
+Applications that don't disable XInput will fail to compile unless the
+dependency is met.
+
+**Workaround**
+
+Install libxi-dev.
+
+**Rationale**
+
+In order to add multi-touch support on Linux, the XInput2 extension is
+required. The libxi-dev package provides the necessary headers and libraries
+for this extension.
+
 
 ## Change
 

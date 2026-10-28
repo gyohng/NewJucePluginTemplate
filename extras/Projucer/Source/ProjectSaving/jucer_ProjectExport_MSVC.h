@@ -885,8 +885,6 @@ public:
             projectGuid = createGUID (owner.getProject().getProjectUIDString() + getName());
         }
 
-        virtual ~MSVCTarget() = default;
-
         String getProjectVersionString() const     { return "10.00"; }
         String getProjectFileSuffix() const        { return ".vcxproj"; }
         String getFiltersFileSuffix() const        { return ".vcxproj.filters"; }
@@ -1322,19 +1320,6 @@ public:
                 auto* rcGroup = projectXml.createNewChildElement ("ItemGroup");
                 auto* e = rcGroup->createNewChildElement ("ResourceCompile");
                 e->setAttribute ("Include", prependDot (getOwner().rcFile.getFileName()));
-            }
-
-            if (owner.shouldAddMidiPackage())
-            {
-                auto* group = projectXml.createNewChildElement ("ItemGroup");
-                auto* reference = group->createNewChildElement ("Reference");
-                reference->setAttribute ("Include", midiPackage.name);
-
-                auto* hintPath = reference->createNewChildElement ("HintPath");
-                hintPath->addTextElement ("packages\\" + midiPackage.name + "." + midiPackage.version + "\\ref\\native\\" + midiPackage.name + ".winmd");
-
-                auto* isWinmd = reference->createNewChildElement ("IsWinMDFile");
-                isWinmd->addTextElement ("true");
             }
 
             {
@@ -2690,7 +2675,7 @@ protected:
 
     inline static const NuGetPackage webviewPackage { "Microsoft.Web.WebView2", "1.0.3485.44", false };
     inline static const NuGetPackage cppwinrtPackage { "Microsoft.Windows.CppWinRT", "2.0.250303.1", true };
-    inline static const NuGetPackage midiPackage { "Microsoft.Windows.Devices.Midi2", "1.0.17-rc.4.25", false };
+    inline static const NuGetPackage midiPackage { "Windows.Devices.Midi2", "0.99.67-devpreview.7", false };
 
     void getPackagesToInclude (std::vector<NuGetPackage>& result) const
     {

@@ -229,7 +229,7 @@ namespace juce::build_tools
 
                     addPlistDictionaryKey (*dict2, "CFBundleTypeName", ex);
                     addPlistDictionaryKey (*dict2, "CFBundleTypeRole", "Editor");
-                    addPlistDictionaryKey (*dict2, "CFBundleTypeIconFile", "Icon");
+                    addPlistDictionaryKey (*dict2, "CFBundleTypeIconFile", iconFile.getFileNameWithoutExtension());
                     addPlistDictionaryKey (*dict2, "NSPersistentStoreTypeKey", "XML");
                     addPlistDictionaryKey (*dict2, "LSHandlerRank", "Default");
                 }
@@ -374,7 +374,9 @@ namespace juce::build_tools
         plistEntry.createNewChildElement ("key")->addTextElement ("NSExtensionAttributes");
 
         auto* dict = plistEntry.createNewChildElement ("dict");
-        addPlistDictionaryKey (*dict, "AudioComponentBundle", auv3FrameworkBundle);
+
+        if (auv3FrameworkBundle.isNotEmpty())
+            addPlistDictionaryKey (*dict, "AudioComponentBundle", auv3FrameworkBundle);
 
         dict->createNewChildElement ("key")->addTextElement ("AudioComponents");
         auto* componentArray = dict->createNewChildElement ("array");

@@ -106,6 +106,7 @@ endfunction()
 
 if((CMAKE_SYSTEM_NAME STREQUAL "Linux") OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD"))
     _juce_create_pkgconfig_target(JUCE_CURL_LINUX_DEPS libcurl)
+    _juce_create_pkgconfig_target(JUCE_GLES_LINUX_DEPS egl glesv2)
     _juce_available_pkgconfig_module_or_else(webkit_package_name webkit2gtk-4.1 webkit2gtk-4.0)
 
     # All browser related libs are loaded dynamically only if they are available during runtime
@@ -262,13 +263,19 @@ function(_juce_link_optional_libraries target)
     if((CMAKE_SYSTEM_NAME STREQUAL "Linux") OR (CMAKE_SYSTEM_NAME MATCHES ".*BSD"))
         get_target_property(needs_curl ${target} JUCE_NEEDS_CURL)
         get_target_property(needs_browser ${target} JUCE_NEEDS_WEB_BROWSER)
+        get_target_property(needs_opengl_es ${target} JUCE_NEEDS_OPENGL_ES)
 
         target_compile_definitions(${target} PRIVATE
             JUCE_USE_CURL=$<BOOL:${needs_curl}>
-            JUCE_WEB_BROWSER=$<BOOL:${needs_browser}>)
+            JUCE_WEB_BROWSER=$<BOOL:${needs_browser}>
+            JUCE_OPENGL_ES=$<BOOL:${needs_opengl_es}>)
 
         if(needs_curl)
             target_link_libraries(${target} PRIVATE juce::pkgconfig_JUCE_CURL_LINUX_DEPS)
+        endif()
+
+        if(needs_opengl_es)
+            target_link_libraries(${target} PRIVATE juce::pkgconfig_JUCE_GLES_LINUX_DEPS)
         endif()
 
         if(needs_browser)
@@ -659,17 +666,6 @@ function(_juce_generate_icon source_target dest_target)
     get_filename_component(icon_composer_icon_name "${juce_property_icon_composer_bundle}" NAME_WE)
 
     if(juce_property_icon_composer_bundle AND (CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "iOS"))
-        set_source_files_properties("${juce_property_icon_composer_bundle}"
-            PROPERTIES
-                MACOSX_PACKAGE_LOCATION Resources
-                XCODE_EXPLICIT_FILE_TYPE folder.iconcomposer.icon
-        )
-
-        target_sources(${dest_target} PRIVATE "${juce_property_icon_composer_bundle}")
-
-        set_target_properties(${dest_target} PROPERTIES
-            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "${icon_composer_icon_name}")
-
         if((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (NOT CMAKE_GENERATOR STREQUAL "Xcode"))
             add_custom_command(TARGET ${target} POST_BUILD
                 COMMAND "${CMAKE_COMMAND}"
@@ -677,6 +673,17 @@ function(_juce_generate_icon source_target dest_target)
                     "-Dicon_path=${juce_property_icon_composer_bundle}"
                     "-P" "${JUCE_CMAKE_UTILS_DIR}/generateXcassetsFromIcon.cmake"
                 VERBATIM)
+        else()
+            set_source_files_properties("${juce_property_icon_composer_bundle}"
+                PROPERTIES
+                    MACOSX_PACKAGE_LOCATION Resources
+                    XCODE_EXPLICIT_FILE_TYPE folder.iconcomposer.icon
+            )
+
+            target_sources(${dest_target} PRIVATE "${juce_property_icon_composer_bundle}")
+
+            set_target_properties(${dest_target} PROPERTIES
+                XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "${icon_composer_icon_name}")
         endif()
     endif()
 
@@ -2083,6 +2090,7 @@ function(_juce_initialise_target target)
         COMPANY_EMAIL
         NEEDS_CURL                      # Set this true if you want to link curl on Linux
         NEEDS_WEB_BROWSER               # Set this true if you want to link webkit on Linux
+        NEEDS_OPENGL_ES                 # Set this true if you want to use OpenGL ES rather than OpenGL on Linux
         NEEDS_WEBVIEW2                  # Set this true if you want to link WebView2 statically on Windows
         NEEDS_STORE_KIT                 # Set this true if you want in-app-purchases on Mac
         NEEDS_WINDOWS_MIDI_SERVICES     # Set this true If you want to support the newest Windows MIDI backend
@@ -2368,6 +2376,10 @@ function(juce_add_pip header)
 
     if("JUCE_PLUGINHOST_AU=1" IN_LIST pip_moduleflags)
         list(APPEND extra_target_args PLUGINHOST_AU TRUE)
+    endif()
+
+    if("JUCE_USE_WINDOWS_MIDI_SERVICES=1" IN_LIST pip_moduleflags)
+        list(APPEND extra_target_args NEEDS_WINDOWS_MIDI_SERVICES TRUE)
     endif()
 
     if("JUCE_USE_WIN_WEBVIEW2_WITH_STATIC_LINKING=1" IN_LIST pip_moduleflags)

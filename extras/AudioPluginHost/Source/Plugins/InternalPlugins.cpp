@@ -116,6 +116,7 @@ public:
 
             ~Decorator() override
             {
+                self.inner->editorBeingDeleted (wrapped.get());
                 self.editorBeingDeleted (this);
             }
 

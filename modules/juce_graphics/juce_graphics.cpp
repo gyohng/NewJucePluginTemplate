@@ -50,7 +50,7 @@
 
 #include "juce_graphics.h"
 
-#include "fonts/juce_FunctionPointerDestructor.h"
+#include <juce_core/detail/juce_FunctionPointerDestructor.h>
 
 //==============================================================================
 #if JUCE_MAC
@@ -197,6 +197,7 @@ extern "C"
 #include "image_formats/juce_GIFLoader.cpp"
 #include "image_formats/juce_JPEGLoader.cpp"
 #include "image_formats/juce_PNGLoader.cpp"
+#include "image_formats/juce_WebPLoader.cpp"
 #include "fonts/juce_AttributedString.cpp"
 #include "fonts/juce_FontComparators.h"
 #include "fonts/juce_Typeface.cpp"

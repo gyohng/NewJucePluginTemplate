@@ -457,15 +457,15 @@ private:
     //==============================================================================
     DylibHandle webkitLib, jsLib, soupLib;
 
-    DylibHandle gtkLib    { "libgtk-3.so" },
-                glib      { "libglib-2.0.so" };
+    DylibHandle gtkLib    { "libgtk-3.so.0" },
+                glib      { "libglib-2.0.so.0" };
 
-    const bool webKitIsAvailable =    (   openWebKitAndDependencyLibraries ({ "libwebkit2gtk-4.1.so",
-                                                                              "libjavascriptcoregtk-4.1.so",
-                                                                              "libsoup-3.0.so" })
-                                       || openWebKitAndDependencyLibraries ({ "libwebkit2gtk-4.0.so",
-                                                                              "libjavascriptcoregtk-4.0.so",
-                                                                              "libsoup-2.4.so" }))
+    const bool webKitIsAvailable =    (   openWebKitAndDependencyLibraries ({ "libwebkit2gtk-4.1.so.0",
+                                                                              "libjavascriptcoregtk-4.1.so.0",
+                                                                              "libsoup-3.0.so.0" })
+                                       || openWebKitAndDependencyLibraries ({ "libwebkit2gtk-4.0.so.37",
+                                                                              "libjavascriptcoregtk-4.0.so.18",
+                                                                              "libsoup-2.4.so.1" }))
                                    && loadWebkitSymbols()
                                    && loadGtkSymbols()
                                    && loadJsLibSymbols()

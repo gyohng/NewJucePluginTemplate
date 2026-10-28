@@ -41,7 +41,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wsign-conversion",
                                      "-Wunused-parameter",
                                      "-Wswitch-enum",
                                      "-Wdeprecated-declarations",
-                                     "-Wcast-align")
+                                     "-Wcast-align",
+                                     "-Wimplicit-fallthrough")
 
 JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4100 4127 4996 6001 6011 6326 6385 6386 6387 28183)
 
@@ -91,7 +92,6 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4100 4127 4996 6001 6011 6326 6385 6386 6387 28
 #undef FIX_0_541196100
 #undef MULTIPLY
 #include "juce_graphics/image_formats/jpglib/jfdctfst.c"
-#endif
 
 #define savable_state dedup_savable_state
 #define huff_entropy_ptr dedup_huff_entryopy_ptr
@@ -100,3 +100,9 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4100 4127 4996 6001 6011 6326 6385 6386 6387 28
 #undef savable_state
 #undef huff_entropy_ptr
 #undef finish_pass_huff
+
+#else
+// To get around 'empty translation unit' errors and 'has no symbols' warnings emitted by libtool
+void juce_graphicsLibjpg1Placeholder (void);
+void juce_graphicsLibjpg1Placeholder (void) {}
+#endif

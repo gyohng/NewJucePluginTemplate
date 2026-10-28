@@ -69,6 +69,8 @@
 #include "midi_io/ump/juce_UMPLegacyVirtualOutput.cpp"
 #include "midi_io/ump/juce_UMPVirtualEndpoint.cpp"
 #include "midi_io/ump/juce_UMPSession.cpp"
+#include "midi_io/ump/juce_UMPEndpoint.cpp"
+#include "midi_io/ump/juce_UMPStaticDeviceInfo.cpp"
 #include "midi_io/ump/juce_UMPEndpoints.cpp"
 #include "midi_io/ump/juce_UMPEndpointId.cpp"
 
@@ -105,6 +107,12 @@
 
 //==============================================================================
 #elif JUCE_WINDOWS
+ #include <cfgmgr32.h>
+
+ #if ! JUCE_DONT_AUTOLINK_TO_WIN32_LIBRARIES
+  #pragma comment (lib, "cfgmgr32.lib")
+ #endif
+
  #if JUCE_WASAPI
   #include <mmreg.h>
   #include "native/juce_WASAPI_windows.cpp"
@@ -269,11 +277,16 @@ namespace juce
   #include <winrt/Windows.Foundation.Collections.h>
   #include <winrt/Windows.Devices.Enumeration.h>
 
-  #include <winrt/Microsoft.Windows.Devices.Midi2.h>
-  #include <winrt/Microsoft.Windows.Devices.Midi2.Endpoints.Virtual.h>
-  #include <winmidi/init/Microsoft.Windows.Devices.Midi2.Initialization.hpp>
+  #include <WindowsMidiServicesAppSdkComExtensions.h>
+  #include <winrt/Windows.Devices.Midi2.h>
+  #include <winrt/Windows.Devices.Midi2.Enumeration.h>
+  #include <winrt/Windows.Devices.Midi2.Transports.Virtual.h>
   JUCE_END_IGNORE_WARNINGS_MSVC
  #endif
 
  #include "native/juce_Midi_windows.cpp"
+#endif
+
+#if JUCE_UNIT_TESTS
+ #include "midi_io/juce_ScheduledEventThread_test.cpp"
 #endif

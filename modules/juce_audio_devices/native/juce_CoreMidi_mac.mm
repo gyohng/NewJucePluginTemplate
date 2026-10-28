@@ -643,16 +643,14 @@ struct CoreMidiHelpers
         static void enableSimulatorMidiSession()
         {
            #if TARGET_OS_SIMULATOR
-            static bool hasEnabledNetworkSession = false;
+            static std::once_flag hasEnabledNetworkSession;
 
-            if (! hasEnabledNetworkSession)
+            std::call_once (hasEnabledNetworkSession, []
             {
                 MIDINetworkSession* session = [MIDINetworkSession defaultSession];
                 session.enabled = YES;
                 session.connectionPolicy = MIDINetworkConnectionPolicy_Anyone;
-
-                hasEnabledNetworkSession = true;
-            }
+            });
            #endif
         }
 
@@ -683,7 +681,7 @@ struct CoreMidiHelpers
 
                 case kMIDIMsgSetupChanged:
                #if JUCE_IOS
-                case kMIDIMsgInternalStart:
+                case 0x1000: // kMIDIMsgInternalStart
                #endif
 
                 default:
@@ -772,8 +770,6 @@ struct CoreMidiHelpers
                     if (numGroups == 0)
                         return;
 
-                    const auto index = log2 (*bitmap);
-
                     if (result >= blocks.size())
                     {
                         // This shouldn't happen, there's a max of 32 blocks!
@@ -781,10 +777,21 @@ struct CoreMidiHelpers
                         return;
                     }
 
+                    const auto beginOfSetRange = ffs (*bitmap) - 1;
+                    const auto endOfSetRange   = fls (*bitmap);
+
+                    if (beginOfSetRange + numGroups < endOfSetRange)
+                    {
+                        // Function blocks should only contain contiguous groups, but this bitmask
+                        // is not contiguous
+                        jassertfalse;
+                        return;
+                    }
+
                     blocks[result++] = ump::Block{}.withDirection (dir == ump::IOKind::src ? ump::BlockDirection::sender : ump::BlockDirection::receiver)
                                                    .withUiHint (dir == ump::IOKind::src ? ump::BlockUiHint::sender : ump::BlockUiHint::receiver)
                                                    .withEnabled (true)
-                                                   .withFirstGroup ((uint8_t) index)
+                                                   .withFirstGroup ((uint8_t) beginOfSetRange)
                                                    .withNumGroups ((uint8_t) numGroups)
                                                    .withMaxSysex8Streams (0)
                                                    .withMIDI1ProxyKind (ump::BlockMIDI1ProxyKind::inapplicable)
@@ -1940,6 +1947,7 @@ struct CoreMidiHelpers
     public:
         bool send (ump::Iterator b, ump::Iterator e)
         {
+            const ScopedLock lock { mutex };
             return output.send (connection.portAndEndpoint, b, e);
         }
 
@@ -2040,6 +2048,7 @@ struct CoreMidiHelpers
 
         Connection connection;
         OutputToUse output;
+        CriticalSection mutex;
     };
 
     class InputImplNative : public ump::Input::Impl::Native,

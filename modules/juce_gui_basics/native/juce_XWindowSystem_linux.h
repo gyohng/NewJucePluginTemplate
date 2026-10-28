@@ -189,7 +189,7 @@ public:
     void setIcon (::Window , const Image&) const;
     void setVisible (::Window, bool shouldBeVisible) const;
     [[nodiscard]] std::optional<unsigned long> setBounds (::Window, Rectangle<int>, bool fullScreen) const;
-    void updateConstraints (::Window) const;
+    void updateSizeHints (::Window, ComponentPeer&, Rectangle<int> physicalBounds) const;
 
     ComponentPeer::OptionalBorderSize getBorderSize (::Window) const;
     Rectangle<int> getWindowBounds (::Window, ::Window parentWindow);
@@ -255,6 +255,9 @@ public:
 
     void startHostManagedResize (::Window window,
                                  ResizableBorderComponent::Zone zone);
+
+    bool grabPointerForExternalDrag (::Window, Cursor) const;
+    void ungrabPointer() const;
 
     static String getWindowScalingFactorSettingName()  { return "Gdk/WindowScalingFactor"; }
     static String getThemeNameSettingName()            { return "Net/ThemeName"; }
@@ -339,21 +342,20 @@ private:
 
    #if JUCE_USE_XINPUT
     void handleXIDeviceEvent        (LinuxComponentPeer*, int, XIDeviceEvent&) const;
-    void updateXInputDevices        () const;
    #endif
 
     void dismissBlockingModals      (LinuxComponentPeer*) const;
     void dismissBlockingModals      (LinuxComponentPeer*, const XConfigureEvent&) const;
-    void updateConstraints          (::Window, ComponentPeer&) const;
 
     ::Window findTopLevelWindowOf (::Window) const;
+    Point<int> queryPointerPosition() const;
+    void clickForwarded (const XButtonEvent&);
+    void pointerSeenByServer();
 
     static void windowMessageReceive (XEvent&);
 
     //==============================================================================
     bool xIsAvailable = false;
-
-    std::vector<::Window> windowHandles;
 
     XWindowSystemUtilities::Atoms atoms;
     ::Display* display = nullptr;
@@ -369,6 +371,25 @@ private:
     String localClipboardContent;
 
     Point<int> parentScreenPosition;
+
+    // A click that another client forwards to one of our windows carries its position on the
+    // screen, but the X server hasn't seen the pointer there. Under Xwayland the server only
+    // sees the pointer while it is over an X window, and reports the position where it last saw
+    // it until then. That report is the only sign of the pointer moving over another client's
+    // window, so the click is kept until the report changes, not only until the next pointer
+    // event.
+    struct ForwardedClick
+    {
+        Point<int> screenPosition;
+        Point<int> positionReportedByServer;
+
+        bool isCurrent (Point<int> currentReportedPosition) const
+        {
+            return currentReportedPosition == positionReportedByServer;
+        }
+    };
+
+    std::optional<ForwardedClick> lastForwardedClick;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XWindowSystem)

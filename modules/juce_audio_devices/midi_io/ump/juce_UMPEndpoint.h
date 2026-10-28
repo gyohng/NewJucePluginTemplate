@@ -154,6 +154,9 @@ public:
     Span<const Block> getBlocks() const&& = delete;
     Span<Block> getBlocks() && = delete;
 
+    bool operator== (const Endpoint&) const;
+    bool operator!= (const Endpoint& other) { return ! operator== (other); }
+
 private:
     enum StreamConfigFlags : uint16_t
     {

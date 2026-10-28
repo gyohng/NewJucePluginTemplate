@@ -36,30 +36,6 @@ namespace juce
 {
 
 //==============================================================================
-template <typename T>
-static T findNearestValue (const Array<T>& v, T target)
-{
-    if (v.begin() == v.end())
-    {
-        jassertfalse;
-        return T{};
-    }
-
-    const auto it = std::lower_bound (v.begin(), v.end(), target);
-
-    if (it == v.begin())
-        return *it;
-
-    if (it == v.end())
-        return *(it - 1);
-
-    const T upper = *it;
-    const T lower = *(it - 1);
-
-    return std::abs (target - lower) < std::abs (target - upper) ? lower : upper;
-}
-
-//==============================================================================
 class ScopedCFDictionary;
 
 class ScopedCFArray
@@ -348,6 +324,7 @@ private:
 };
 
 using CFStringProperty = CFProperty<CFStringRef>;
+using CFDictionaryProperty = CFProperty<CFDictionaryRef>;
 
 //==============================================================================
 template <typename T>
@@ -431,6 +408,12 @@ template<>
 String propertyValueToString (const CFDictionaryRef& dict)
 {
     return String::fromCFString (makeCFUniquePtr (CFCopyDescription (dict)).get());
+}
+
+template<>
+String propertyValueToString (const CFDictionaryProperty& dict)
+{
+    return dict.get() != nullptr ? propertyValueToString (dict.get()) : String{};
 }
 
 template<>
@@ -571,6 +554,11 @@ public:
         return std::make_shared<PropertyListener> (getId(), selector, PropertyScope::wildcard, std::move (callback));
     }
 
+    bool operator< (const AudioObject& other) const
+    {
+        return objectId < other.objectId;
+    }
+
     bool operator== (const AudioObject& other) const
     {
         return objectId == other.objectId;
@@ -597,19 +585,15 @@ private:
         UInt32 size{};
     };
 
-    bool hasProperty (PropertyAddress address) const
-    {
-        if (isValid() && AudioObjectHasProperty (objectId, address.get()))
-            return true;
-
-        JUCE_COREAUDIO_LOG (" Property not found!");
-        return false;
-    }
+    // We deliberately avoid AudioObjectHasProperty, for some properties on an
+    // Apogee Symphony I/O Mk2 it can lock up coreaudiod (likely a driver bug).
+    // Missing properties are detected instead when the Get/IsProperty* calls
+    // below fail through checkStatus.
 
     size_t getPropertySize (PropertyAddress address, DataType arg) const
     {
-        if (! hasProperty (address))
-            return 0;
+        if (! isValid())
+            return {};
 
         UInt32 size{};
 
@@ -623,7 +607,7 @@ private:
     template <typename PropertyType>
     bool copyPropertyData (PropertyAddress address, Span<PropertyType> property, DataType arg) const
     {
-        if (! hasProperty (address))
+        if (! isValid())
             return {};
 
         auto size = (UInt32) (property.getSizeInBytes());
@@ -663,7 +647,7 @@ private:
 
     bool isPropertySettable (PropertyAddress address) const
     {
-        if (! hasProperty (address))
+        if (! isValid())
             return {};
 
         Boolean isSettable = NO;
@@ -1040,6 +1024,35 @@ public:
         return getPropertyArray<AudioDevice> (kAudioAggregateDevicePropertyActiveSubDeviceList);
     }
 
+    // A Multi-Output Device is a stacked aggregate device. Its output channels are arranged such
+    // that the output streams are all fed the same data.
+    bool isStacked() const
+    {
+        const auto composition = getPropertyOrDefault<CFDictionaryProperty> (kAudioAggregateDevicePropertyComposition);
+
+        if (composition.get() == nullptr)
+            return false;
+
+        const auto* value = CFDictionaryGetValue (composition.get(), CFSTR (kAudioAggregateDeviceIsStackedKey));
+
+        if (value == nullptr)
+            return false;
+
+        // This is a lightly documented part of the Core Audio API and in practice the returned type
+        // can be either a CFBoolean or a CFNumber, depending on how the device was created.
+        if (CFGetTypeID (value) == CFBooleanGetTypeID())
+            return CFBooleanGetValue (static_cast<CFBooleanRef> (value));
+
+        if (CFGetTypeID (value) == CFNumberGetTypeID())
+        {
+            int stacked{};
+            CFNumberGetValue (static_cast<CFNumberRef> (value), kCFNumberIntType, &stacked);
+            return stacked != 0;
+        }
+
+        return false;
+    }
+
     bool configure (const ScopedCFDictionary& newComposition)
     {
         return setProperty (kAudioAggregateDevicePropertyComposition, newComposition.get());
@@ -1118,6 +1131,27 @@ private:
 };
 
 //==============================================================================
+template <typename T>
+class UniqueArray
+{
+public:
+    void addIfNotAlreadyThere (T device)
+    {
+        if (setData.insert (device).second)
+            arrayData.add (device);
+    }
+
+    auto& getArray() const { return arrayData; }
+
+    auto begin() const { return arrayData.begin(); }
+    auto end() const { return arrayData.end(); }
+
+private:
+    std::set<T> setData;
+    Array<T> arrayData;
+};
+
+//==============================================================================
 class AggregateDeviceDescription
 {
 public:
@@ -1181,11 +1215,26 @@ private:
         return startIndex;
     }
 
-    void addDevice (AudioDevice device, PlaybackDirection direction)
+    void addStackedOutputDevice (AudioDevice device)
     {
-        if (! device.isValid())
-            return;
+        const auto dir = PlaybackDirection::output;
 
+        for (auto audioDevice : getAudioDevices (device))
+        {
+            devices.addIfNotAlreadyThere (audioDevice);
+
+            const auto numChannels = std::min (device.getNumChannels (dir),
+                                               audioDevice.getNumChannels (dir));
+
+            const auto aggregateChannelIndex = getFirstChannelIndexFor (audioDevice, dir);
+
+            for (auto channel = 0; channel < numChannels; ++channel)
+                channelMap[toUnderlyingType (dir)].set (aggregateChannelIndex + channel, channel);
+        }
+    }
+
+    void addConcatenatedDevice (AudioDevice device, PlaybackDirection direction)
+    {
         int deviceChannelIndex = 0;
 
         for (auto audioDevice : getAudioDevices (device))
@@ -1202,6 +1251,19 @@ private:
         }
     }
 
+    void addDevice (AudioDevice device, PlaybackDirection direction)
+    {
+        if (! device.isValid())
+            return;
+
+        const auto stacked = device.isAggregateDevice() && AggregateAudioDevice { device.getId() }.isStacked();
+
+        if (direction == PlaybackDirection::output && stacked)
+            addStackedOutputDevice (device);
+        else
+            addConcatenatedDevice (device, direction);
+    }
+
     ScopedCFDictionary toDictionary() const
     {
         const auto clockingDeviceUid = clockingDevice.getUid();
@@ -1216,7 +1278,7 @@ private:
             subDevice.setString (kAudioSubDeviceUIDKey, uid);
             subDevice.setInt (kAudioSubDeviceDriftCompensationKey, uid != clockingDeviceUid);
             subDevice.setInt (kAudioSubDeviceDriftCompensationQualityKey,
-                             #if JUCE_MAC_API_VERSION_CAN_BE_BUILT (13, 0)
+                             #if JUCE_MAC_API_VERSION_CAN_BE_BUILT (14, 0)
                               kAudioAggregateDriftCompensationHighQuality);
                              #else
                               kAudioSubDeviceDriftCompensationHighQuality);
@@ -1263,7 +1325,7 @@ private:
 
     String name;
     AudioDevice clockingDevice;
-    Array<AudioDevice> devices;
+    UniqueArray<AudioDevice> devices;
     std::array<ChannelMap, 2> channelMap;
 };
 
@@ -1509,11 +1571,11 @@ private:
     }
 
     void audioDeviceProcessorCallback (int numSamples,
-                                       const AudioTimeStamp* inNow,
-                                       const AudioBufferList* inInputData,
                                        const AudioTimeStamp*,
+                                       const AudioBufferList* inInputData,
+                                       const AudioTimeStamp* inInputTime,
                                        AudioBufferList* outOutputData,
-                                       const AudioTimeStamp*) override
+                                       const AudioTimeStamp* inOutputTime) override
     {
         const SpinLock::ScopedTryLockType lock { mutex };
 
@@ -1540,7 +1602,19 @@ private:
             inputSamples[channel][sample] = value;
         });
 
-        const AudioIODeviceCallbackContext context { inNow != nullptr ? &inNow->mHostTime : nullptr };
+        uint64_t hostTimeNs{};
+
+        AudioIODeviceCallbackContext context;
+
+        auto* timeStamp = buffers[Direction::output].getNumChannels() > 0 ? inOutputTime
+                                                                          : inInputTime;
+
+        if (timeStamp != nullptr)
+        {
+            hostTimeNs = timeConversions.hostTimeToNanos (timeStamp->mHostTime);
+            context.hostTimeNs = &hostTimeNs;
+        }
+
         callback->audioDeviceIOCallbackWithContext (buffers[Direction::input].getArrayOfReadPointers(),
                                                     buffers[Direction::input].getNumChannels(),
                                                     buffers[Direction::output].getArrayOfWritePointers(),
@@ -1568,6 +1642,7 @@ private:
     std::map<PlaybackDirection, AudioBuffer<float>> buffers;
     std::atomic<bool> playing{};
     std::atomic<bool> detectedSetupChange{};
+    CoreAudioTimeConversions timeConversions;
     mutable SpinLock mutex;
     mutable std::mutex errorMutex;
 };
@@ -1702,7 +1777,7 @@ private:
     {
         jassert (bufferSizesToTry.has_value() && ! bufferSizesToTry->isEmpty());
 
-        const auto nextBufferSize = findNearestValue (*bufferSizesToTry, coreAudioDevice.getBufferSize());
+        const auto nextBufferSize = findNearestValue (Span (*bufferSizesToTry), coreAudioDevice.getBufferSize());
         bufferSizesToTry->removeFirstMatchingValue (nextBufferSize);
 
         const auto bufferSize = requestBufferSize (nextBufferSize);
@@ -1736,7 +1811,7 @@ private:
     std::optional<double> requestSampleRate (double newSampleRate)
     {
         const auto sampleRates = juceDevice->getAvailableSampleRates();
-        const auto targetSampleRate = newSampleRate > 0.0 ? findNearestValue (sampleRates, newSampleRate)
+        const auto targetSampleRate = newSampleRate > 0.0 ? findNearestValue (Span (sampleRates), newSampleRate)
                                                           : coreAudioDevice.getSampleRate();
 
         const auto tryRequestingSampleRate = [&] (auto dev)
@@ -1758,7 +1833,7 @@ private:
     std::optional<int> requestBufferSize (int newBufferSize)
     {
         const auto sizes = juceDevice->getAvailableBufferSizes();
-        const auto targetBufferSize = newBufferSize > 0 ? findNearestValue (sizes, newBufferSize)
+        const auto targetBufferSize = newBufferSize > 0 ? findNearestValue (Span (sizes), newBufferSize)
                                                         : juceDevice->getDefaultBufferSize();
 
         JUCE_COREAUDIO_LOG ("Requesting buffer-size: ", targetBufferSize);
@@ -1850,12 +1925,12 @@ private:
         //==============================================================================
         Array<double> getAvailableSampleRates() final
         {
-            const auto getDeviceSampleRates = [] (auto device)
+            const auto getDeviceSampleRates = [] (auto device) -> Array<double>
             {
-                Array<double> sampleRates;
+                UniqueArray<double> sampleRates;
 
                 if (! device.isValid())
-                    return sampleRates;
+                    return sampleRates.getArray();
 
                 for (const auto& range : device.getAvailableSampleRateRanges())
                 {
@@ -1872,7 +1947,7 @@ private:
                     }
                 }
 
-                return sampleRates;
+                return sampleRates.getArray();
             };
 
             auto inputSampleRates = getDeviceSampleRates (ioDevices[toUnderlyingType (PlaybackDirection::input)]);
@@ -2104,11 +2179,18 @@ private:
 
             if (device.isAggregateDevice())
             {
-                const auto devs = AggregateAudioDevice { device.getId() }.getSubDevices();
-                subDevices.reserve (devs.size());
+                const AggregateAudioDevice aggregate { device.getId() };
 
-                for (auto dev : devs)
-                    subDevices.push_back ({ dev.getName(), dev.getNumChannels (direction) });
+                // We can't assign specific device names to the channels with a stacked aggregate device,
+                // because each channel will be broadcast to all sub-devices.
+                if (! aggregate.isStacked())
+                {
+                    const auto devs = aggregate.getSubDevices();
+                    subDevices.reserve (devs.size());
+
+                    for (const auto& dev : devs)
+                        subDevices.push_back ({ dev.getName(), dev.getNumChannels (direction) });
+                }
             }
 
             for (int index = 0; index < numChannels; ++index)

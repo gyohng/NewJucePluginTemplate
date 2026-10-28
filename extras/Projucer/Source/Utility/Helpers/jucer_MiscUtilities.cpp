@@ -62,6 +62,7 @@ String getLineFeedForFile (const String& fileContent)
             case 0:     break;
             case '\n':  return "\n";
             case '\r':  if (*t == '\n') return "\r\n";
+                        [[fallthrough]];
             default:    continue;
         }
     }
