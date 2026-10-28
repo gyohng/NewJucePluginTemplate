@@ -2086,15 +2086,15 @@ private:
 
     void modalComponentManagerChanged()
     {
-        // We are only changing the style flags if we absolutely have to. Plugin windows generally
-        // don't like to be modified. Windows created under plugin hosts running in an external
-        // subprocess are particularly touchy, and may make the window invisible even if we call
-        // [window setStyleMask [window setStyleMask]].
-        if (isSharedWindow || ! hasNativeTitleBar())
-            return;
-
-        const auto newStyleMask = [&]() -> std::optional<NSWindowStyleMask>
+        const auto newStyleMask = std::invoke ([&]() -> std::optional<NSWindowStyleMask>
         {
+            // We are only changing the style flags if we absolutely have to. Plugin windows generally
+            // don't like to be modified. Windows created under plugin hosts running in an external
+            // subprocess are particularly touchy, and may make the window invisible even if we call
+            // [window setStyleMask [window setStyleMask]].
+            if (isSharedWindow || ! hasNativeTitleBar())
+                return {};
+
             const auto currentStyleMask = [window styleMask];
 
             if (ModalComponentManager::getInstance()->getNumModalComponents() > 0)
@@ -2118,10 +2118,36 @@ private:
             }
 
             return {};
-        }();
+        });
 
-        if (newStyleMask && *newStyleMask != [window styleMask])
+        if (newStyleMask.has_value() && *newStyleMask != [window styleMask])
             [window setStyleMask: *newStyleMask];
+
+        const auto newLevel = std::invoke ([&]() -> std::optional<NSWindowLevel>
+        {
+            if (isSharedWindow)
+                return {};
+
+            auto* manager = ModalComponentManager::getInstance();
+
+            if (manager->getNumModalComponents() > 0)
+            {
+                auto* recent = manager->getModalComponent (0);
+
+                if (recent == &component || component.isParentOf (recent))
+                {
+                    if (! storedLevel.has_value())
+                        storedLevel = [window level];
+
+                    return NSModalPanelWindowLevel;
+                }
+            }
+
+            return std::exchange (storedLevel, {});
+        });
+
+        if (newLevel.has_value() && *newLevel != [window level])
+            [window setLevel: *newLevel];
     }
 
     //==============================================================================
@@ -2129,6 +2155,7 @@ private:
     std::vector<ScopedNotificationCenterObserver> windowObservers;
 
     std::optional<StoredStyleFlags> storedFlags;
+    std::optional<NSWindowLevel> storedLevel;
     ErasedScopeGuard modalChangeListenerScope =
         detail::ComponentHelpers::ModalComponentManagerChangeNotifier::getInstance().addListener ([this]
                                                                                                   {
@@ -2234,6 +2261,25 @@ struct JuceNSViewClass final : public NSViewComponentPeerWrapper<ObjCClass<NSVie
 
         addMethod (@selector (draggingEnded:),                  draggingExited);
         addMethod (@selector (draggingExited:),                 draggingExited);
+
+        addMethod (@selector (hitTest:), [] (id self, SEL, NSPoint pt) -> NSView*
+        {
+            auto* hit = sendSuperclassMessage<NSView*> (self, @selector (hitTest:), pt);
+
+            if (hit == nil || hit == self)
+                return hit;
+
+            auto* owner = getOwner (self);
+
+            if (owner == nullptr || ! owner->isBlockedByModalComponent())
+                return hit;
+
+            for (NSView* v = hit; v != nil && v != self; v = [v superview])
+                if ([v isKindOfClass: [self class]])
+                    return hit;
+
+            return owner->view;
+        });
 
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wundeclared-selector")
         addMethod (@selector (clipsToBounds), [] (id, SEL) { return YES; });

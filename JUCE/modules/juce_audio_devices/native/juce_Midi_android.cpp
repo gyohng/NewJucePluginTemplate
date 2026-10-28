@@ -1761,6 +1761,8 @@ struct AndroidMidiHelpers
 
         bool send (ump::Iterator b, ump::Iterator e) override
         {
+            const ScopedLock lock { mutex };
+
             if (dst != nullptr)
                 return converter.convert (b, e, [&] (auto&&... args) { return dst->send (args...); });
 
@@ -1773,6 +1775,7 @@ struct AndroidMidiHelpers
             consumers.call ([&] (auto& x) { x.consume (b, e, time); });
         }
 
+        CriticalSection mutex;
         std::optional<ump::Endpoint> endpoint;
         WaitFreeListeners<Consumer> consumers;
         ConverterWithOptionalProtocol converter;
@@ -2894,6 +2897,8 @@ struct AndroidMidiHelpers
 
         bool send (ump::Iterator b, ump::Iterator e) override
         {
+            const ScopedLock lock { mutex };
+
             if (dst == nullptr)
                 return false;
 
@@ -2991,6 +2996,8 @@ struct AndroidMidiHelpers
         std::vector<MidiPort> ports;
 
         ConverterWithOptionalProtocol converter;
+
+        CriticalSection mutex;
     };
 
     class BytestreamConnection : public Connection,
@@ -3058,6 +3065,8 @@ struct AndroidMidiHelpers
 
         bool send (ump::Iterator b, ump::Iterator e) override
         {
+            const ScopedLock lock { mutex };
+
             bool success = true;
 
             for (const auto v : makeRange (b, e))
@@ -3126,6 +3135,8 @@ struct AndroidMidiHelpers
         std::vector<std::unique_ptr<MidiSource>> src;
         std::vector<std::unique_ptr<MidiDestination>> dst;
         std::vector<MidiPort> ports;
+
+        CriticalSection mutex;
     };
 
     class Client : private DeviceManagerListener,

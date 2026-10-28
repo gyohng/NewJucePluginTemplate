@@ -76,9 +76,10 @@ bool LV2PluginFormatHeadless::isTrivialToScan() const { return true; }
 
 StringArray LV2PluginFormatHeadless::searchPathsForPlugins (const FileSearchPath& directoriesToSearch,
                                                             bool recursive,
-                                                            bool allowAsync)
+                                                            bool)
 {
-    return pimpl->searchPathsForPlugins (directoriesToSearch, recursive, allowAsync);
+    return pimpl->searchPathsForPlugins (directoriesToSearch,
+                                         recursive ? Pimpl::Recursive::yes : Pimpl::Recursive::no);
 }
 
 FileSearchPath LV2PluginFormatHeadless::getDefaultLocationsToSearch()

@@ -96,7 +96,12 @@ public:
     Span<const String, 16> getLegacyIdentifiersDst() const&& = delete;
     Span<const String, 16> getLegacyIdentifiers (IOKind) const&& = delete;
 
+    bool operator== (const StaticDeviceInfo&) const;
+    bool operator!= (const StaticDeviceInfo& other) const { return ! operator== (other); }
+
 private:
+    auto tie() const;
+
     std::array<String, 16> identifierSrc, identifierDst;
     String name;                        ///< The full human-readable name of this device
     String manufacturer;                ///< The name of the organisation that produced this device

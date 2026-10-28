@@ -41,7 +41,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wcast-align",
                                      "-Wsign-conversion",
                                      "-Wredundant-decls",
                                      "-Wshadow",
-                                     "-Wcomma")
+                                     "-Wcomma",
+                                     "-Wimplicit-fallthrough")
 
 JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6385 6326)
 
@@ -56,4 +57,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6385 6326)
 #include "juce_core/zip/zlib/trees.c"
 #include "juce_core/zip/zlib/zutil.c"
 
+#else
+// To get around 'empty translation unit' errors and 'has no symbols' warnings emitted by libtool
+void juce_coreZlibPlaceholder (void);
+void juce_coreZlibPlaceholder (void) {}
 #endif

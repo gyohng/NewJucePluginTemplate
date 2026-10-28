@@ -89,6 +89,9 @@ static bool setPriorityInternal (bool isRealtime, HANDLE handle, Thread::Priorit
 
 bool Thread::createNativeThread (Priority priority)
 {
+    if (threadHandle != nullptr)
+        closeThreadHandle();
+
     unsigned int newThreadId;
     threadHandle = (void*) _beginthreadex (nullptr, (unsigned int) threadStackSize,
                                            &threadEntryProc, this, CREATE_SUSPENDED,
@@ -206,6 +209,11 @@ struct SleepEvent
 };
 
 static SleepEvent sleepEvent;
+
+void JUCE_CALLTYPE Thread::sleep (Milliseconds duration)
+{
+    sleep (roundToInt (duration.count()));
+}
 
 void JUCE_CALLTYPE Thread::sleep (const int millisecs)
 {

@@ -177,7 +177,7 @@ public:
             if (LocalRef<jobject> holder { env->CallObjectMethod (surfaceView, AndroidSurfaceView.getHolder) })
                 env->CallVoidMethod (holder, AndroidSurfaceHolder.removeCallback, surfaceHolderCallback.get());
 
-        if (jobject viewParent = env->CallObjectMethod (surfaceView.get(), JuceOpenGLViewSurface.getParent))
+        if (LocalRef viewParent { env->CallObjectMethod (surfaceView.get(), JuceOpenGLViewSurface.getParent) })
             env->CallVoidMethod (viewParent, AndroidViewGroup.removeView, surfaceView.get());
     }
 
@@ -272,26 +272,6 @@ public:
         const ScopedLock lock;
     };
 
-    void addListener (NativeContextListener& l)
-    {
-        listeners.add (&l);
-    }
-
-    void removeListener (NativeContextListener& l)
-    {
-        listeners.remove (&l);
-    }
-
-    void notifyWillPause()
-    {
-        listeners.call ([&] (auto& l) { l.contextWillPause(); });
-    }
-
-    void notifyDidResume()
-    {
-        listeners.call ([&] (auto& l) { l.contextDidResume(); });
-    }
-
     Component& component;
 
 private:
@@ -379,14 +359,18 @@ private:
         if (auto* peer = component.getPeer())
         {
             const auto peerBounds = peer->getAreaCoveredBy (component).toFloat();
+            const auto desktopScale = peer->getComponent().getDesktopScaleFactor();
             const auto globalRect = Rectangle { peer->localToGlobal (peerBounds.getTopLeft()),
                                                 peer->localToGlobal (peerBounds.getBottomRight()) }
-                                  / peer->getComponent().getDesktopScaleFactor();
+                                  / desktopScale;
 
             const auto& displays = Desktop::getInstance().getDisplays();
             const Rectangle physical { displays.logicalToPhysical (globalRect.getTopLeft()),
                                        displays.logicalToPhysical (globalRect.getBottomRight()) };
-            return physical.toNearestInt();
+
+            const auto physicalPeerPos = displays.logicalToPhysical (peer->localToGlobal (Point<float>{}) / desktopScale);
+
+            return (physical - physicalPeerPos).toNearestInt();
         }
 
         return component.getBounds();
@@ -427,7 +411,6 @@ private:
 
     mutable std::mutex nativeHandleMutex;
     OpenGLContext* juceContext = nullptr;
-    ListenerList<NativeContextListener> listeners;
     EGLHelpers::PtrEGLSurface surface{};
     EGLHelpers::PtrEGLContext context{};
 

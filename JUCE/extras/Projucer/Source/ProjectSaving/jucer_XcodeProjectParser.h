@@ -219,6 +219,7 @@ private:
                     if (--braceDepth == 0)
                         return content.substr ((size_t) std::distance (content.begin(), start),
                                                (size_t) std::distance (start, ptr));
+                    [[fallthrough]];
 
                 default:
                     break;

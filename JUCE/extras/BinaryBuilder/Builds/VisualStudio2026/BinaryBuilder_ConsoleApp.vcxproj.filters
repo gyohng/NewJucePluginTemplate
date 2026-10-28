@@ -400,6 +400,9 @@
     <ClCompile Include="..\..\..\..\modules\juce_core\threads\juce_ThreadPool.cpp">
       <Filter>JUCE Modules\juce_core\threads</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\modules\juce_core\threads\juce_ThreadPoolJob.cpp">
+      <Filter>JUCE Modules\juce_core\threads</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\..\modules\juce_core\threads\juce_TimeSliceThread.cpp">
       <Filter>JUCE Modules\juce_core\threads</Filter>
     </ClCompile>
@@ -558,6 +561,9 @@
     <ClInclude Include="..\..\..\..\modules\juce_core\detail\juce_CallbackListenerList.h">
       <Filter>JUCE Modules\juce_core\detail</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_core\detail\juce_FunctionPointerDestructor.h">
+      <Filter>JUCE Modules\juce_core\detail</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_core\detail\juce_IncrementRef.h">
       <Filter>JUCE Modules\juce_core\detail</Filter>
     </ClInclude>
@@ -565,6 +571,9 @@
       <Filter>JUCE Modules\juce_core\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_core\detail\juce_NativeFileHandle.h">
+      <Filter>JUCE Modules\juce_core\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_core\detail\juce_ThreadPoolLambdaJob.h">
       <Filter>JUCE Modules\juce_core\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_core\files\juce_AndroidDocument.h">
@@ -906,6 +915,9 @@
     <ClInclude Include="..\..\..\..\modules\juce_core\threads\juce_ThreadPool.h">
       <Filter>JUCE Modules\juce_core\threads</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\modules\juce_core\threads\juce_ThreadPoolJob.h">
+      <Filter>JUCE Modules\juce_core\threads</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\modules\juce_core\threads\juce_TimeSliceThread.h">
       <Filter>JUCE Modules\juce_core\threads</Filter>
     </ClInclude>
@@ -995,7 +1007,7 @@
     <None Include="..\..\..\..\modules\juce_core\native\java\README.txt">
       <Filter>JUCE Modules\juce_core\native\java</Filter>
     </None>
-    <None Include="..\..\..\..\modules\juce_core\zip\zlib\JUCE_CHANGES.txt">
+    <None Include="..\..\..\..\modules\juce_core\zip\zlib\JUCE_UPSTREAM.txt">
       <Filter>JUCE Modules\juce_core\zip\zlib</Filter>
     </None>
   </ItemGroup>

@@ -398,7 +398,7 @@ public:
     bool isConstrainedNativeWindow() const
     {
         return constrainer != nullptr
-            && (getStyleFlags() & (windowHasTitleBar | windowIsResizable)) == (windowHasTitleBar | windowIsResizable)
+            && (getStyleFlags() & windowIsResizable) != 0
             && ! isKioskMode();
     }
 
@@ -410,12 +410,12 @@ public:
             return;
         }
 
-        if (isConstrainedNativeWindow())
-            XWindowSystem::getInstance()->updateConstraints (windowH);
-
         physicalBounds = XWindowSystem::getInstance()->getWindowBounds (windowH, parentWindow);
         fullScreen = XWindowSystem::getInstance()->isFullScreen (windowH);
         updateScaleFactorFromNewBounds (physicalBounds, true);
+
+        if (isConstrainedNativeWindow())
+            XWindowSystem::getInstance()->updateSizeHints (windowH, *this, physicalBounds);
 
         updateVBlankTimer();
     }
@@ -450,7 +450,10 @@ public:
 
     void startHostManagedResize (Point<int>, ResizableBorderComponent::Zone zone) override
     {
-        XWindowSystem::getInstance()->startHostManagedResize (windowH, zone);
+        // The window manager won't resize a window with fixed size hints, so keep the pointer grab
+        // and let the resizer component handle the drag.
+        if ((getStyleFlags() & windowIsResizable) != 0)
+            XWindowSystem::getInstance()->startHostManagedResize (windowH, zone);
     }
 
     //==============================================================================
@@ -648,11 +651,12 @@ private:
         {
             // Some systems fail to set an explicit refresh rate, or ask for a refresh rate of 0
             // (observed on Raspbian Bullseye over VNC). In these situations, use a fallback value.
-            const auto newIntFrequencyHz = roundToInt (display->verticalFrequencyHz.value_or (0.0));
-            const auto frequencyToUse = newIntFrequencyHz != 0 ? newIntFrequencyHz : 100;
+            const auto reportedHz = display->verticalFrequencyHz.value_or (0.0);
+            const auto frequencyToUse = reportedHz > 0.0 ? reportedHz : 100.0;
+            const auto periodMs = jmax (1, (int) (1000.0 / frequencyToUse));
 
-            if (vBlankManager.getTimerInterval() != frequencyToUse)
-                vBlankManager.startTimerHz (frequencyToUse);
+            if (vBlankManager.getTimerInterval() != periodMs)
+                vBlankManager.startTimer (periodMs);
         }
     }
 

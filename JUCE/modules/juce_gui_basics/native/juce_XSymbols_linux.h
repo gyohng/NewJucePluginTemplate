@@ -49,6 +49,10 @@ namespace ReturnHelpers
     using functionName      = returnType (*) args; \
     functionName objectName = [] args -> returnType  { return ReturnHelpers::returnDefaultConstructedAnyType<returnType>(); };
 
+#define JUCE_GENERATE_FUNCTION_WITH_DEFAULT_RESULT(functionName, objectName, args, returnType, defaultResult) \
+    using functionName      = returnType (*) args; \
+    functionName objectName = [] args -> returnType  { return defaultResult; };
+
 
 //==============================================================================
 class JUCE_API  X11Symbols
@@ -319,9 +323,10 @@ public:
                                          Atom)
 
    #if JUCE_USE_XINPUT
-    JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XIQueryVersion, xiQueryVersion,
-                                         (::Display*, int*, int*),
-                                         Status)
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT_RESULT (XIQueryVersion, xiQueryVersion,
+                                                (::Display*, int*, int*),
+                                                Status,
+                                                BadRequest)
 
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XIQueryDevice, xiQueryDevice,
                                          (::Display*, int, int*),
@@ -333,6 +338,19 @@ public:
 
     JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XISelectEvents, xiSelectEvents,
                                          (::Display*, ::Window, XIEventMask*, int),
+                                         Status)
+
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XIGetClientPointer, xiGetClientPointer,
+                                         (::Display*, ::Window, int*),
+                                         Bool)
+
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT_RESULT (XIGrabDevice, xiGrabDevice,
+                                                (::Display*, int, ::Window, ::Time, Cursor, int, int, Bool, XIEventMask*),
+                                                Status,
+                                                BadRequest)
+
+    JUCE_GENERATE_FUNCTION_WITH_DEFAULT (XIUngrabDevice, xiUngrabDevice,
+                                         (::Display*, int, ::Time),
                                          Status)
    #endif
 
@@ -652,7 +670,7 @@ private:
     DynamicLibrary xrandrLib   { "libXrandr.so.2" };
    #endif
    #if JUCE_USE_XINPUT
-    DynamicLibrary xinputLib   { "libXi.so" };
+    DynamicLibrary xinputLib   { "libXi.so.6" };
    #endif
 
     //==============================================================================

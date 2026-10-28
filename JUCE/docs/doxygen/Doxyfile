@@ -1096,7 +1096,9 @@ RECURSIVE              = YES
 EXCLUDE                = ../../modules/juce_graphics/image_formats \
                          ../../modules/juce_core/zip/zlib \
                          ../../modules/juce_audio_formats/codecs/flac \
-                         ../../modules/juce_audio_formats/codecs/oggvorbis \
+                         ../../modules/juce_audio_formats/codecs/ogg \
+                         ../../modules/juce_audio_formats/codecs/opus \
+                         ../../modules/juce_audio_formats/codecs/vorbis \
                          ../../modules/juce_audio_devices/native \
                          ../../modules/juce_audio_plugin_client/AU/AudioUnitSDK \
                          ../../modules/juce_browser_plugin_client/juce_browser_plugin.h \
@@ -1430,7 +1432,7 @@ HTML_STYLESHEET        =
 # documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = css/header.css \
+HTML_EXTRA_STYLESHEET  = css/site-chrome.css \
                          css/doxygen-juce-overrides.css \
                          css/tokyo-night-dark.min.css
 
