@@ -113,6 +113,15 @@ set(_optAUv3 _AUv3)
 if (LEGACY_MACOS_SDK)
     unset(optAUv3)
     unset(_optAUv3)
+    # NSAlert selectors newer than the 10.13 SDK, guarded by @available at runtime
+    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/../JUCE/modules/juce_gui_basics/juce_gui_basics.mm"
+        PROPERTIES COMPILE_OPTIONS -Wno-objc-method-access)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # harfbuzz uses NAN, which -ffast-math makes clang complain about
+    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/../JUCE/modules/juce_graphics/juce_graphics_Harfbuzz.cpp"
+        PROPERTIES COMPILE_OPTIONS -Wno-nan-infinity-disabled)
 endif()
 
 string(TIMESTAMP thisyear "%Y")
