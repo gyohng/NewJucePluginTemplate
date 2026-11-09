@@ -30,6 +30,8 @@ if (NOT USE_XCODE)
     else()
         set(CMAKE_OSX_SYSROOT "$ENV{HOME}/MacOSX-SDKs/MacOSX10.13.sdk" CACHE STRING "" FORCE)
         set(LEGACY_MACOS_SDK 1)
+        # The 10.13 SDK libc++ stub does not re-export ___cxa_deleted_virtual
+        link_libraries(c++abi)
 
         # Xcode 27 removed the classic ld64 and the new linker cannot link i386.
         # Probe the system linker, then the ld-classic bundled in tools/ (from
