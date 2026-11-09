@@ -29,9 +29,34 @@ if (NOT USE_XCODE)
         set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "" FORCE)
     else()
         set(CMAKE_OSX_SYSROOT "$ENV{HOME}/MacOSX-SDKs/MacOSX10.13.sdk" CACHE STRING "" FORCE)
-        # you may want to remove i386 from the list eventually
-        set(CMAKE_OSX_ARCHITECTURES "x86_64;i386" CACHE STRING "" FORCE)
         set(LEGACY_MACOS_SDK 1)
+
+        # Xcode 27 removed the classic ld64 and the new linker cannot link i386.
+        # Probe the system linker, then the ld-classic bundled in tools/ (from
+        # Command Line Tools 16.4), and build x86_64 only if neither works.
+        set(i386_archs "x86_64;i386")
+        set(ld_classic "${CMAKE_CURRENT_LIST_DIR}/../tools/ld-classic/ld-classic")
+        foreach (ld_flags "" "--ld-path=${ld_classic}")
+            execute_process(
+                COMMAND echo "int main(void) { return 0; }"
+                COMMAND xcrun cc -x c - -arch i386 -isysroot "${CMAKE_OSX_SYSROOT}" -mmacosx-version-min=10.9 ${ld_flags} -o /dev/null
+                RESULT_VARIABLE i386_link_result
+                OUTPUT_QUIET ERROR_QUIET)
+            if (i386_link_result EQUAL 0)
+                set(i386_ld_flags "${ld_flags}")
+                break()
+            endif()
+        endforeach()
+        if (NOT i386_link_result EQUAL 0)
+            message(STATUS "No linker for i386 found, building x86_64 only")
+            set(i386_archs "x86_64")
+        elseif (i386_ld_flags)
+            message(STATUS "Using bundled ld-classic for i386")
+            foreach (kind EXE SHARED MODULE)
+                set(CMAKE_${kind}_LINKER_FLAGS_INIT "${i386_ld_flags}")
+            endforeach()
+        endif()
+        set(CMAKE_OSX_ARCHITECTURES "${i386_archs}" CACHE STRING "" FORCE)
     endif()
     
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "" FORCE)
